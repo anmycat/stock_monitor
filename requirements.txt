@@ -1,0 +1,8 @@
+requests
+schedule
+pandas
+python-dotenv
+google-generativeai
+pandas_market_calendars
+flask
+matplotlib
