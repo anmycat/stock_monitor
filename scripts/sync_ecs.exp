@@ -1,0 +1,32 @@
+#!/usr/bin/env expect -f
+set timeout 300
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        # 备份当前代码
+        send "cd /stock_monitor && cp -r modules modules.bak.$(date +%Y%m%d%H%M%S) && cp guardian.py guardian.py.bak\r"
+        expect "# "
+        
+        # 清理缓存
+        send "rm -rf /stock_monitor/modules/__pycache__ /stock_monitor/__pycache__\r"
+        expect "# "
+        
+        send "echo 'Backup completed'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

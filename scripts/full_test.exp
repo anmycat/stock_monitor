@@ -1,0 +1,56 @@
+#!/usr/bin/env expect -f
+set timeout 180
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "cd /stock_monitor && source .venv/bin/activate\r"
+        expect "# "
+        
+        send "python3 << 'PYEOF'\r"
+        expect "PYEOF"
+        
+        send "print('=' * 50)\r"
+        send "print('ECS 系统完整测试')\r"
+        send "print('=' * 50)\r"
+        
+        send "from modules.trader_brain import get_professional_trader\r"
+        send "t = get_professional_trader()\r"
+        send "r = t.assess_market()\r"
+        send "print(f'市场: {r.get(\"trend\")} {r.get(\"signal\")} {r.get(\"position\")}')\r"
+        
+        send "from modules.sector_analysis import load_watchlist, get_market_active_top\r"
+        send "wl = load_watchlist()\r"
+        send "print(f'自选股: {len(wl.get(\"watch_stocks\", []))} 只')\r"
+        
+        send "from modules.stock_scanner import format_stock_alert, analyze_stock_activity, scan_watchlist_stocks, detect_turnover_alerts, detect_fund_flow_proxy\r"
+        send "from modules.market import get_quote\r"
+        
+        send "stocks = wl.get('watch_stocks', [])\r"
+        send "results = scan_watchlist_stocks(stocks[:5], min_score=0)\r"
+        send "print(f'扫描结果: {len(results)} 只')\r"
+        send "for r in results[:3]:\r"
+        send "    print(f'  {r.get(\"name\")} 评分={r.get(\"score\")} 换手={r.get(\"turnover_rate\"):.2f}%')\r"
+        
+        send "print('=' * 50)\r"
+        send "print('测试完成!')\r"
+        send "print('=' * 50)\r"
+        
+        send "\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

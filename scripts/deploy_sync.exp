@@ -1,0 +1,19 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn scp -o StrictHostKeyChecking=no scripts/ecs_test.py root@${host}:/tmp/
+expect "password:"
+send "$password\r"
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no ${user}@${host}
+expect "password:"
+send "$password\r"
+expect "# "
+send "cd /stock_monitor && source .venv/bin/activate && python3 /tmp/ecs_test.py 2>&1\r"
+expect "# "
+send "exit\r"
+expect eof

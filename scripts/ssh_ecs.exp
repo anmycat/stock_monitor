@@ -1,0 +1,45 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect {
+            "# " {
+                send "uname -a && python3 --version\r"
+                expect "# "
+                send "ls -la /stock_monitor/\r"
+                expect "# "
+                send "free -h && df -h /\r"
+                expect "# "
+                send "cd /stock_monitor && find . -name '*.py' -type f | head -30\r"
+                expect "# "
+                send "cat /stock_monitor/config/.env 2>/dev/null | head -20 || echo 'No .env file'\r"
+                expect "# "
+                send "exit\r"
+                expect eof
+            }
+            "Permission denied" {
+                puts "AUTH_FAILED"
+                exit 1
+            }
+            timeout {
+                puts "TIMEOUT"
+                exit 1
+            }
+        }
+    }
+    "Permission denied" {
+        puts "AUTH_FAILED"
+        exit 1
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

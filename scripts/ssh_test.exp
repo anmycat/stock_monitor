@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+set timeout 30
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect {
+            "#" {
+                send "echo connected && ls -la /stock_monitor\r"
+                expect "#"
+                send "exit\r"
+                expect eof
+            }
+            "Permission denied" {
+                puts "AUTH_FAILED"
+                exit 1
+            }
+        }
+    }
+    "Permission denied" {
+        puts "AUTH_FAILED"
+        exit 1
+    }
+}

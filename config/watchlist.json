@@ -1,0 +1,47 @@
+{
+  "watch_stocks": [
+    {"code": "sh000001", "name": "上证指数", "type": "index"},
+    {"code": "sz399001", "name": "深证成指", "type": "index"},
+    {"code": "sz000858", "name": "五粮液", "type": "stock", "sector": "白酒"},
+    {"code": "sz002594", "name": "比亚迪", "type": "stock", "sector": "新能源汽车"},
+    {"code": "sh600900", "name": "长江电力", "type": "stock", "sector": "电力"}
+  ],
+  "etf_codes": [
+    "sh510300",
+    "sh510500",
+    "sh512880",
+    "sh513050",
+    "sh515030",
+    "sh516160",
+    "sh512690",
+    "sh512800",
+    "sz159919",
+    "sz159995",
+    "sz159992",
+    "sz159825",
+    "sz160626",
+    "sh588000",
+    "sh588050"
+  ],
+  "etf_codes_low_vol": [
+    "sh515180",
+    "sh512890",
+    "sh515300",
+    "sz561590"
+  ],
+  "sectors": {
+    "白酒": ["sh600519", "sz000858", "sz000568", "sh603589"],
+    "新能源汽车": ["sz002594", "sh600418", "sz300750", "sh601238"],
+    "银行": ["sh600036", "sh601988", "sh600015", "sz000001"],
+    "保险": ["sh601318", "sh601319", "sh601601"],
+    "电力": ["sh600900", "sh600021", "sh600795", "sz003816"]
+  },
+  "scan_rules": {
+    "min_turnover_rate": 3.0,
+    "min_volume_ratio": 1.5,
+    "min_pct_change": 2.0,
+    "max_pct_change": 9.5,
+    "bias_threshold": 5.0,
+    "sector_min_stocks": 3
+  }
+}

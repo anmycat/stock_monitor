@@ -1,0 +1,37 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "cat >> /stock_monitor/config/.env << 'EOF'\n"
+        send "DSA_INTEGRATION_MODE=both\n"
+        send "DSA_DATA_SHARE_ENABLED=true\n"
+        send "DSA_REPORT_PATH=/daily_stock_analysis/output\n"
+        send "EOF\n"
+        expect "# "
+        
+        send "tail -5 /stock_monitor/config/.env\r"
+        expect "# "
+        
+        send "cd /stock_monitor && source .venv/bin/activate && python3 -c 'from modules.weekly_ops import check_daily_repo_status; r=check_daily_repo_status(); print(\"Repo:\", r.get(\"repo_exists\"), \"Behind:\", r.get(\"behind\"), \"Data:\", r.get(\"daily_data_ok\"))'\r"
+        expect "# "
+        
+        send "echo 'Config completed!'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

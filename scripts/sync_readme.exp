@@ -1,0 +1,39 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "cd /stock_monitor && tar -xzf /tmp/readme_sync.tar.gz\r"
+        expect "# "
+        
+        send "cp README.md README.md.bak\r"
+        expect "# "
+        
+        send "head -50 README.md\r"
+        expect "# "
+        
+        send "grep -c 'daily_stock_analysis' README.md\r"
+        expect "# "
+        
+        send "cat config/.env | grep DSA\r"
+        expect "# "
+        
+        send "echo 'Sync completed!'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

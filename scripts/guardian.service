@@ -1,0 +1,18 @@
+[Unit]
+Description=Stock Guardian - A股行情监控系统
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/stock_monitor
+Environment=PATH=/stock_monitor/.venv/bin
+ExecStart=/stock_monitor/.venv/bin/python /stock_monitor/guardian.py
+Restart=always
+RestartSec=10
+
+StandardOutput=append:/stock_monitor/logs/stdout.log
+StandardError=append:/stock_monitor/logs/stderr.log
+
+[Install]
+WantedBy=multi-user.target

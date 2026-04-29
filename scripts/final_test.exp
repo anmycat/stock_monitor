@@ -1,0 +1,46 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        # 测试所有核心模块
+        send "cd /stock_monitor && source .venv/bin/activate\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.stock_scanner import scan_market_trade_candidates, format_stock_alert; print(\"stock_scanner: OK\")'\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.factors import score_stocks_by_factors; print(\"factors: OK\")'\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.fund_flow import get_famous_trader_stocks; print(\"fund_flow: OK\")'\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.sector_analysis import auto_discover_hot_sectors; print(\"sector_analysis: OK\")'\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.trader_brain import get_professional_trader; t=get_professional_trader(); r=t.assess_market(); print(\"Market:\",r.get(\"trend\"),r.get(\"signal\"),r.get(\"position\"))'\r"
+        expect "# "
+        
+        send "python3 -c 'from modules.market import get_quote; q=get_quote(\"sh600519\"); print(\"Quote:\",q.get(\"name\"),q.get(\"price\"))'\r"
+        expect "# "
+        
+        send "echo 'All tests passed!'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

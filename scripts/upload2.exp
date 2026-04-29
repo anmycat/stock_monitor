@@ -1,0 +1,17 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn scp -o StrictHostKeyChecking=no -o ServerAliveInterval=60 /tmp/stock_monitor_sync2.tar.gz ${user}@${host}:/tmp/
+expect {
+    "password:" {
+        send "$password\r"
+        expect eof
+    }
+    timeout {
+        puts "SCP TIMEOUT"
+        exit 1
+    }
+}

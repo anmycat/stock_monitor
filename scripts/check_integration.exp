@@ -1,0 +1,56 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "echo '=== 系统状态检查 ==='\r"
+        expect "# "
+        
+        send "echo '\n--- 1. daily_stock_analysis 版本 ---'\r"
+        expect "# "
+        send "cd /daily_stock_analysis && git log --oneline -3 && git describe --tags\r"
+        expect "# "
+        
+        send "echo '\n--- 2. stock_monitor 状态 ---'\r"
+        expect "# "
+        send "cd /stock_monitor && ps aux | grep guardian | grep -v grep\r"
+        expect "# "
+        
+        send "echo '\n--- 3. 数据共享检查 ---'\r"
+        expect "# "
+        send "ls -la /daily_stock_analysis/latest_quote.json 2>/dev/null || echo 'Not found'\r"
+        expect "# "
+        send "ls -la /stock_monitor/data/daily_stock_analysis/ 2>/dev/null || mkdir -p /stock_monitor/data/daily_stock_analysis\r"
+        expect "# "
+        send "ln -sf /daily_stock_analysis/latest_quote.json /stock_monitor/data/daily_stock_analysis/ 2>/dev/null; ls -la /stock_monitor/data/daily_stock_analysis/\r"
+        expect "# "
+        
+        send "echo '\n--- 4. 环境配置 ---'\r"
+        expect "# "
+        send "cat /stock_monitor/config/.env | grep -E 'DAILY|DSA'\r"
+        expect "# "
+        
+        send "echo '\n--- 5. 同步脚本 ---'\r"
+        expect "# "
+        send "cat /stock_monitor/scripts/sync_daily.sh 2>/dev/null || echo '#!/bin/bash\ncd /daily_stock_analysis\ngit pull origin main' > /stock_monitor/scripts/sync_daily.sh && chmod +x /stock_monitor/scripts/sync_daily.sh && cat /stock_monitor/scripts/sync_daily.sh\r"
+        expect "# "
+        
+        send "echo '\n=== 检查完成 ==='\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

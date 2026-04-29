@@ -1,0 +1,60 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "echo '=== 修复同步机制 ==='\r"
+        expect "# "
+        
+        send "echo '\n--- 1. 设置cron定时任务 ---'\r"
+        expect "# "
+        send "crontab -l 2>/dev/null || echo 'no existing crontab'\r"
+        expect "# "
+        send "echo '0 3 * * 1 cd /daily_stock_analysis && git pull origin main >> /stock_monitor/logs/git_sync.log 2>&1' | crontab -\r"
+        expect "# "
+        send "crontab -l\r"
+        expect "# "
+        
+        send "echo '\n--- 2. 创建日志目录 ---'\r"
+        expect "# "
+        send "mkdir -p /stock_monitor/logs && touch /stock_monitor/logs/git_sync.log\r"
+        expect "# "
+        
+        send "echo '\n--- 3. 测试daily_stock_analysis main.py ---'\r"
+        expect "# "
+        send "cd /daily_stock_analysis && ls -la latest_quote.json output/ 2>/dev/null || echo 'No output yet'\r"
+        expect "# "
+        
+        send "echo '\n--- 4. 手动生成行情数据 ---'\r"
+        expect "# "
+        send "cd /daily_stock_analysis && source .venv/bin/activate 2>/dev/null || python3 -m venv .venv && source .venv/bin/activate\r"
+        expect "# "
+        send "pip install -q -r requirements.txt 2>/dev/null\r"
+        expect "# "
+        send "timeout 60 python3 main.py --mode realtime 2>&1 | head -20 &\r"
+        expect "# "
+        
+        send "echo '\n--- 5. 验证符号链接 ---'\r"
+        expect "# "
+        send "ls -la /stock_monitor/data/daily_stock_analysis/\r"
+        expect "# "
+        
+        send "echo '\n=== 修复完成 ==='\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

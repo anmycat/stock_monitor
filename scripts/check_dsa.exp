@@ -1,0 +1,36 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "ls -la /daily_stock_analysis 2>/dev/null || echo 'Not found'\r"
+        expect "# "
+        
+        send "ls -la ~/daily_stock_analysis 2>/dev/null || echo 'Not in home'\r"
+        expect "# "
+        
+        send "find / -name 'daily_stock_analysis' -type d 2>/dev/null | head -5\r"
+        expect "# "
+        
+        send "cat /stock_monitor/config/.env | grep -i daily\r"
+        expect "# "
+        
+        send "cat /stock_monitor/guardian.py | grep -i daily | head -10\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

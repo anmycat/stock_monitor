@@ -1,0 +1,55 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "echo '=== 修复系统 ==='\r"
+        expect "# "
+        
+        send "cd /stock_monitor\r"
+        expect "# "
+        
+        send "tar -xzf /tmp/scanner_fix.tar.gz\r"
+        expect "# "
+        
+        send "rm -rf modules/__pycache__\r"
+        expect "# "
+        
+        send "source .venv/bin/activate\r"
+        expect "# "
+        
+        send "python3 -c \"from modules.stock_scanner import scan_watchlist_stocks, format_stock_alert, detect_turnover_alerts, detect_fund_flow_proxy; print('All functions OK')\"\r"
+        expect "# "
+        
+        send "echo '\n--- 测试自选股扫描 ---'\r"
+        expect "# "
+        send "python3 -c \"from modules.sector_analysis import load_watchlist; from modules.stock_scanner import scan_watchlist_stocks; wl=load_watchlist(); stocks=wl.get('watch_stocks',[]); results=scan_watchlist_stocks(stocks[:5], min_score=0); print('Scan:', len(results), 'results')\"\r"
+        expect "# "
+        
+        send "echo '\n--- daily_stock_analysis 启动 ---'\r"
+        expect "# "
+        send "cd /daily_stock_analysis && source .venv/bin/activate && ls -la *.py 2>/dev/null | head -3\r"
+        expect "# "
+        
+        send "python3 main.py --help 2>&1 | head -10\r"
+        expect "# "
+        
+        send "echo '\n=== 修复完成 ==='\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

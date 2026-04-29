@@ -1,0 +1,51 @@
+#!/usr/bin/env expect -f
+set timeout 180
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "cd /stock_monitor && source .venv/bin/activate\r"
+        expect "# "
+        
+        send "cat > /tmp/ecs_final_test.py << 'EOF'\r"
+        send "from modules.trader_brain import get_professional_trader\r"
+        send "from modules.sector_analysis import load_watchlist\r"
+        send "from modules.stock_scanner import scan_watchlist_stocks, format_stock_alert\r"
+        send "print('='*50)\r"
+        send "print('ECS System Test')\r"
+        send "print('='*50)\r"
+        send "t = get_professional_trader()\r"
+        send "r = t.assess_market()\r"
+        send "print(f'Market: {r.get(\"trend\")} {r.get(\"signal\")} {r.get(\"position\")}')\r"
+        send "wl = load_watchlist()\r"
+        send "stocks = wl.get('watch_stocks', [])\r"
+        send "print(f'Watchlist: {len(stocks)} stocks')\r"
+        send "results = scan_watchlist_stocks(stocks[:5], min_score=0)\r"
+        send "print(f'Scan results: {len(results)}')\r"
+        send "for r in results[:3]:\r"
+        send "    print(f'  {r.get(\"name\")} score={r.get(\"score\")} turnover={r.get(\"turnover_rate\"):.2f}%')\r"
+        send "print('All OK!')\r"
+        send "EOF\r"
+        expect "# "
+        
+        send "python3 /tmp/ecs_final_test.py\r"
+        expect "# "
+        
+        send "rm /tmp/ecs_final_test.py\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

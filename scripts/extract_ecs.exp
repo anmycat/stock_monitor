@@ -1,0 +1,44 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        # 备份
+        send "cd /stock_monitor && mkdir -p backup && cp modules/*.py guardian.py README.md backup/\r"
+        expect "# "
+        
+        # 解压
+        send "cd /stock_monitor && tar -xzf /tmp/stock_monitor_sync.tar.gz\r"
+        expect "# "
+        
+        # 清理缓存
+        send "rm -rf modules/__pycache__ __pycache__\r"
+        expect "# "
+        
+        # 测试导入
+        send "source .venv/bin/activate && python3 -c 'from modules.stock_scanner import scan_market_trade_candidates; print(\"Import OK\")'\r"
+        expect "# "
+        
+        # 检查更新
+        send "ls -la modules/stock_scanner.py modules/utils.py modules/market.py\r"
+        expect "# "
+        
+        send "echo 'Sync completed successfully'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

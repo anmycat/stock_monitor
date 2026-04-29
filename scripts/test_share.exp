@@ -1,0 +1,46 @@
+#!/usr/bin/env expect -f
+set timeout 60
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "echo '=== 数据共享测试 ==='\r"
+        expect "# "
+        
+        send "cd /stock_monitor && source .venv/bin/activate\r"
+        expect "# "
+        
+        send "python3 -c \"from modules.market import _get_quote_daily_local; q=_get_quote_daily_local('sh600519'); print('daily_source:', q.get('name'), q.get('price'))\"\r"
+        expect "# "
+        
+        send "echo '\n--- 最新报告 ---'\r"
+        expect "# "
+        send "ls -la /daily_stock_analysis/output/*.json 2>/dev/null | tail -3\r"
+        expect "# "
+        
+        send "echo '\n--- 周一同步计划 ---'\r"
+        expect "# "
+        send "crontab -l | grep -E 'git|pull|sync' || echo 'No cron set'\r"
+        expect "# "
+        
+        send "cat /stock_monitor/modules/weekly_ops.py | grep -A5 '_job_weekly_check'\r"
+        expect "# "
+        
+        send "echo '\n=== 状态正常 ==='\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

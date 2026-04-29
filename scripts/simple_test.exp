@@ -1,0 +1,26 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        send "cd /stock_monitor && source .venv/bin/activate\r"
+        expect "# "
+        send "python3 -c 'from modules.trader_brain import get_professional_trader; t=get_professional_trader(); r=t.assess_market(); print(\"Market:\",r.get(\"trend\"),r.get(\"signal\"),r.get(\"position\"))'\r"
+        expect "# "
+        send "python3 -c 'from modules.market import get_quote; q=get_quote(\"sh600519\"); print(\"Quote:\",q.get(\"name\"),q.get(\"price\"))'\r"
+        expect "# "
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}

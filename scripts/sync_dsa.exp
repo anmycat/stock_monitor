@@ -1,0 +1,39 @@
+#!/usr/bin/env expect -f
+set timeout 120
+set host "8.134.89.55"
+set user "root"
+set password "$env(ECS_PASSWORD)"
+
+spawn ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 ${user}@${host}
+
+expect {
+    "password:" {
+        send "$password\r"
+        expect "# "
+        
+        send "cd /daily_stock_analysis && git status\r"
+        expect "# "
+        
+        send "git log --oneline -5\r"
+        expect "# "
+        
+        send "git fetch origin main && git log --oneline origin/main -5\r"
+        expect "# "
+        
+        send "git pull --ff-only origin main\r"
+        expect "# "
+        
+        send "cd /stock_monitor && source .venv/bin/activate && python3 -c 'from modules.weekly_ops import check_daily_repo_status; r=check_daily_repo_status(); print(\"After sync - Repo:\", r.get(\"repo_exists\"), \"Behind:\", r.get(\"behind\"), \"Upgraded:\", r.get(\"upgraded\"), \"Data:\", r.get(\"daily_data_ok\"))'\r"
+        expect "# "
+        
+        send "echo 'Daily Stock Analysis sync completed!'\r"
+        expect "# "
+        
+        send "exit\r"
+        expect eof
+    }
+    timeout {
+        puts "TIMEOUT"
+        exit 1
+    }
+}
