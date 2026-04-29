@@ -696,37 +696,6 @@ python -c "from modules.market import get_quote; print(get_quote('sh600519', sou
 
 ---
 
-## 10. ECS部署
-
-### 10.1 服务器信息
-- IP: 8.134.89.55
-- 系统: Ubuntu 24.04 LTS
-- Python: 3.12.3
-- 内存: 1.6GB (已用59%)
-
-### 10.2 当前状态
-```bash
-cd /stock_monitor && source .venv/bin/activate
-python guardian.py  # 启动
-```
-
-### 10.3 监控命令
-```bash
-systemctl status guardian     # 服务状态
-tail -f logs/run.log         # 实时日志
-```
-
----
-
-## 11. OpenClaw MX_APIKEY
-
-> 📌 MX_APIKEY是东方财富妙想OpenClaw Skills专用，非本Python项目直接使用
-
-获取地址: https://dl.dfcfs.com/m/itc4
-
-如需使用OpenClaw AI Agent框架，请参考安装指南。
-
----
 
 ## 12. 新闻推送逻辑
 
@@ -735,35 +704,7 @@ tail -f logs/run.log         # 实时日志
 - **交易日**: 推送集合竞价Top10 + 财经新闻 + 情感分析
 - **非交易日**: 仅推送财经新闻（标题为"非交易日"）
 
-### 12.2 消息格式
-```
-交易日：
-[stock_monitor] 交易日
-今日集合竞价情况：
-...
-新闻速览：
-...
 
-非交易日：
-[stock_monitor] 非交易日
-新闻速览：
-...
-```
-
----
-
-## 13. 定时任务
-
-### 13.1 任务列表
-| 任务ID | 类型 | 时间 | 说明 |
-|--------|------|------|------|
-| morning_call_auction_news | Cron | 09:25 (mon-fri) | 集合竞价+新闻推送 |
-| intraday_scan | Interval | 每15分钟 | 盘中扫描（交易时间9:30-11:30,13:00-15:00） |
-| source_health_report | Interval | 每60分钟 | 数据源健康检查 |
-| noon_recap | Cron | 11:35 (mon-fri) | 午间复盘 |
-| close_recap | Cron | 15:10 (mon-fri) | 收盘复盘 |
-| weekly_check | Cron | 03:00 (周一) | 版本检查 |
-| monday_news | Cron | 08:30 (周一) | 周一新闻 |
 
 ### 13.2 故障排查
 - **问题**: 定时任务不执行
