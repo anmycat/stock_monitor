@@ -295,7 +295,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    ECS (DEPLOY_HOST_PLACEHOLDER)                        │
+│                    
 │                                                             │
 │  ┌───────────────────┐      ┌───────────────────────────┐  │
 │  │ stock_monitor     │      │ daily_stock_analysis     │  │
