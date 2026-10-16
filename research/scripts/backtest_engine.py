@@ -15,8 +15,18 @@ import json, csv, os, math
 from collections import defaultdict
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MARKET = json.load(open(os.path.join(BASE, "raw/market_full.json"), encoding="utf-8"))
-MARKET_EXT = json.load(open(os.path.join(BASE, "raw/market_full_ext.json"), encoding="utf-8"))
+
+
+def _load_market(name, fallback):
+    """加载行情数据：优先原始文件名，缺失时回退到 6m 归档版（2026-10-16 归档时补）"""
+    p = os.path.join(BASE, "raw", name)
+    if not os.path.exists(p):
+        p = os.path.join(BASE, "raw", fallback)
+    return json.load(open(p, encoding="utf-8"))
+
+
+MARKET = _load_market("market_full.json", "market_full_6m.json")
+MARKET_EXT = _load_market("market_full_ext.json", "market_full_ext_6m.json")
 RULES = json.load(open(os.path.join(BASE, "rules/methodology_rules.json"), encoding="utf-8"))
 
 

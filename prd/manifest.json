@@ -4,7 +4,7 @@
   "date": "2026-10-16",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md",
-  "structure": "仓库根布局：prd/ 16 个模块文档（00-13 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件）；coding/ 仅含本地 .venv（不入 git）",
+  "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
   "content_tracks": {
     "track_a_product": "产品实现线：quant_engine v5.0.0（FastAPI+Redis+Celery），ECS 8.134.89.55:8000，PRD v3.0 符合度 100%",
     "track_b_research": "调研方法论线：research/rules/methodology_rules.json v1.4，半年窗口 2026-04-13~10-13（122 交易日/27 只/614 笔信号/3151 基准样本）",
@@ -24,7 +24,8 @@
     {"id": "10", "file": "10_风险登记.md", "title": "风险登记", "answers": "方法论/工程/合规/业务风险与对策"},
     {"id": "11", "file": "11_参考资料.md", "title": "参考资料", "answers": "外部来源、源文件映射总表、数据/脚本/代码资产索引、规则库版本史"},
     {"id": "12", "file": "12_审计清单.md", "title": "完整性审查清单", "answers": "重组审计方法、完整性核对、读取受限留痕、缺陷修正、复查清单"},
-    {"id": "13", "file": "13_系统运行分析报告.md", "title": "系统运行分析报告", "answers": "ECS 生产日志全史（6/7 至今）：三阶段时间线、九类事件分类统计、五类问题根因分析（P0×2/P1×3）、健康面证据、分级处置清单"}
+    {"id": "13", "file": "13_系统运行分析报告.md", "title": "系统运行分析报告", "answers": "ECS 生产日志全史（6/7 至今）：三阶段时间线、九类事件分类统计、五类问题根因分析（P0×2/P1×3）、健康面证据、分级处置清单"},
+    {"id": "14", "file": "14_项目迭代计划.md", "title": "项目迭代计划", "answers": "v1.4→v1.5 分级迭代项（P0×3/P1×6/P2×3）、最近3个月实盘行情命中率验证（58 交易日/288 笔）、各项裁定（执行×5/观察×1/撤回×1）、Kelly 下修表、月度稳定性与 9 月失效归因"}
   ],
   "key_facts": {
     "validation_window": "2026-04-13 ~ 2026-10-13（122 个交易日，27 只股票）",
@@ -35,6 +36,8 @@
     "most_robust_chip_rule": "C01 低位突破确认 +2.79%（n=376，超额 +1.12pp）",
     "capital_ordering": "起爆日 HC-01 +6.17% > 慢资金日 SC-01 +1.48% > 游资日 YZ-01 +0.98% > 派发日 DR-01 -0.20%",
     "kelly_v14": {"R02": "半凯利 13.13%", "R01": "12.18%", "R04": "3.54%", "R05": "0.91%（微仓）", "all": "4.53%"},
+    "kelly_3m_reestimate": {"R02": "9.15%", "R01": "2.46%", "R04": "2.92%", "R05": "2.66%", "all": "3.70%", "note": "3 个月窗口（2026-07-16~10-13）重估，盈亏比系统性走低，v1.5 按 3M 值下修（14 §5.6）"},
+    "iteration_plan_2026_10_16": "v1.4→v1.5 迭代计划（14_项目迭代计划.md）：① 剔除 R06 倒T（两窗口稳定亏损，采纳配置均盈亏 +0.34%→+0.88%、累计 ×2.0）② Kelly 按 3M 下修 ③ R12+R13v 固化为默认（3M 复验通过）④ R04 降权 ⑤ C01 筹码叠加层验证不通过撤回（淘汰组为正收益）⑥ 9 月环境性失效（胜率 27.1%）→ 回测池扩容 100+/12 个月；工程线 P0：DeepSeek 密钥轮换/MemoryMax/mask guardian",
     "production": "ECS 8.134.89.55:8000（/stock_monitor），quant-engine + worker + beat + Redis 8.0.5，PRD v3.0 符合度 100%",
     "market_data_finding": "东财 push2 burst 后秒封（实测 0/15，>65s 未恢复）；腾讯/新浪 15/15 稳定；Tushare 需注册（100+20 积分）",
     "tushare_emergency": "Tushare Pro token 已于 2026-10-16 配置到 .env 应急位（收费源）：仅免费源全不可用时切换，恢复即切回；代码中无 tushare 通路，启用前需先加 TushareSource 适配器（02 §3.5）"
