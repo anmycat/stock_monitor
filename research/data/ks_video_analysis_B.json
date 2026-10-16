@@ -1,0 +1,341 @@
+[
+  {
+    "video_code": "nZTKyjXA",
+    "hint": "今天被砸的头晕眼花",
+    "caption": "今天被砸的头晕眼花",
+    "summary": "用户发布快手视频，配文“今天被砸的头晕眼花”，附同花顺App交易截图（成交明细）展示当日对黄河旋风、爱丽家居等个股的买卖成交，并配一张游戏/封面图。从成交记录看当日有买入与卖出操作，整体情绪为被套亏损。",
+    "images": [
+      {
+        "filename": "nZTKyjXA_00.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "买入",
+            "time": "10:11:51",
+            "quantity": null,
+            "price": 16.22,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "黄河旋风 买入成交"
+          },
+          {
+            "type": "买入",
+            "time": "10:09:29",
+            "quantity": null,
+            "price": 32.01,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交（图中成交价右端疑似被截断）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "同花顺 买入 江海证券 **0857 股东账号；成交明细列：黄河旋风 买 10:11:51 16.220；爱丽家居 买 10:09:29 32.010",
+        "evidence_level": "中",
+        "note": "可见成交价与买卖方向，但成交数量（股/手）未清晰显示，无法提取。"
+      },
+      {
+        "filename": "nZTKyjXA_01.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "买入",
+            "time": "09:44:31",
+            "quantity": null,
+            "price": 31.77,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交"
+          },
+          {
+            "type": "买入",
+            "time": "09:44:31",
+            "quantity": null,
+            "price": 31.77,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交（与上一行时间价格相同，疑为同笔重复显示）"
+          },
+          {
+            "type": "卖出",
+            "time": "09:44:21",
+            "quantity": null,
+            "price": 16.32,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "黄河旋风 卖出成交"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "成交明细（顶部截断 买 10:07:28）；爱丽家居 买 09:44:31 31.770；爱丽家居 买 09:44:31 31.770；黄河旋风 卖 09:44:21 16.320；底部按钮：查询历史成交",
+        "evidence_level": "中",
+        "note": "为成交明细列表放大图，含买卖方向与成交价，数量不可见；顶部一行被截断。"
+      },
+      {
+        "filename": "nZTKyjXA_02.jpg",
+        "kind": "cover",
+        "app": "其他",
+        "screenshot_type": "其他",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "浪涛未尽 烽火荣都 刮地皮 兑换小猫好感度（疑似游戏界面）",
+        "evidence_level": "低",
+        "note": "游戏/视频封面截图，非交易内容，无可提取的金融信息。"
+      },
+      {
+        "filename": "nZTKyjXA_03.jpg",
+        "kind": "cover",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "买入",
+            "time": "10:11:51",
+            "quantity": null,
+            "price": 16.22,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "黄河旋风 买入成交（与 nZTKyjXA_00 内容相同）"
+          },
+          {
+            "type": "买入",
+            "time": "10:09:29",
+            "quantity": null,
+            "price": 32.01,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交（与 nZTKyjXA_00 内容相同）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "同花顺 买入 江海证券 **0857；成交明细：黄河旋风 买 10:11:51 16.220；爱丽家居 买 10:09:29 32.010（与 nZTKyjXA_00 重复）",
+        "evidence_level": "中",
+        "note": "该图内容与 nZTKyjXA_00.jpg 完全相同，为重复截图。"
+      }
+    ]
+  },
+  {
+    "video_code": "JgZ1IFSc",
+    "hint": "炒股日记 股票交流 实盘记录",
+    "caption": "炒股日记 股票交流 实盘记录",
+    "summary": "用户发布“炒股日记 股票交流 实盘记录”视频，附同花顺App交易截图，展示对爱丽家居、黄河旋风、贤丰控股、远东股份等个股的当日买卖成交，属实盘记录内容，并配一张博主自拍封面。",
+    "images": [
+      {
+        "filename": "JgZ1IFSc_00.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "买入",
+            "time": "10:37:04",
+            "quantity": null,
+            "price": 27.72,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交"
+          },
+          {
+            "type": "持仓",
+            "time": null,
+            "quantity": null,
+            "price": 16.87,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "黄河旋风 显示价格 16.870，买卖方向不明（可能为行情/委托价）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "同花顺 买入 江海证券 **0857；成交明细列：爱丽家居 买 10:37:04 27.720；黄河旋风 16.870（方向不明）",
+        "evidence_level": "中",
+        "note": "可见买入价与方向，数量未显示；黄河旋风一行买卖方向不清。"
+      },
+      {
+        "filename": "JgZ1IFSc_01.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "卖出",
+            "time": "10:36:54",
+            "quantity": null,
+            "price": null,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出成交（个股名称与价格被截断，仅见 卖 10:36:54）"
+          },
+          {
+            "type": "买入",
+            "time": "10:28:48",
+            "quantity": null,
+            "price": 6.49,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "贤丰控股 买入成交"
+          },
+          {
+            "type": "买入",
+            "time": "10:28:48",
+            "quantity": null,
+            "price": 6.49,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "贤丰控股 买入成交（与上一行时间价格相同，疑为同笔重复显示）"
+          },
+          {
+            "type": "卖出",
+            "time": "10:28:36",
+            "quantity": null,
+            "price": 18.44,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "远东股份 卖出成交"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "成交明细：卖 10:36:54（截断）；贤丰控股 买 10:28:48 6.490；贤丰控股 买 10:28:48 6.490；远东股份 卖 10:28:36 18.440；底部标签：首页 行情 自选",
+        "evidence_level": "中",
+        "note": "放大版成交明细，含买卖方向与成交价，数量不可见；顶部一行被截断，个股与价格缺失。"
+      },
+      {
+        "filename": "JgZ1IFSc_02.jpg",
+        "kind": "cover",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [
+          {
+            "type": "买入",
+            "time": "10:37:04",
+            "quantity": null,
+            "price": 27.72,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "爱丽家居 买入成交（与 JgZ1IFSc_00 内容相同）"
+          },
+          {
+            "type": "持仓",
+            "time": null,
+            "quantity": null,
+            "price": 16.87,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "黄河旋风 价格 16.870，方向不明（与 JgZ1IFSc_00 内容相同）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "同花顺 买入 江海证券 **0857；成交明细：爱丽家居 买 10:37:04 27.720；黄河旋风 16.870（与 JgZ1IFSc_00 重复）",
+        "evidence_level": "中",
+        "note": "该图内容与 JgZ1IFSc_00.jpg 完全相同，为重复截图。"
+      },
+      {
+        "filename": "JgZ1IFSc_03.jpg",
+        "kind": "cover",
+        "app": "其他",
+        "screenshot_type": "其他",
+        "stock_code": null,
+        "stock_name": null,
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "9月22日周二 炒股377天（博主自拍封面）",
+        "evidence_level": "低",
+        "note": "视频封面，博主自拍并标注实盘天数，非交易截图，无可提取的金融信息。"
+      }
+    ]
+  }
+]

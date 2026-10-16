@@ -1,0 +1,14 @@
+{
+  "接口清单": {
+    "作品列表": "GET /rest/v/profile/feed?__NS_hxfalcon=<签名>",
+    "用户资料": "GET /rest/v/profile/get?__NS_hxfalcon=<签名>",
+    "搜索用户": "GET /rest/v/search/user?keyword=&pcursor=",
+    "搜索视频": "GET /rest/v/search/feed?keyword=&pcursor=",
+    "直播回放": "GET /rest/v/live/playBack/list"
+  },
+  "签名": "__NS_hxfalcon 与请求参数绑定，复用旧值返回 {result:50, error_msg:'签名验证失败'}；必须由页面 JS 生成",
+  "本次实测响应": {
+    "/rest/v/profile/feed": "{\"result\":1,\"pcursor\":\"1.787660131573E12\",\"feeds\":[],\"webPageArea\":\"profilexxnull\"}",
+    "/rest/v/profile/get": "（返回当前登录用户 喵个咪喵 / userId 4393886674，非目标账号）"
+  }
+}

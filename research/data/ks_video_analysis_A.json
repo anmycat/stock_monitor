@@ -1,0 +1,364 @@
+[
+  {
+    "video_code": "JKn0ajlI",
+    "hint": "新开的小号亏损，大号赚钱，互相颠倒",
+    "caption": "新开的小号亏损，大号赚钱，互相颠倒",
+    "summary": "视频对比两个证券账户的表现：小号（东方财富账户）亏损、大号（同花顺/江海证券账户）赚钱。图片包含同花顺买入委托页与爱丽家居的多次买卖成交记录（价格区间 26.97~28.00），以及东方财富账户持仓页（总资产 5683.14 元、仓位 95%、当日盈亏 +54.19 元、持仓盈亏 -316.86 元，重仓国芳集团盈利 183.95 元，香江控股清仓后累计亏损 -500.81 元）。另有唱歌/音乐封面两图与交易无关。",
+    "images": [
+      {
+        "filename": "JKn0ajlI_00.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "买入委托",
+        "stock_code": "",
+        "stock_name": "",
+        "actions": [
+          {
+            "type": "买入",
+            "time": "",
+            "quantity": null,
+            "price": null,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "同花顺（江海证券 **0857）买入委托页，未填写代码/价格/数量，仅底部成交记录露出'爱丽家居 28.000'（方向与数量被裁切）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "同花顺App 15:01 江海证券 **0857 买入/卖出/撤单 股票代码/简拼 限价 买入价 买入量 可买- 全仓 1/2仓 1/3仓 1/4仓 买入 持仓 委托 成交时间 成交价 爱丽家居 28.000",
+        "evidence_level": "中",
+        "note": "委托页未实际下单，信息有限；页面右侧被裁切"
+      },
+      {
+        "filename": "JKn0ajlI_01.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": "603221.SH",
+        "stock_name": "爱丽家居",
+        "actions": [
+          {
+            "type": "卖出",
+            "time": "15:00:00",
+            "quantity": null,
+            "price": 28.0,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出爱丽家居（顶部行部分被裁切，价格推断为 28.000）"
+          },
+          {
+            "type": "买入",
+            "time": "13:51:04",
+            "quantity": null,
+            "price": 26.97,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "买入",
+            "time": "13:51:00",
+            "quantity": null,
+            "price": 26.97,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "买入",
+            "time": "13:48:57",
+            "quantity": null,
+            "price": 26.97,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "卖出",
+            "time": "13:46:10",
+            "quantity": null,
+            "price": 27.0,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出爱丽家居"
+          },
+          {
+            "type": "卖出",
+            "time": "13:46:10",
+            "quantity": null,
+            "price": 27.0,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出爱丽家居（同时间两笔）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "爱丽家居 卖 15:00:00 买 13:51:04 26.970 买 13:51:00 26.970 买 13:48:57 26.970 卖 13:46:10 27.000 卖 13:46:10 27.000 查询历史 首页 行情 自选",
+        "evidence_level": "高",
+        "note": "红色为买入、蓝色为卖出（同花顺配色）；数量未显示；顶部一行被裁切"
+      },
+      {
+        "filename": "JKn0ajlI_02.jpg",
+        "kind": "atlas",
+        "app": "东方财富",
+        "screenshot_type": "持仓",
+        "stock_code": "601086.SH",
+        "stock_name": "国芳集团",
+        "actions": [
+          {
+            "type": "持仓",
+            "time": "14:50",
+            "quantity": null,
+            "price": 17.99,
+            "cost": 17.377,
+            "pnl_amount": 183.95,
+            "pnl_pct": 0.03528,
+            "position_pct": 0.95,
+            "note": "国芳集团：市值 5397.00，现价 17.990 / 成本 17.377，持仓盈亏 +183.95 (+3.528%)，当日盈亏 +183.95 (+3.529%)"
+          },
+          {
+            "type": "清仓",
+            "time": "14:50",
+            "quantity": null,
+            "price": 4.71,
+            "cost": null,
+            "pnl_amount": -500.81,
+            "pnl_pct": null,
+            "position_pct": 0.0,
+            "note": "香江控股（600162.SH）：已清仓，市值 0.00，现价 4.710，持仓盈亏 -500.81，当日盈亏 -129.76 (-2.346%)"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": 5683.14,
+          "当日盈亏": 54.19,
+          "持仓盈亏": -316.86,
+          "仓位": 0.95,
+          "可用": 286.04
+        },
+        "text_in_image": "东方财富 普通 信用 期权 模拟 期货 总资产 5,683.14 仓位95.0% 当日盈亏 +54.19 证券市值 5,397.00 持仓盈亏 -316.86 可用 286.04 理财资产 0.00 理财昨日收益 0.00 可取 96.95 持仓 委托成交 国芳集团 5397.00 17.990 17.377 183.95 3.528% 183.95 3.529% 香江控股 0.00 4.710 0.000 -500.81 -129.76 -2.346% 批量加仓 批量卖出 共有2条持仓数据",
+        "evidence_level": "高",
+        "note": "东方财富交易页（橙色顶栏），数字清晰；即标题所称'亏损的小号'（总资产仅 5683 元、持仓盈亏为负）"
+      },
+      {
+        "filename": "JKn0ajlI_03.jpg",
+        "kind": "cover",
+        "app": "未识别",
+        "screenshot_type": "其他",
+        "stock_code": "",
+        "stock_name": "",
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "无文字（人物手持话筒唱歌画面）",
+        "evidence_level": "高",
+        "note": "非交易截图，视频封面/人像画面"
+      },
+      {
+        "filename": "JKn0ajlI_04.jpg",
+        "kind": "cover",
+        "app": "未识别",
+        "screenshot_type": "其他",
+        "stock_code": "",
+        "stock_name": "",
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "My legs 原唱：Lila Smoke 翻唱：听潮阁男明星",
+        "evidence_level": "高",
+        "note": "非交易截图，音乐封面图"
+      }
+    ]
+  },
+  {
+    "video_code": "Jdg4jr6z",
+    "hint": "数据不会骗人，每一分努力都算数",
+    "caption": "数据不会骗人，每一分努力都算数",
+    "summary": "视频展示同花顺（江海证券 **0857）账户当日成交明细，围绕爱丽家居（603221.SH）高频做T：早盘 09:45 两次买入 29.300，午后 13:18~13:27 在 29.36~29.55 间多次买卖；同时交易黄河旋风（600172.SH，16.46~16.51 附近买卖）和远东股份（600869.SH，13:21 买入 22.370）。另一张为音乐封面图，与交易无关。",
+    "images": [
+      {
+        "filename": "Jdg4jr6z_00.jpg",
+        "kind": "cover",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": "603221.SH",
+        "stock_name": "爱丽家居",
+        "actions": [
+          {
+            "type": "卖出",
+            "time": "13:27:38",
+            "quantity": null,
+            "price": 29.55,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出爱丽家居"
+          },
+          {
+            "type": "卖出",
+            "time": "13:26:37",
+            "quantity": null,
+            "price": 29.45,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出爱丽家居"
+          },
+          {
+            "type": "卖出",
+            "time": "13:26:05",
+            "quantity": null,
+            "price": 16.46,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出黄河旋风（600172.SH）"
+          },
+          {
+            "type": "买入",
+            "time": "13:22:56",
+            "quantity": null,
+            "price": 29.36,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "买入",
+            "time": "13:21:12",
+            "quantity": null,
+            "price": 22.37,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入远东股份（600869.SH）"
+          },
+          {
+            "type": "买入",
+            "time": "13:18:51",
+            "quantity": null,
+            "price": 29.44,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "买入",
+            "time": "09:45:11",
+            "quantity": null,
+            "price": 29.3,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居"
+          },
+          {
+            "type": "买入",
+            "time": "09:45:11",
+            "quantity": null,
+            "price": 29.3,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "买入爱丽家居（同时间两笔）"
+          },
+          {
+            "type": "卖出",
+            "time": "09:44:18",
+            "quantity": null,
+            "price": 16.51,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出黄河旋风（600172.SH）"
+          },
+          {
+            "type": "卖出",
+            "time": "09:44:18",
+            "quantity": null,
+            "price": 16.51,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "卖出黄河旋风（同时间两笔）"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "13:52 同花顺App 江海证券 **0857 买入 卖出 撤单 持仓 委托 成交 成交时间 成交价 爱丽家居 卖 13:27:38 29.550 / 卖 13:26:37 29.450 / 黄河旋风 卖 13:26:05 16.460 / 爱丽家居 买 13:22:56 29.360 / 远东股份 买 13:21:12 22.370 / 爱丽家居 买 13:18:51 29.440 / 爱丽家居 买 09:45:11 29.300 x2 / 黄河旋风 卖 09:44:18 16.510 x2",
+        "evidence_level": "高",
+        "note": "红色=买入、蓝色=卖出；数量列被裁切未显示；黄河旋风 09:44 卖 16.510 后 13:26 卖 16.460，说明其间有回补买入但不在截图中"
+      },
+      {
+        "filename": "Jdg4jr6z_01.jpg",
+        "kind": "cover",
+        "app": "未识别",
+        "screenshot_type": "其他",
+        "stock_code": "",
+        "stock_name": "",
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "My legs 原唱：Lila Smoke 翻唱：听潮阁男明星",
+        "evidence_level": "高",
+        "note": "非交易截图，音乐封面图（与 JKn0ajlI_04 同一张）"
+      }
+    ]
+  }
+]

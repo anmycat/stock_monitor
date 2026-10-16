@@ -1,0 +1,54 @@
+meta:
+  id: dip_reversal_v1
+  name: 低吸反转策略
+  version: 1
+  category: reversal
+  description: 超跌反弹，寻找低位止跌企稳的股票
+
+entry:
+  logic: and
+  conditions:
+    - indicator: position_20d
+      op: "<"
+      value: 0.3
+      weight: 0.3
+      description: 处于20日低位
+    - indicator: rsi
+      op: "<"
+      value: 40
+      weight: 0.25
+      description: RSI超卖
+    - indicator: stoch_k
+      op: "<"
+      value: 30
+      weight: 0.2
+      description: KDJ超卖
+    - indicator: stop_stabilize
+      op: "=="
+      value: true
+      weight: 0.25
+      description: 止跌企稳
+
+filters:
+  - type: bear_market
+    description: 熊市不操作
+  - type: high_volatility
+    threshold: 0.05
+    description: 排除高波动
+
+exit:
+  stop_loss: 0.05
+  take_profit: 0.10
+  trailing_stop: false
+
+scoring:
+  min_score: 65
+  weights:
+    oversold: 0.4
+    reversal: 0.3
+    stability: 0.3
+
+levels:
+  S: 80
+  A: 70
+  B: 60

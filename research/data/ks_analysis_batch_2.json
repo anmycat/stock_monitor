@@ -1,0 +1,242 @@
+[
+  {
+    "date": "2025-06-30",
+    "post_id": "1565820650",
+    "img": "raw/em_imgs/2025-06-30_1565820650_0.jpg",
+    "text_context": "$中毅达(SH600610)$太有规律了，7月明天开门红",
+    "app": "腾讯自选股",
+    "screenshot_type": "行情",
+    "stock_code": "600610",
+    "stock_name": "中毅达",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": 16.38,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "腾讯自选股中毅达(600610.SH)资金页截图，含主力资金净流入柱状图与融资融券余额曲线(融资余额连降2天)，无任何交易动作。顶部现价16.38元，跌0.50元(-2.96%)。price字段为现价。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-07-31",
+    "post_id": "1578288590",
+    "img": "raw/em_imgs/2025-07-31_1578288590_0.jpg",
+    "text_context": "[图片]",
+    "app": "东方财富",
+    "screenshot_type": "收益曲线",
+    "stock_code": "002289",
+    "stock_name": "*ST宇顺",
+    "actions": [
+      {
+        "type": "做T",
+        "time": "15:07",
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": 1296.60,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富\"做T超神，未来豪门\"收益分享卡片。本月做T收益+1296.60元，做T次数4次，成功率100.00%，标的002289 *ST宇顺，发布用户\"多空博弈社\"，时间2025-07-31 15:07。仅有汇总收益，无单笔买卖时间/价量明细。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-08-04",
+    "post_id": "1579197897",
+    "img": "raw/em_imgs/2025-08-04_1579197897_0.jpg",
+    "text_context": "$*ST宇顺(SZ002289)$这个天天不知道狗叫啥",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "002289",
+    "stock_name": "*ST宇顺",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富社区帖子截图：用户\"闲聊客\"发帖\"年轻人的第一个股票账户，就来东方财富证券\"，标注发布于*ST宇顺吧，含评论区(用户\"多空博弈社\"回复\"你快滚\")。纯社区内容，非交易截图。stock_code取自吧名。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-08-14",
+    "post_id": "1584076148",
+    "img": "raw/em_imgs/2025-08-14_1584076148_0.jpg",
+    "text_context": "$*ST宇顺(SZ002289)$总有几个chun货，每天都在gou叫",
+    "app": "东方财富",
+    "screenshot_type": "持仓",
+    "stock_code": "002289",
+    "stock_name": "*ST宇顺",
+    "actions": [
+      {
+        "type": "持仓",
+        "time": null,
+        "quantity": 2200,
+        "price": 24.990,
+        "cost": 19.536,
+        "pnl_amount": 11999.74,
+        "pnl_pct": 0.27918,
+        "position_pct": null
+      }
+    ],
+    "note": "持仓页截图(顶部\"持仓/委托成交\"切换\"分时\")：*ST宇顺 市值54978.00，现价24.990，成本19.536，持仓盈亏+11999.74(+27.918%)，当日盈亏+1590.77(+1.476%)。经市值/现价反算持仓约2200股(54978/24.990)。App无明确标识，按橙色配色判断为东方财富，存在不确定。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-09-08",
+    "post_id": "1596525820",
+    "img": "raw/em_imgs/2025-09-08_1596525820_0.jpg",
+    "text_context": "$吉视传媒(SH601929)$今天还是持续加仓，国光t了，等尾盘抢筹，明天开始反包，今天不是反包的时候",
+    "app": "腾讯自选股",
+    "screenshot_type": "成交",
+    "stock_code": "002549",
+    "stock_name": "凯美特气",
+    "actions": [
+      {
+        "type": "买入",
+        "time": "11:06:42",
+        "quantity": 500,
+        "price": 17.30,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "腾讯自选股交易详情：凯美特气(002549.SZ) 委托买入时间2025-09-08 11:06:40，全部成交11:06:42。委托单价17.30元、委托数量500股；成交均价17.30元、成交数量500股；证券成交金额8650.00元，合计费用(预估)5.00元。quantity单位为股。注意：帖子正文谈吉视传媒，与截图标的凯美特气不一致。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-09-08",
+    "post_id": "1596495792",
+    "img": "raw/em_imgs/2025-09-08_1596495792_0.jpg",
+    "text_context": "$吉视传媒(SH601929)$你接着出来狗叫啊",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": null,
+    "stock_name": null,
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富评论详情页截图：用户\"多空博弈社\"与\"华尔街大鳄\"互相评论对喷(内容涉及吉视、中国电影)，无股票代码标签、无交易动作。纯社区内容截图。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-09-08",
+    "post_id": "1596370441",
+    "img": "raw/em_imgs/2025-09-08_1596370441_0.jpg",
+    "text_context": "$吉视传媒(SH601929)$持续加仓，下午会拉升",
+    "app": "东方财富",
+    "screenshot_type": "分时卖点",
+    "stock_code": "601929",
+    "stock_name": "吉视传媒",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富吉视传媒(601929)分时图截图，现价5.36元(-1.65%)，含买卖5档盘口、主力意愿/散户线副图。图上有人为涂鸦文字标注(如\"卖飞机\"、\"S\"、\"B\"、\"开始出货\"等)，非系统成交/委托记录，无法确认实际买卖价量，故不填数值。现价参考5.36。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-09-16",
+    "post_id": "1600485799",
+    "img": "raw/em_imgs/2025-09-16_1600485799_0.jpg",
+    "text_context": "$中欣氟材(SZ002915)$拉不上去就砸就行",
+    "app": "东方财富",
+    "screenshot_type": "分时卖点",
+    "stock_code": "002915",
+    "stock_name": "中欣氟材",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富中欣氟材(002915)分时图截图(含成交量、MACD副图、买卖5档)，现价30.41元(+3.86%)。图上有一个绿色\"B\"买入点标记(约29.9附近)及\"追山顶\"文字，属人为标注而非成交流水，无法确认实际成交价量，故不填数值。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-09-18",
+    "post_id": "1601831586",
+    "img": "raw/em_imgs/2025-09-18_1601831586_0.jpg",
+    "text_context": "$济民健康(SH603222)$我的剧本写得很明确，看今天砸盘多少",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": null,
+    "stock_name": null,
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "微信群聊截图(群名\"多空博弈社\")，与\"许雄峰\"讨论盘面(淳中、柚子、外资砸盘等)，非交易截图，无股票代码与交易动作。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-09-19",
+    "post_id": "1602361155",
+    "img": "raw/em_imgs/2025-09-19_1602361155_0.jpg",
+    "text_context": "$济民健康(SH603222)$出来狗叫啊",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "603222",
+    "stock_name": "济民健康",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富\"评论转发\"页截图(09-18)，多条评论引用$济民健康(SH603222)$并讨论\"高点已到，撤离就行\"等，非交易截图，无交易动作。stock_code取自评论中的股票标签。",
+    "evidence_level": "高"
+  }
+]

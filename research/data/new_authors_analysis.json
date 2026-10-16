@@ -1,0 +1,1357 @@
+{
+ "users": [
+  {
+   "platform": "zhihu",
+   "name": "硬核大卫哥",
+   "followers": "",
+   "status_count": null,
+   "description": "公主号：硬核大卫哥",
+   "count": 40,
+   "avg_fav": 3547.5,
+   "max_fav": 29616,
+   "total_fav": 141901,
+   "bull_kw": 30,
+   "bear_kw": 23,
+   "bull_ratio": 0.57,
+   "themes": {
+    "大盘策略": 8,
+    "个股研究": 2,
+    "方法论": 35,
+    "基本面": 46,
+    "资金情绪": 3,
+    "宏观": 8,
+    "风险教训": 16
+   },
+   "top_theme": "基本面",
+   "method_density": 1.27,
+   "method_kw": 51,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 424
+  },
+  {
+   "platform": "zhihu",
+   "name": "小Lin说",
+   "followers": "",
+   "status_count": null,
+   "description": "商业财经不无聊~",
+   "count": 39,
+   "avg_fav": 594.5,
+   "max_fav": 9370,
+   "total_fav": 23186,
+   "bull_kw": 3,
+   "bear_kw": 18,
+   "bull_ratio": 0.14,
+   "themes": {
+    "大盘策略": 1,
+    "个股研究": 0,
+    "方法论": 6,
+    "基本面": 10,
+    "资金情绪": 1,
+    "宏观": 1,
+    "风险教训": 19
+   },
+   "top_theme": "风险教训",
+   "method_density": 0.15,
+   "method_kw": 6,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 210
+  },
+  {
+   "platform": "zhihu",
+   "name": "赛博格Cyborg",
+   "followers": "",
+   "status_count": null,
+   "description": "",
+   "count": 12,
+   "avg_fav": 1850.9,
+   "max_fav": 6092,
+   "total_fav": 22211,
+   "bull_kw": 5,
+   "bear_kw": 2,
+   "bull_ratio": 0.71,
+   "themes": {
+    "大盘策略": 0,
+    "个股研究": 0,
+    "方法论": 0,
+    "基本面": 7,
+    "资金情绪": 1,
+    "宏观": 0,
+    "风险教训": 3
+   },
+   "top_theme": "基本面",
+   "method_density": 0.33,
+   "method_kw": 4,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 308
+  },
+  {
+   "platform": "zhihu",
+   "name": "火神八号​",
+   "followers": "",
+   "status_count": null,
+   "description": "QQ交流群：火神八号随想群",
+   "count": 37,
+   "avg_fav": 417.6,
+   "max_fav": 4727,
+   "total_fav": 15450,
+   "bull_kw": 31,
+   "bear_kw": 25,
+   "bull_ratio": 0.55,
+   "themes": {
+    "大盘策略": 18,
+    "个股研究": 2,
+    "方法论": 6,
+    "基本面": 1,
+    "资金情绪": 24,
+    "宏观": 62,
+    "风险教训": 2
+   },
+   "top_theme": "宏观",
+   "method_density": 0.97,
+   "method_kw": 36,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 311
+  },
+  {
+   "platform": "zhihu",
+   "name": "杨知潮​",
+   "followers": "",
+   "status_count": null,
+   "description": "一个喜欢研究商业的价值投资者。",
+   "count": 40,
+   "avg_fav": 332.8,
+   "max_fav": 4689,
+   "total_fav": 13313,
+   "bull_kw": 13,
+   "bear_kw": 12,
+   "bull_ratio": 0.52,
+   "themes": {
+    "大盘策略": 1,
+    "个股研究": 1,
+    "方法论": 1,
+    "基本面": 13,
+    "资金情绪": 5,
+    "宏观": 4,
+    "风险教训": 2
+   },
+   "top_theme": "基本面",
+   "method_density": 0.5,
+   "method_kw": 20,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 343
+  },
+  {
+   "platform": "zhihu",
+   "name": "Jerry Ma",
+   "followers": "",
+   "status_count": null,
+   "description": "公众号：多空逻辑",
+   "count": 40,
+   "avg_fav": 295.7,
+   "max_fav": 7376,
+   "total_fav": 11829,
+   "bull_kw": 32,
+   "bear_kw": 13,
+   "bull_ratio": 0.71,
+   "themes": {
+    "大盘策略": 4,
+    "个股研究": 8,
+    "方法论": 14,
+    "基本面": 5,
+    "资金情绪": 15,
+    "宏观": 2,
+    "风险教训": 14
+   },
+   "top_theme": "资金情绪",
+   "method_density": 1.4,
+   "method_kw": 56,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 306
+  },
+  {
+   "platform": "zhihu",
+   "name": "未曾真知",
+   "followers": "",
+   "status_count": null,
+   "description": "无",
+   "count": 3,
+   "avg_fav": 2711.7,
+   "max_fav": 7983,
+   "total_fav": 8135,
+   "bull_kw": 14,
+   "bear_kw": 4,
+   "bull_ratio": 0.78,
+   "themes": {
+    "大盘策略": 11,
+    "个股研究": 1,
+    "方法论": 8,
+    "基本面": 1,
+    "资金情绪": 1,
+    "宏观": 0,
+    "风险教训": 0
+   },
+   "top_theme": "大盘策略",
+   "method_density": 3.0,
+   "method_kw": 9,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 1398
+  },
+  {
+   "platform": "zhihu",
+   "name": "李斯克",
+   "followers": "",
+   "status_count": null,
+   "description": "CFA&amp;FRM持证人。公众号：何李的CFA学习课堂",
+   "count": 40,
+   "avg_fav": 175.2,
+   "max_fav": 4268,
+   "total_fav": 7006,
+   "bull_kw": 33,
+   "bear_kw": 69,
+   "bull_ratio": 0.32,
+   "themes": {
+    "大盘策略": 32,
+    "个股研究": 3,
+    "方法论": 28,
+    "基本面": 15,
+    "资金情绪": 8,
+    "宏观": 19,
+    "风险教训": 67
+   },
+   "top_theme": "风险教训",
+   "method_density": 1.0,
+   "method_kw": 40,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 657
+  },
+  {
+   "platform": "zhihu",
+   "name": "慎行",
+   "followers": "",
+   "status_count": null,
+   "description": "浙大 人资",
+   "count": 40,
+   "avg_fav": 147.2,
+   "max_fav": 3503,
+   "total_fav": 5889,
+   "bull_kw": 30,
+   "bear_kw": 41,
+   "bull_ratio": 0.42,
+   "themes": {
+    "大盘策略": 23,
+    "个股研究": 1,
+    "方法论": 9,
+    "基本面": 33,
+    "资金情绪": 22,
+    "宏观": 3,
+    "风险教训": 40
+   },
+   "top_theme": "风险教训",
+   "method_density": 1.45,
+   "method_kw": 58,
+   "top_stocks": [
+    [
+     "就以",
+     1
+    ]
+   ],
+   "distinct_stocks": 1,
+   "top3_concentration": 1.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 338
+  },
+  {
+   "platform": "xueqiu",
+   "name": "ericwarn丁宁",
+   "followers": 260853,
+   "status_count": 13439,
+   "description": "2011～2015年，为《中证报》供稿期间。学习巴菲特，发明了市赚率公式（PR=PE/ROE）。低估就买高估就卖，2016年至今年化收益20%。未经授权，禁止将市赚率体系及相关内容用于任何商业用途。",
+   "count": 20,
+   "avg_fav": 294.2,
+   "max_fav": 2377,
+   "total_fav": 5885,
+   "bull_kw": 145,
+   "bear_kw": 101,
+   "bull_ratio": 0.59,
+   "themes": {
+    "大盘策略": 36,
+    "个股研究": 65,
+    "方法论": 27,
+    "基本面": 510,
+    "资金情绪": 4,
+    "宏观": 6,
+    "风险教训": 37
+   },
+   "top_theme": "基本面",
+   "method_density": 12.25,
+   "method_kw": 245,
+   "top_stocks": [
+    [
+     "SH600519",
+     31
+    ],
+    [
+     "SH601318",
+     13
+    ],
+    [
+     "贵州茅台",
+     10
+    ],
+    [
+     "SH600938",
+     8
+    ],
+    [
+     "SH600036",
+     7
+    ],
+    [
+     "SH601919",
+     6
+    ],
+    [
+     "SZ000858",
+     5
+    ],
+    [
+     "SZ000568",
+     4
+    ]
+   ],
+   "distinct_stocks": 60,
+   "top3_concentration": 0.33,
+   "time_dist": {
+    "早盘(09:31-11:30)": 65.0,
+    "晚间(>18:00)": 25.0,
+    "午后(13:00-15:00)": 10.0
+   },
+   "top_period": "早盘(09:31-11:30)",
+   "avg_len": 3034
+  },
+  {
+   "platform": "zhihu",
+   "name": "顽皮的虎鲸",
+   "followers": "",
+   "status_count": null,
+   "description": "有梦想的企业家，特立独行的投资家\n尽我所能拉黑遇到的所有推盐选的",
+   "count": 38,
+   "avg_fav": 148.2,
+   "max_fav": 2081,
+   "total_fav": 5632,
+   "bull_kw": 18,
+   "bear_kw": 21,
+   "bull_ratio": 0.46,
+   "themes": {
+    "大盘策略": 3,
+    "个股研究": 2,
+    "方法论": 4,
+    "基本面": 1,
+    "资金情绪": 6,
+    "宏观": 74,
+    "风险教训": 13
+   },
+   "top_theme": "宏观",
+   "method_density": 0.26,
+   "method_kw": 10,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 414
+  },
+  {
+   "platform": "zhihu",
+   "name": "奥特之父​​",
+   "followers": "",
+   "status_count": null,
+   "description": "金融界门德尔松 暂时停加私域有问题走咨询或专栏。",
+   "count": 40,
+   "avg_fav": 132.2,
+   "max_fav": 844,
+   "total_fav": 5289,
+   "bull_kw": 37,
+   "bear_kw": 17,
+   "bull_ratio": 0.69,
+   "themes": {
+    "大盘策略": 20,
+    "个股研究": 4,
+    "方法论": 5,
+    "基本面": 11,
+    "资金情绪": 33,
+    "宏观": 7,
+    "风险教训": 6
+   },
+   "top_theme": "资金情绪",
+   "method_density": 0.68,
+   "method_kw": 27,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 356
+  },
+  {
+   "platform": "zhihu",
+   "name": "山间拾月二十八",
+   "followers": "",
+   "status_count": null,
+   "description": "可以关注我的公众号，爱分享的小郑",
+   "count": 7,
+   "avg_fav": 594.1,
+   "max_fav": 2821,
+   "total_fav": 4159,
+   "bull_kw": 39,
+   "bear_kw": 18,
+   "bull_ratio": 0.68,
+   "themes": {
+    "大盘策略": 7,
+    "个股研究": 11,
+    "方法论": 34,
+    "基本面": 8,
+    "资金情绪": 48,
+    "宏观": 20,
+    "风险教训": 7
+   },
+   "top_theme": "资金情绪",
+   "method_density": 18.71,
+   "method_kw": 131,
+   "top_stocks": [
+    [
+     "圣阳股份",
+     1
+    ],
+    [
+     "洋河股份",
+     1
+    ],
+    [
+     "久之洋",
+     1
+    ]
+   ],
+   "distinct_stocks": 3,
+   "top3_concentration": 1.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 775
+  },
+  {
+   "platform": "xueqiu",
+   "name": "金哥",
+   "followers": 80705,
+   "status_count": 6220,
+   "description": "普通投资者投资股市就是为了获得投资股票未来股息的现金流折现，持股收息，等待过激。。。",
+   "count": 41,
+   "avg_fav": 94.4,
+   "max_fav": 925,
+   "total_fav": 3871,
+   "bull_kw": 65,
+   "bear_kw": 25,
+   "bull_ratio": 0.72,
+   "themes": {
+    "大盘策略": 3,
+    "个股研究": 10,
+    "方法论": 2,
+    "基本面": 180,
+    "资金情绪": 14,
+    "宏观": 4,
+    "风险教训": 10
+   },
+   "top_theme": "基本面",
+   "method_density": 1.22,
+   "method_kw": 50,
+   "top_stocks": [
+    [
+     "SZ000408",
+     56
+    ],
+    [
+     "SH601899",
+     32
+    ],
+    [
+     "藏格矿业",
+     18
+    ],
+    [
+     "紫金矿业",
+     13
+    ],
+    [
+     "SH601168",
+     11
+    ],
+    [
+     "SH000819",
+     7
+    ],
+    [
+     "SZ002532",
+     7
+    ],
+    [
+     "西部矿业",
+     5
+    ]
+   ],
+   "distinct_stocks": 31,
+   "top3_concentration": 0.55,
+   "time_dist": {
+    "早盘(09:31-11:30)": 31.7,
+    "晚间(>18:00)": 29.3,
+    "盘后(15:01-18:00)": 19.5,
+    "午后(13:00-15:00)": 17.1,
+    "盘前(<09:00)": 2.4
+   },
+   "top_period": "早盘(09:31-11:30)",
+   "avg_len": 1015
+  },
+  {
+   "platform": "xueqiu",
+   "name": "杨爽",
+   "followers": 62839,
+   "status_count": 698,
+   "description": "知行合一",
+   "count": 27,
+   "avg_fav": 129.7,
+   "max_fav": 2409,
+   "total_fav": 3503,
+   "bull_kw": 139,
+   "bear_kw": 30,
+   "bull_ratio": 0.82,
+   "themes": {
+    "大盘策略": 25,
+    "个股研究": 11,
+    "方法论": 40,
+    "基本面": 80,
+    "资金情绪": 59,
+    "宏观": 47,
+    "风险教训": 19
+   },
+   "top_theme": "基本面",
+   "method_density": 6.07,
+   "method_kw": 164,
+   "top_stocks": [
+    [
+     "SZ300502",
+     26
+    ],
+    [
+     "SZ300308",
+     17
+    ],
+    [
+     "SH688498",
+     13
+    ],
+    [
+     "SZ300394",
+     7
+    ],
+    [
+     "中际旭创",
+     5
+    ],
+    [
+     "新易盛",
+     5
+    ],
+    [
+     "SZ002384",
+     4
+    ],
+    [
+     "源杰科技",
+     3
+    ]
+   ],
+   "distinct_stocks": 28,
+   "top3_concentration": 0.53,
+   "time_dist": {
+    "午后(13:00-15:00)": 37.0,
+    "晚间(>18:00)": 37.0,
+    "盘后(15:01-18:00)": 11.1,
+    "早盘(09:31-11:30)": 7.4,
+    "早盘集合(09:00-09:30)": 7.4
+   },
+   "top_period": "午后(13:00-15:00)",
+   "avg_len": 2191
+  },
+  {
+   "platform": "zhihu",
+   "name": "郑国成",
+   "followers": "",
+   "status_count": null,
+   "description": "",
+   "count": 40,
+   "avg_fav": 74.5,
+   "max_fav": 225,
+   "total_fav": 2979,
+   "bull_kw": 46,
+   "bear_kw": 22,
+   "bull_ratio": 0.68,
+   "themes": {
+    "大盘策略": 31,
+    "个股研究": 3,
+    "方法论": 1,
+    "基本面": 12,
+    "资金情绪": 3,
+    "宏观": 0,
+    "风险教训": 6
+   },
+   "top_theme": "大盘策略",
+   "method_density": 0.42,
+   "method_kw": 17,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 208
+  },
+  {
+   "platform": "zhihu",
+   "name": "做多知乎",
+   "followers": "",
+   "status_count": null,
+   "description": "",
+   "count": 40,
+   "avg_fav": 49.0,
+   "max_fav": 426,
+   "total_fav": 1958,
+   "bull_kw": 1,
+   "bear_kw": 1,
+   "bull_ratio": 0.5,
+   "themes": {
+    "大盘策略": 0,
+    "个股研究": 0,
+    "方法论": 16,
+    "基本面": 1,
+    "资金情绪": 0,
+    "宏观": 1,
+    "风险教训": 2
+   },
+   "top_theme": "方法论",
+   "method_density": 0.42,
+   "method_kw": 17,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 115
+  },
+  {
+   "platform": "xueqiu",
+   "name": "闷得而蜜",
+   "followers": 218515,
+   "status_count": 1786,
+   "description": "四海云游僧，闲谈时代福报，浅聊产业技术。不迎合大众预期，只看真实未来。",
+   "count": 31,
+   "avg_fav": 50.9,
+   "max_fav": 313,
+   "total_fav": 1579,
+   "bull_kw": 44,
+   "bear_kw": 15,
+   "bull_ratio": 0.75,
+   "themes": {
+    "大盘策略": 5,
+    "个股研究": 5,
+    "方法论": 6,
+    "基本面": 28,
+    "资金情绪": 19,
+    "宏观": 6,
+    "风险教训": 9
+   },
+   "top_theme": "基本面",
+   "method_density": 2.0,
+   "method_kw": 62,
+   "top_stocks": [
+    [
+     "SZ300476",
+     24
+    ],
+    [
+     "SZ300308",
+     14
+    ],
+    [
+     "SZ002384",
+     11
+    ],
+    [
+     "胜宏科技",
+     6
+    ],
+    [
+     "SH688662",
+     6
+    ],
+    [
+     "SH688629",
+     5
+    ],
+    [
+     "SH603228",
+     4
+    ],
+    [
+     "SZ300843",
+     4
+    ]
+   ],
+   "distinct_stocks": 50,
+   "top3_concentration": 0.33,
+   "time_dist": {
+    "晚间(>18:00)": 29.0,
+    "盘后(15:01-18:00)": 22.6,
+    "午后(13:00-15:00)": 22.6,
+    "早盘(09:31-11:30)": 16.1,
+    "早盘集合(09:00-09:30)": 6.5,
+    "盘前(<09:00)": 3.2
+   },
+   "top_period": "晚间(>18:00)",
+   "avg_len": 1226
+  },
+  {
+   "platform": "zhihu",
+   "name": "么么哒",
+   "followers": "",
+   "status_count": null,
+   "description": "士志于道",
+   "count": 40,
+   "avg_fav": 29.1,
+   "max_fav": 897,
+   "total_fav": 1166,
+   "bull_kw": 6,
+   "bear_kw": 1,
+   "bull_ratio": 0.86,
+   "themes": {
+    "大盘策略": 0,
+    "个股研究": 0,
+    "方法论": 2,
+    "基本面": 14,
+    "资金情绪": 3,
+    "宏观": 8,
+    "风险教训": 3
+   },
+   "top_theme": "基本面",
+   "method_density": 0.07,
+   "method_kw": 3,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 121
+  },
+  {
+   "platform": "xueqiu",
+   "name": "metalslime",
+   "followers": 260846,
+   "status_count": 30972,
+   "description": "热爱生活，热爱每日穿搭分享。",
+   "count": 20,
+   "avg_fav": 30.9,
+   "max_fav": 119,
+   "total_fav": 619,
+   "bull_kw": 2,
+   "bear_kw": 1,
+   "bull_ratio": 0.67,
+   "themes": {
+    "大盘策略": 2,
+    "个股研究": 0,
+    "方法论": 0,
+    "基本面": 0,
+    "资金情绪": 0,
+    "宏观": 2,
+    "风险教训": 1
+   },
+   "top_theme": "大盘策略",
+   "method_density": 0.1,
+   "method_kw": 2,
+   "top_stocks": [
+    [
+     "SH600519",
+     1
+    ]
+   ],
+   "distinct_stocks": 1,
+   "top3_concentration": 1.0,
+   "time_dist": {
+    "早盘(09:31-11:30)": 35.0,
+    "午后(13:00-15:00)": 30.0,
+    "盘前(<09:00)": 15.0,
+    "早盘集合(09:00-09:30)": 10.0,
+    "盘后(15:01-18:00)": 5.0,
+    "晚间(>18:00)": 5.0
+   },
+   "top_period": "早盘(09:31-11:30)",
+   "avg_len": 133
+  },
+  {
+   "platform": "zhihu",
+   "name": "渡你眉眼何川",
+   "followers": "",
+   "status_count": null,
+   "description": "",
+   "count": 39,
+   "avg_fav": 11.7,
+   "max_fav": 190,
+   "total_fav": 458,
+   "bull_kw": 68,
+   "bear_kw": 44,
+   "bull_ratio": 0.61,
+   "themes": {
+    "大盘策略": 16,
+    "个股研究": 37,
+    "方法论": 69,
+    "基本面": 1,
+    "资金情绪": 33,
+    "宏观": 0,
+    "风险教训": 11
+   },
+   "top_theme": "方法论",
+   "method_density": 2.79,
+   "method_kw": 109,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 544
+  },
+  {
+   "platform": "xueqiu",
+   "name": "刘浪",
+   "followers": 60646,
+   "status_count": 432,
+   "description": "散户一枚",
+   "count": 20,
+   "avg_fav": 15.8,
+   "max_fav": 46,
+   "total_fav": 316,
+   "bull_kw": 40,
+   "bear_kw": 26,
+   "bull_ratio": 0.61,
+   "themes": {
+    "大盘策略": 39,
+    "个股研究": 4,
+    "方法论": 22,
+    "基本面": 27,
+    "资金情绪": 7,
+    "宏观": 35,
+    "风险教训": 17
+   },
+   "top_theme": "大盘策略",
+   "method_density": 3.7,
+   "method_kw": 74,
+   "top_stocks": [
+    [
+     "SZ000938",
+     5
+    ],
+    [
+     "SZ300502",
+     4
+    ],
+    [
+     "SZ300308",
+     3
+    ],
+    [
+     "SZ301165",
+     3
+    ],
+    [
+     "SZ000063",
+     3
+    ],
+    [
+     "SZ002222",
+     3
+    ],
+    [
+     "SZ000988",
+     3
+    ],
+    [
+     "SH688410",
+     3
+    ]
+   ],
+   "distinct_stocks": 37,
+   "top3_concentration": 0.2,
+   "time_dist": {
+    "晚间(>18:00)": 30.0,
+    "早盘(09:31-11:30)": 25.0,
+    "盘前(<09:00)": 20.0,
+    "午后(13:00-15:00)": 15.0,
+    "盘后(15:01-18:00)": 10.0
+   },
+   "top_period": "晚间(>18:00)",
+   "avg_len": 1983
+  },
+  {
+   "platform": "xueqiu",
+   "name": "黄建平",
+   "followers": 615548,
+   "status_count": 28066,
+   "description": "建平远航基金经理，JP sailing Fund 基金经理",
+   "count": 21,
+   "avg_fav": 9.4,
+   "max_fav": 83,
+   "total_fav": 197,
+   "bull_kw": 4,
+   "bear_kw": 5,
+   "bull_ratio": 0.44,
+   "themes": {
+    "大盘策略": 1,
+    "个股研究": 0,
+    "方法论": 0,
+    "基本面": 11,
+    "资金情绪": 0,
+    "宏观": 4,
+    "风险教训": 5
+   },
+   "top_theme": "基本面",
+   "method_density": 0.48,
+   "method_kw": 10,
+   "top_stocks": [
+    [
+     "SZ399441",
+     3
+    ],
+    [
+     "SH511620",
+     1
+    ]
+   ],
+   "distinct_stocks": 2,
+   "top3_concentration": 1.0,
+   "time_dist": {
+    "早盘(09:31-11:30)": 42.9,
+    "午后(13:00-15:00)": 28.6,
+    "早盘集合(09:00-09:30)": 9.5,
+    "晚间(>18:00)": 9.5,
+    "盘后(15:01-18:00)": 4.8,
+    "盘前(<09:00)": 4.8
+   },
+   "top_period": "早盘(09:31-11:30)",
+   "avg_len": 318
+  },
+  {
+   "platform": "xueqiu",
+   "name": "没头脑",
+   "followers": 7171,
+   "status_count": 1515,
+   "description": "十几年股龄的老登，实盘一个十年的账户。\n没啥大事，就一直实盘下去。",
+   "count": 21,
+   "avg_fav": 7.6,
+   "max_fav": 119,
+   "total_fav": 159,
+   "bull_kw": 42,
+   "bear_kw": 30,
+   "bull_ratio": 0.58,
+   "themes": {
+    "大盘策略": 3,
+    "个股研究": 25,
+    "方法论": 17,
+    "基本面": 11,
+    "资金情绪": 16,
+    "宏观": 2,
+    "风险教训": 34
+   },
+   "top_theme": "风险教训",
+   "method_density": 3.86,
+   "method_kw": 81,
+   "top_stocks": [
+    [
+     "SH688981",
+     13
+    ],
+    [
+     "SH601766",
+     7
+    ],
+    [
+     "SZ300760",
+     7
+    ],
+    [
+     "中芯国际",
+     6
+    ],
+    [
+     "SH600048",
+     5
+    ],
+    [
+     "SH601126",
+     4
+    ],
+    [
+     "中国中车",
+     3
+    ],
+    [
+     "迈瑞医疗",
+     3
+    ]
+   ],
+   "distinct_stocks": 34,
+   "top3_concentration": 0.31,
+   "time_dist": {
+    "盘后(15:01-18:00)": 47.6,
+    "盘前(<09:00)": 19.0,
+    "晚间(>18:00)": 19.0,
+    "午后(13:00-15:00)": 14.3
+   },
+   "top_period": "盘后(15:01-18:00)",
+   "avg_len": 1059
+  },
+  {
+   "platform": "zhihu",
+   "name": "迷糊大王",
+   "followers": "",
+   "status_count": null,
+   "description": "开悟级选手，专治各种人生疑难杂症。",
+   "count": 40,
+   "avg_fav": 3.6,
+   "max_fav": 42,
+   "total_fav": 144,
+   "bull_kw": 2,
+   "bear_kw": 3,
+   "bull_ratio": 0.4,
+   "themes": {
+    "大盘策略": 2,
+    "个股研究": 0,
+    "方法论": 4,
+    "基本面": 0,
+    "资金情绪": 5,
+    "宏观": 0,
+    "风险教训": 2
+   },
+   "top_theme": "资金情绪",
+   "method_density": 0.45,
+   "method_kw": 18,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 262
+  },
+  {
+   "platform": "zhihu",
+   "name": "爱财老猫",
+   "followers": "",
+   "status_count": null,
+   "description": "一名10多年投资经验的老司机，关注我获取更多金融“内幕”",
+   "count": 40,
+   "avg_fav": 2.4,
+   "max_fav": 25,
+   "total_fav": 96,
+   "bull_kw": 35,
+   "bear_kw": 33,
+   "bull_ratio": 0.51,
+   "themes": {
+    "大盘策略": 129,
+    "个股研究": 17,
+    "方法论": 1,
+    "基本面": 8,
+    "资金情绪": 22,
+    "宏观": 2,
+    "风险教训": 0
+   },
+   "top_theme": "大盘策略",
+   "method_density": 0.6,
+   "method_kw": 24,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 194
+  },
+  {
+   "platform": "xueqiu",
+   "name": "伊飞",
+   "followers": 132281,
+   "status_count": 2276,
+   "description": "知行合一，三思而行～",
+   "count": 23,
+   "avg_fav": 4.0,
+   "max_fav": 14,
+   "total_fav": 91,
+   "bull_kw": 11,
+   "bear_kw": 5,
+   "bull_ratio": 0.69,
+   "themes": {
+    "大盘策略": 3,
+    "个股研究": 1,
+    "方法论": 0,
+    "基本面": 39,
+    "资金情绪": 7,
+    "宏观": 1,
+    "风险教训": 2
+   },
+   "top_theme": "基本面",
+   "method_density": 2.26,
+   "method_kw": 52,
+   "top_stocks": [
+    [
+     "SH603259",
+     47
+    ],
+    [
+     "药明康德",
+     16
+    ],
+    [
+     "SZ002821",
+     4
+    ],
+    [
+     "SH688220",
+     2
+    ],
+    [
+     "SH600664",
+     2
+    ],
+    [
+     "SH688137",
+     2
+    ],
+    [
+     "SH601579",
+     2
+    ],
+    [
+     "SH688202",
+     2
+    ]
+   ],
+   "distinct_stocks": 22,
+   "top3_concentration": 0.71,
+   "time_dist": {
+    "晚间(>18:00)": 43.5,
+    "午后(13:00-15:00)": 21.7,
+    "盘前(<09:00)": 17.4,
+    "盘后(15:01-18:00)": 8.7,
+    "早盘(09:31-11:30)": 8.7
+   },
+   "top_period": "晚间(>18:00)",
+   "avg_len": 510
+  },
+  {
+   "platform": "zhihu",
+   "name": "石虫虫​",
+   "followers": "",
+   "status_count": null,
+   "description": "投资、科学、宗教",
+   "count": 40,
+   "avg_fav": 1.7,
+   "max_fav": 5,
+   "total_fav": 67,
+   "bull_kw": 0,
+   "bear_kw": 0,
+   "bull_ratio": null,
+   "themes": {
+    "大盘策略": 0,
+    "个股研究": 0,
+    "方法论": 0,
+    "基本面": 1,
+    "资金情绪": 0,
+    "宏观": 0,
+    "风险教训": 0
+   },
+   "top_theme": "基本面",
+   "method_density": 0.03,
+   "method_kw": 1,
+   "top_stocks": [],
+   "distinct_stocks": 0,
+   "top3_concentration": 0.0,
+   "time_dist": {},
+   "top_period": "-",
+   "avg_len": 145
+  },
+  {
+   "platform": "xueqiu",
+   "name": "慢牛来了",
+   "followers": 12118,
+   "status_count": 2793,
+   "description": "价值投资，稳中求进。",
+   "count": 20,
+   "avg_fav": 0.9,
+   "max_fav": 11,
+   "total_fav": 18,
+   "bull_kw": 8,
+   "bear_kw": 3,
+   "bull_ratio": 0.73,
+   "themes": {
+    "大盘策略": 0,
+    "个股研究": 1,
+    "方法论": 0,
+    "基本面": 7,
+    "资金情绪": 6,
+    "宏观": 0,
+    "风险教训": 0
+   },
+   "top_theme": "基本面",
+   "method_density": 0.15,
+   "method_kw": 3,
+   "top_stocks": [
+    [
+     "SH601127",
+     24
+    ],
+    [
+     "SH600256",
+     18
+    ],
+    [
+     "SH600418",
+     15
+    ],
+    [
+     "赛力斯",
+     11
+    ],
+    [
+     "广汇能源",
+     9
+    ],
+    [
+     "江淮汽车",
+     6
+    ],
+    [
+     "SZ300750",
+     1
+    ],
+    [
+     "SH688825",
+     1
+    ]
+   ],
+   "distinct_stocks": 8,
+   "top3_concentration": 0.67,
+   "time_dist": {
+    "盘前(<09:00)": 40.0,
+    "早盘(09:31-11:30)": 25.0,
+    "盘后(15:01-18:00)": 20.0,
+    "午后(13:00-15:00)": 10.0,
+    "晚间(>18:00)": 5.0
+   },
+   "top_period": "盘前(<09:00)",
+   "avg_len": 404
+  },
+  {
+   "platform": "xueqiu",
+   "name": "Max",
+   "followers": 173,
+   "status_count": 1263,
+   "description": "",
+   "count": 27,
+   "avg_fav": 0.0,
+   "max_fav": 0,
+   "total_fav": 0,
+   "bull_kw": 9,
+   "bear_kw": 2,
+   "bull_ratio": 0.82,
+   "themes": {
+    "大盘策略": 9,
+    "个股研究": 1,
+    "方法论": 0,
+    "基本面": 0,
+    "资金情绪": 2,
+    "宏观": 0,
+    "风险教训": 0
+   },
+   "top_theme": "大盘策略",
+   "method_density": 0.0,
+   "method_kw": 0,
+   "top_stocks": [
+    [
+     "SZ002131",
+     20
+    ],
+    [
+     "利欧股份",
+     10
+    ],
+    [
+     "SH000001",
+     8
+    ],
+    [
+     "上证指数",
+     4
+    ],
+    [
+     "SH603092",
+     4
+    ],
+    [
+     "SH688836",
+     4
+    ],
+    [
+     "德力佳",
+     2
+    ],
+    [
+     "SZ002075",
+     2
+    ]
+   ],
+   "distinct_stocks": 11,
+   "top3_concentration": 0.66,
+   "time_dist": {
+    "午后(13:00-15:00)": 55.6,
+    "早盘(09:31-11:30)": 40.7,
+    "晚间(>18:00)": 3.7
+   },
+   "top_period": "午后(13:00-15:00)",
+   "avg_len": 78
+  }
+ ]
+}

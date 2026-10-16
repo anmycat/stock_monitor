@@ -1,0 +1,42 @@
+{
+  "name": "股票信号系统方案文档集",
+  "version": "1.0",
+  "date": "2026-10-15",
+  "rules_version": "1.4",
+  "structure_reference": "按功能组织（用户指定结构）",
+  "documents": [
+    {"id": "00", "file": "00_总体设计与系统边界.md", "title": "总体设计与系统边界", "answers": "系统是什么/不是什么、五层架构"},
+    {"id": "01", "file": "01_需求规格与交易约束.md", "title": "需求规格与交易约束", "answers": "硬性约束与验收边界"},
+    {"id": "02", "file": "02_数据源与行情适配.md", "title": "数据源与行情适配", "answers": "数据口径、主备源、failover"},
+    {"id": "03", "file": "03_数据模型.md", "title": "数据模型", "answers": "SQLite表结构、Signal契约、持仓状态机"},
+    {"id": "04", "file": "04_因子研究规范.md", "title": "因子研究规范", "answers": "因子口径、资金四分类、筹码算法"},
+    {"id": "05", "file": "05_策略矩阵.md", "title": "策略矩阵", "answers": "股票池、五层流水线、射程矩阵、采纳配置"},
+    {"id": "06", "file": "06_回测与资金管理.md", "title": "回测与资金管理", "answers": "回测纪律、Kelly、账户风控"},
+    {"id": "07", "file": "07_执行与故障恢复.md", "title": "执行与故障恢复", "answers": "调度、执行闭环、推送、故障恢复"},
+    {"id": "08", "file": "08_验收标准.md", "title": "验收标准", "answers": "各层可判定验收线"},
+    {"id": "09", "file": "09_实施路线.md", "title": "实施路线", "answers": "三阶段路线图"},
+    {"id": "10", "file": "10_风险登记.md", "title": "风险登记", "answers": "方法论/工程/合规风险"},
+    {"id": "11", "file": "11_参考资料.md", "title": "参考资料", "answers": "来源/文档/数据/脚本索引"},
+    {"id": "12", "file": "12_审计清单.md", "title": "内容审计清单", "answers": "审计方法、发现修复、流程固化"}
+  ],
+  "key_facts": {
+    "validation_window": "2026-04-13 ~ 2026-10-13（122个交易日，27只票）",
+    "samples": {"rule_signals": 614, "baseline_days": 3151, "chip_samples": 3151},
+    "baseline_avg_pnl": "+1.67%/笔（胜率48.4%）",
+    "adopted_config": "仅R13急跌禁低吸变体（bias20≤-2%禁R05低吸）：被禁35笔均-1.65%，+0.22%→+0.34%/笔",
+    "strongest_rule": "R02涨停低开 +3.53%（n=44，超额+1.86pp）",
+    "most_robust_chip_rule": "C01低位突破确认 +2.79%（n=376，超额+1.12pp）",
+    "capital_ordering": "起爆日HC-01+6.17% > 慢资金日SC-01+1.48% > 游资日YZ-01+0.98% > 派发日DR-01-0.20%",
+    "kelly": {"R02": "半凯利13.13%", "R01": "12.18%", "R04": "3.54%", "R05": "0.91%（微仓）", "all": "4.53%"}
+  },
+  "audit_2026_10_15": {
+    "data_defects_fixed": [
+      "neodata批量接口省略2026-04-02~05-18（补取27只×26天）",
+      "扩展池混入周末占位行270个+省略键10个（已清洗）"
+    ],
+    "conclusions_revised": ["C02撤销降级(+2.83%)", "C04撤销禁买(+1.13%)", "R05降为微仓(+0.14%)", "峰位判别力弱化", "DR-01幅度下调"],
+    "conclusions_confirmed": ["R13变体有效", "R11信号闸门证伪", "R12环境依赖", "C03预警版废弃", "C05暂缓", "资金四分类排序", "C01最稳健", "采纳配置仅R13变体"]
+  },
+  "upstream_docs": "docs/00-14（调研与验证过程档案）",
+  "executable_config": "rules/methodology_rules.json v1.4"
+}

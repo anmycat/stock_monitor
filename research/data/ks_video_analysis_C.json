@@ -1,0 +1,166 @@
+[
+  {
+    "video_code": "nmP9R9Lt",
+    "hint": "@多空博弈社 发了一个快手作品",
+    "caption": "@多空博弈社 发了一个快手作品",
+    "summary": "该作品是一条股票账户交易复盘类内容，主体为同花顺 App 内江海证券账户（尾号 0857）的卖出委托下单页与当日成交明细。画面显示交易者在 13:42—13:44 之间频繁操作：多次买入深物业A（12.420、12.200）、卖出哈药股份（7.230）、买入博纳影业（6.560），属于典型盘中做T/短线换股操作。第 4 张图为人物自拍封面，与交易内容无关。",
+    "images": [
+      {
+        "filename": "nmP9R9Lt_00.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "卖出委托",
+        "stock_code": null,
+        "stock_name": "",
+        "actions": [
+          {
+            "type": "买入",
+            "time": "13:44:29",
+            "quantity": null,
+            "price": 6.56,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "下方成交明细显示“博纳影业 买 13:44:29 成交价 6.560”，数量未显示"
+          },
+          {
+            "type": "买入",
+            "time": "13:44:16",
+            "quantity": null,
+            "price": 12.2,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "下方成交明细显示“深物业A 买 13:44:16 成交价 12.200”，数量未显示"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "19:53 同花顺App 江海证券 **0857 买入 卖出 撤单 股票代码/简拼 限价 卖出价 卖出量 可卖- 全仓 1/2仓 1/3仓 1/4仓 2/3仓 卖出 持仓 委托 成交时间 成交价 博纳影业 买 13:44:29 6.560 深物业A 买 13:44:16 12.200",
+        "evidence_level": "高",
+        "note": "卖出委托下单页，标的/价格/数量输入框均为空，说明截图为下单界面而非持仓页。底部成交明细可确认两笔买入：博纳影业 6.560、深物业A 12.200，时间分别为 13:44:29、13:44:16；数量、金额图外未显示，故置 null。"
+      },
+      {
+        "filename": "nmP9R9Lt_01.jpg",
+        "kind": "atlas",
+        "app": "同花顺",
+        "screenshot_type": "成交明细",
+        "stock_code": null,
+        "stock_name": "哈药股份/深物业A",
+        "actions": [
+          {
+            "type": "卖出",
+            "time": "13:43:45",
+            "quantity": null,
+            "price": 7.23,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "哈药股份（蓝色卖单）13:43:45 成交价 7.230"
+          },
+          {
+            "type": "买入",
+            "time": "13:42:17",
+            "quantity": null,
+            "price": 12.42,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "深物业A 13:42:17 成交价 12.420"
+          },
+          {
+            "type": "买入",
+            "time": "13:42:16",
+            "quantity": null,
+            "price": 12.42,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "深物业A 13:42:16 成交价 12.420，与上一笔时间相邻，疑似拆单或连续买入"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "哈药股份 卖 13:43:45 7.230 深物业A 买 13:42:17 12.420 深物业A 买 13:42:16 12.420",
+        "evidence_level": "高",
+        "note": "纯成交明细列表截图，仅含标的、买卖方向、成交时间、成交价，无数量与金额列，故数量/成本/盈亏均为 null。深物业A 两笔相邻成交疑似分批建仓。"
+      },
+      {
+        "filename": "nmP9R9Lt_02.jpg",
+        "kind": "cover",
+        "app": "同花顺",
+        "screenshot_type": "卖出委托",
+        "stock_code": null,
+        "stock_name": "",
+        "actions": [
+          {
+            "type": "买入",
+            "time": "13:44:29",
+            "quantity": null,
+            "price": 6.56,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "封面图，内容与 nmP9R9Lt_00.jpg 完全一致：博纳影业 买 13:44:29 6.560"
+          },
+          {
+            "type": "买入",
+            "time": "13:44:16",
+            "quantity": null,
+            "price": 12.2,
+            "cost": null,
+            "pnl_amount": null,
+            "pnl_pct": null,
+            "position_pct": null,
+            "note": "封面图内容与 00 图一致：深物业A 买 13:44:16 12.200"
+          }
+        ],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "19:53 同花顺App 江海证券 **0857 买入 卖出 撤单 限价 卖出价 卖出量 全仓 1/2仓 1/3仓 1/4仓 卖出 持仓 委托 成交时间 成交价 博纳影业 买 13:44:29 6.560 深物业A 买 13:44:16 12.200",
+        "evidence_level": "高",
+        "note": "该图为视频封面，画面与图集第 1 张（00）重复，为同一时刻的卖出委托界面截屏，无新增信息。"
+      },
+      {
+        "filename": "nmP9R9Lt_03.jpg",
+        "kind": "cover",
+        "app": "未识别",
+        "screenshot_type": "其他",
+        "stock_code": null,
+        "stock_name": "",
+        "actions": [],
+        "account_snapshot": {
+          "总资产": null,
+          "当日盈亏": null,
+          "持仓盈亏": null,
+          "仓位": null,
+          "可用": null
+        },
+        "text_in_image": "1,50（数字被涂抹/打码，疑为金额或点赞量，无法确认）",
+        "evidence_level": "低",
+        "note": "人物自拍封面图，非交易截图，无可提取的交易信息。画面中部有一处被打码的浅色数字（形似 1,50X），无法确认含义。"
+      }
+    ]
+  }
+]

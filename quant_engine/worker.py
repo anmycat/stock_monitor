@@ -1,0 +1,251 @@
+import time
+from datetime import datetime, timedelta
+from typing import Dict
+from loguru import logger
+from .data.datacenter import DataCenter
+from .services.signal_generator import SignalGenerator
+from .services.market_analyzer import MarketAnalyzer
+from .services.market_alert import MarketAlert
+from .services.ai_summary import AISummary
+from .services.burst_monitor import BurstMonitor
+from .services.notifiers.manager import NotificationManager
+from .utils.calendar import is_trading_day
+from .config import get_settings
+from .backtest.post_evaluation import PostEvaluation
+
+
+def get_current_phase() -> str:
+    now = datetime.now()
+    
+    if not is_trading_day(now):
+        return "WEEKEND"
+    
+    h, m = now.hour, now.minute
+    t = h * 60 + m
+    
+    if t < 9 * 60 + 15:
+        return "PRE_MARKET"
+    elif 9 * 60 + 15 <= t < 9 * 60 + 25:
+        return "SELF_CHECK"
+    elif 9 * 60 + 25 <= t < 9 * 60 + 30:
+        return "CALL_AUCTION"
+    elif 9 * 60 + 30 <= t < 11 * 60 + 30:
+        return "MORNING_SESSION"
+    elif 11 * 60 + 30 <= t < 12 * 60 + 10:
+        return "NOON_BREAK"
+    elif 12 * 60 + 10 <= t < 12 * 60 + 15:
+        return "MORNING_REVIEW"  # 12:10-12:15 早盘总结（避开DS涨价）
+    elif 12 * 60 + 15 <= t < 13 * 60:
+        return "NOON_BREAK"
+    elif 13 * 60 <= t < 15 * 60:
+        return "AFTERNOON_SESSION"
+    elif 15 * 60 <= t < 18 * 60 + 10:
+        return "AFTER_HOURS"
+    elif 18 * 60 + 10 <= t < 18 * 60 + 15:
+        return "DAILY_REVIEW"  # 18:10-18:15 全日总结（避开DS涨价）
+    else:
+        return "AFTER_HOURS"
+
+
+def get_sleep_seconds(phase: str) -> int:
+    now = datetime.now()
+    h, m = now.hour, now.minute
+    t = h * 60 + m
+    schedule = {
+        "PRE_MARKET": 9 * 60 + 15,
+        "SELF_CHECK": 9 * 60 + 25,
+        "CALL_AUCTION": 9 * 60 + 30,
+        "MORNING_SESSION": None,
+        "MORNING_REVIEW": None,
+        "NOON_BREAK": 13 * 60,
+        "AFTERNOON_SESSION": None,
+        "DAILY_REVIEW": None,
+        "AFTER_HOURS": 9 * 60 + 15,
+    }
+    target = schedule.get(phase)
+    if target is None:
+        return 300
+    if phase == "AFTER_HOURS":
+        tomorrow = now.replace(hour=9, minute=15, second=0) + timedelta(days=1)
+        return int((tomorrow - now).total_seconds())
+    return (target - t) * 60
+
+
+def push_summary_to_web(summary_type: str, title: str, summary_data: Dict):
+    """通过WebSocket推送AI总结到Web页面"""
+    try:
+        from .api.websocket_enhanced import manager
+        import asyncio
+        import json
+        
+        ws_data = {
+            'type': 'ai_summary',
+            'data': {
+                'summary_type': summary_type,
+                'title': title,
+                'content': summary_data.get('full_text', ''),
+                'timestamp': datetime.now().isoformat()
+            }
+        }
+        asyncio.run(manager.broadcast(json.dumps(ws_data, default=str)))
+        logger.info(f"✅ {title}已推送到Web")
+    except Exception as e:
+        logger.error(f"推送{title}到Web失败: {e}")
+
+
+def get_sector_data(datacenter):
+    """获取板块数据（统一入口，使用单例）"""
+    try:
+        from .services.sector_monitor import SectorMonitor
+        monitor = SectorMonitor(datacenter)
+        return monitor.get_sector_data()
+    except Exception as e:
+        logger.warning(f"获取板块数据失败: {e}")
+        return []
+
+
+def save_summary_to_cache(datacenter, summary_type: str, summary_data: Dict):
+    """保存总结到Redis缓存，供 Web页面显示"""
+    cache_key = f"ai_summary:{summary_type}"
+    datacenter.cache.set(cache_key, summary_data, ttl=86400)  # 缓存24小时
+
+
+def _save_post_evaluation(post_eval, signals, market):
+    """保存信号到后验评估系统"""
+    try:
+        if not signals:
+            return
+        run_id = f"run_{datetime.now().strftime('%Y%m%d')}"
+        signals_data = [
+            {
+                'code': s.code, 'name': s.name, 'action': s.action.value,
+                'price': s.price, 'score': s.score,
+                'timestamp': s.timestamp.isoformat(),
+            }
+            for s in signals
+        ]
+        market_state = {'type': market.type.value, 'score': market.score}
+        post_eval.save_run(run_id, signals_data, market_state)
+    except Exception as e:
+        logger.error(f"Save post evaluation error: {e}")
+
+
+def main():
+    logger.info("Worker started")
+    settings = get_settings()
+    datacenter = DataCenter()
+    generator = SignalGenerator(datacenter)
+    analyzer = MarketAnalyzer(datacenter)
+    alert_detector = MarketAlert(datacenter)
+    ai_summary = AISummary()
+    burst_monitor = BurstMonitor(datacenter)
+    notifier = NotificationManager()
+    post_eval = PostEvaluation(datacenter.cache, datacenter)
+    last_phase = None
+    active_pool = []
+
+    while True:
+        try:
+            phase = get_current_phase()
+            if phase != last_phase:
+                logger.info(f"Phase: {phase}")
+                last_phase = phase
+                # 新交易日刷新活跃池
+                if phase == "SELF_CHECK":
+                    active_pool = burst_monitor.refresh_active_pool()
+                    logger.info(f"Active pool: {len(active_pool)} stocks")
+
+            if phase == "SELF_CHECK":
+                logger.info("System self-check...")
+                active_pool = burst_monitor.refresh_active_pool()
+                logger.info(f"Active pool: {len(active_pool)} stocks")
+                time.sleep(600)
+
+            elif phase == "CALL_AUCTION":
+                market = analyzer.analyze_market()
+                sectors = get_sector_data(datacenter)
+                summary = ai_summary.generate_summary(market, [], sectors)
+                msg = f"【集合竞价播报】\n\n{summary['full_text']}"
+                notifier.send_custom_message("集合竞价播报", msg)
+                save_summary_to_cache(datacenter, "call_auction", summary)
+                logger.info("Call auction summary generated and pushed")
+                time.sleep(300)
+
+            elif phase in ["MORNING_SESSION", "AFTERNOON_SESSION"]:
+                # 起爆资金监控
+                bursts = burst_monitor.detect_burst()
+                for burst in bursts:
+                    msg = f"🚀 强势异动: {burst['name']} ({burst['code']})\n\n{burst_monitor.format_burst_message(burst)}"
+                    notifier.send_custom_message(f"强势异动: {burst['name']}", msg)
+                    logger.info(f"Burst alert: {burst['name']} {burst['change_pct']}%")
+
+                # 大盘异动检测
+                market = analyzer.analyze_market()
+                alerts = alert_detector.detect_alerts(market)
+                for alert in alerts:
+                    notifier.send_custom_message(alert['title'], alert['detail'])
+                    logger.info(f"Alert: {alert['title']}")
+
+                # 信号扫描
+                signals = generator.scan_all(max_signals=3)
+                if signals:
+                    logger.info(f"Found {len(signals)} signals")
+                    for s in signals:
+                        if s.action.value == 'BUY':
+                            notifier.send_signal(s)
+
+                time.sleep(300)
+
+            elif phase == "MORNING_REVIEW":
+                # 12:15 推送【早盘总结】（避开DS 12:00-13:00涨价时段）
+                market = analyzer.analyze_market()
+                signals = generator.scan_all(max_signals=3)
+                sectors = get_sector_data(datacenter)
+                summary = ai_summary.generate_summary(
+                    market, signals, sectors,
+                    summary_type="morning_review"
+                )
+                msg = f"【早盘总结】\n\n{summary['full_text']}"
+                notifier.send_custom_message("早盘总结", msg)
+                save_summary_to_cache(datacenter, "morning_review", summary)
+                push_summary_to_web("morning_review", "早盘总结", summary)
+                logger.info("✅ 早盘总结已推送 (12:15)")
+                time.sleep(1800)  # 30分钟后进入午休
+
+            elif phase == "DAILY_REVIEW":
+                # 18:15 推送【全日总结】（避开DS 18:00-19:00涨价时段）
+                market = analyzer.analyze_market()
+                signals = generator.scan_all(max_signals=3)
+                alerts_history = alert_detector.get_history(10)
+                alert_summary = f"今日异动{len(alerts_history)}次" if alerts_history else "今日无异动"
+                sectors = get_sector_data(datacenter)
+                summary = ai_summary.generate_summary(
+                    market, signals, sectors,
+                    summary_type="daily_review",
+                    alerts=alerts_history
+                )
+                summary['full_text'] = f"{summary['full_text']}\n\n{alert_summary}"
+                msg = f"【全日总结】\n\n{summary['full_text']}"
+                notifier.send_custom_message("全日总结", msg)
+                save_summary_to_cache(datacenter, "daily_review", summary)
+                push_summary_to_web("daily_review", "全日总结", summary)
+
+                # 保存运行结果供 T+N 后验评估
+                _save_post_evaluation(post_eval, signals, market)
+
+                logger.info("✅ 全日总结已推送 (18:15)")
+                time.sleep(3600)  # 1小时后进入盘后
+
+            else:
+                sleep_sec = get_sleep_seconds(phase)
+                if sleep_sec > 60:
+                    logger.info(f"Phase {phase}, sleeping {sleep_sec}s")
+                time.sleep(min(sleep_sec, 60))
+
+        except Exception as e:
+            logger.error(f"Worker error: {e}")
+            time.sleep(60)
+
+
+if __name__ == "__main__":
+    main()

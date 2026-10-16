@@ -1,0 +1,308 @@
+[
+  {
+    "date": "2026-08-28",
+    "post_id": "1765713750",
+    "img": "raw/em_imgs/2026-08-28_1765713750_0.jpg",
+    "text_context": "$香江控股(SH600162)$资金大就是有优势，随便玩，随便控盘，十几个账号随便玩",
+    "app": "同花顺",
+    "screenshot_type": "持仓",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {
+        "type": "持仓",
+        "time": "2026-06-11至2026-08-28",
+        "quantity": null,
+        "price": 5.36,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": 1.1782,
+        "position_pct": 0.42
+      },
+      {
+        "type": "买入",
+        "time": "2026-08-28 09:32:41",
+        "quantity": null,
+        "price": 5.15,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": "2026-08-28 09:31:58",
+        "quantity": null,
+        "price": 5.22,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": "2026-08-27 10:06:18",
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺持仓页截图。香江控股现价5.36、涨幅10.06%。浮动盈亏统计区间2026/06/11-至今为+117.82%，当日盈亏+11.46%，持股天数56天，个股仓位42.0%，实现盈亏被**遮挡。下方为日K买卖点（BS点）及交易记录：8-28当日先卖后买（卖9:31:58@5.220、买9:32:41@5.150），疑似做T；另有8-27 10:06:18一笔卖出（价格被遮挡）。数量、成本、市值均被**遮挡无法读取。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-28",
+    "post_id": "1765477286",
+    "img": "raw/em_imgs/2026-08-28_1765477286_0.jpg",
+    "text_context": "$香江控股(SH600162)$开始工作，进攻",
+    "app": "未识别",
+    "screenshot_type": "成交",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {
+        "type": "买入",
+        "time": "09:32:41",
+        "quantity": null,
+        "price": 5.15,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": "09:31:58",
+        "quantity": null,
+        "price": 5.22,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "成交记录截图（列名：成交时间/成交价），与同日帖子1765713750的持仓页交易记录一致。香江控股：买09:32:41@5.150、卖09:31:58@5.220（先卖后买，疑似做T）。成交时间无日期，按帖子日期推断为2026-08-28。数量列未出现在图中，无法读取。App样式无法确认，标记未识别。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-30",
+    "post_id": "1766128086",
+    "img": "raw/em_imgs/2026-08-30_1766128086_0.jpg",
+    "text_context": "$香江控股(SH600162)$有没有实力是别人说出来的，不是自己装的",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": null,
+    "stock_name": null,
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "微信群聊截图（群名“多空博弈社”），非交易截图。内容为群成员聊天：有人称错过、倒腾开学没时间看手机等，与股票交易无直接数字。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-30",
+    "post_id": "1766128086",
+    "img": "raw/em_imgs/2026-08-30_1766128086_1.jpg",
+    "text_context": "$香江控股(SH600162)$有没有实力是别人说出来的，不是自己装的",
+    "app": "腾讯自选股",
+    "screenshot_type": "其他",
+    "stock_code": null,
+    "stock_name": null,
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "腾讯自选股“社区提醒-被评论”页面截图，非交易截图。内容为网友评论（称其空间股票都是连板、错失大肉、牛逼等），无交易数字。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-31",
+    "post_id": "1766774657",
+    "img": "raw/em_imgs/2026-08-31_1766774657_0.jpg",
+    "text_context": "$香江控股(SH600162)$根本找不到亏钱的理由",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": null,
+    "stock_name": null,
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "微信群聊截图（群聊(18)），非交易截图。楼主发言含“买一些金螳螂”“香江留100要砸盘”，另有成员讨论科技/算力/化工（红宝丽、金牛、中欣）等，均为口头观点，无成交或持仓数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-09-07",
+    "post_id": "1769604627",
+    "img": "raw/em_imgs/2026-09-07_1769604627_0.jpg",
+    "text_context": "$金螳螂(SZ002081)$无所谓了",
+    "app": "其他",
+    "screenshot_type": "委托",
+    "stock_code": "002081",
+    "stock_name": "金螳螂",
+    "actions": [
+      {
+        "type": "买入",
+        "time": null,
+        "quantity": null,
+        "price": 16.57,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": null,
+        "quantity": null,
+        "price": 6.61,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "微信群聊截图（多空博弈社的群聊(33)），底部嵌入了交易App“已完成(5)”委托/成交列表（仅露出前两条）。可见：买入新金路000510.SZ 委托16.57/现价16.48；卖出贤丰控股002141.SZ 委托6.61/现价6.54。图上另有多只股票口头提及（金螳螂、黄河旋风等）。顶部红条显示“康欣新材 -10.09%”疑为悬浮行情条。完整5笔清单见同帖第二张图。stock_code/stock_name 按帖子所属标的填写，图中实际成交为多只股票，详见该帖另一张图记录。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-09-07",
+    "post_id": "1769604627",
+    "img": "raw/em_imgs/2026-09-07_1769604627_1.jpg",
+    "text_context": "$金螳螂(SZ002081)$无所谓了",
+    "app": "未识别",
+    "screenshot_type": "成交",
+    "stock_code": "002081",
+    "stock_name": "金螳螂",
+    "actions": [
+      {
+        "type": "买入",
+        "time": null,
+        "quantity": null,
+        "price": 16.57,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": null,
+        "quantity": null,
+        "price": 6.61,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "买入",
+        "time": null,
+        "quantity": null,
+        "price": 57.15,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "买入",
+        "time": null,
+        "quantity": null,
+        "price": 56.89,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      },
+      {
+        "type": "卖出",
+        "time": null,
+        "quantity": null,
+        "price": 58.04,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "交易App“已完成(5)”列表截图（列名：方向/股票代码/委托现价）。5笔：1)买入新金路000510.SZ 委托16.57、现价16.48；2)卖出贤丰控股002141.SZ 委托6.61、现价6.54；3)买入百合花603823.SH 委托57.15、现价58.04；4)买入百合花603823.SH 委托56.89、现价58.04；5)卖出百合花603823.SH 委托58.04、现价58.04。price 取委托价，现价见note。无时间与数量列（被裁切）。该截图实为多只股票操作，非仅金螳螂；stock_code/stock_name 按帖子所属标的填写。App无法确认（非典型腾讯/同花顺样式）。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-09-22",
+    "post_id": "1776508826",
+    "img": "raw/em_imgs/2026-09-22_1776508826_0.jpg",
+    "text_context": "$哈药股份(SH600664)$",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "600664",
+    "stock_name": "哈药股份",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富股吧帖子截图，非交易截图。为“多空博弈社”09-18 11:18发表的帖子“哈药股份.SH 无脑冲就行了”，来自哈药股份讨论区，阅读4862、评论2，评论含“收到”等。无任何交易/持仓数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-09-22",
+    "post_id": "1776508826",
+    "img": "raw/em_imgs/2026-09-22_1776508826_1.jpg",
+    "text_context": "$哈药股份(SH600664)$",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": "600664",
+    "stock_name": "哈药股份",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "微信群聊截图（尊享1群(22)），非交易截图。群公告列出9月22日观点：核心黄河旋风、贤丰控股；新金路、爱丽家居继续持有；可买北方旅游、大连圣亚、长白山；勿买闽东电力、C沈鼓、国芳集团。均为口头观点，无成交/持仓数字。文字与帖子标的（哈药股份）不一致。",
+    "evidence_level": "高"
+  }
+]
