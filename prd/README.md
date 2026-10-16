@@ -34,6 +34,7 @@
 | [10](10_风险登记.md) | 风险登记 | 方法论/工程/合规/业务风险与对策 |
 | [11](11_参考资料.md) | 参考资料 | 外部来源、源文件映射总表、数据/脚本/代码资产索引 |
 | [12](12_审计清单.md) | 完整性审查清单 | 重组审计方法、完整性核对、读取受限留痕、复查清单 |
+| [13](13_系统运行分析报告.md) | 系统运行分析报告 | ECS 生产日志全史分析：三阶段时间线、九类事件统计、五类问题根因（P0×2/P1×3）、处置清单 |
 
 **快速路径**：懂系统 → 00 → 05；部署运维 → 09 → 07 → 02；改规则 → 04 → 06 → 12；验结论 → 06 → 11。
 
@@ -57,17 +58,18 @@
 | 样本 | 614 笔规则信号 / 3151 基准样本 / 3151 筹码样本 |
 | 采纳配置 | 仅 R13 急跌禁低吸变体（+0.22%→+0.34%/笔） |
 | PRD 符合度 | 100%（多智能体投票 70% 设计完成，待开发） |
-| 文档结构 | 15 个模块文件（本次重组完成，审计见 12） |
-| 已知遗留 | ① SECURITY_FIX_PLAN.md / DEPLOY_GUIDE.md 读取受限待补齐（12 §3.1）② deploy.sh heredoc 脱敏占位符待修复（G14）③ 回测池扩容 100+ 只/12 个月 |
+| 文档结构 | 16 个模块文件（本次重组完成，审计见 12） |
+| 生产运行 | ⚠️ 稳定运行但 5 类问题待处置：AI 密钥失效(P0)/worker OOM(P0)/evaluation 500(P1)/宽度数据异常(P1)/guardian 空转(P1)——根因与处置见 13 |
+| 已知遗留 | ① SECURITY_FIX_PLAN.md / DEPLOY_GUIDE.md 读取受限待补齐（12 §3.1）② deploy.sh heredoc 脱敏占位符待修复（G14）③ 13 报告 P0-P1 处置项未执行 ④ 回测池扩容 100+ 只/12 个月 |
 
 ---
 
 ## 与代码的关系
 
-- 代码在 `../coding/` 下按职能分目录：`quant_engine/`（项目代码）+ `test/`（测试）+ `UX/`（前端交互）+ `deploy/`（部署脚本）；本文档集 00-11 的每个功能模块都有对应代码位置（00 §8 有完整对照表）
-- `research/rules/methodology_rules.json` v1.4 是调研线唯一可执行配置源；产品线的可执行配置是 `quant_engine/strategies/*.yaml` + `config.py`
-- 部署：`coding/deploy/deploy_onekey.sh`（一键上传）+ `coding/deploy/deploy.sh`（服务器 provisioning，注意 G14 脱敏占位符）
-- 测试：`cd coding/test && python -m unittest test_quant_engine_audit`（2026-10-16 实跑 3/3 通过）
+- 代码与本文档集同在仓库根下平级：`quant_engine/`（项目代码）+ `test/`（测试）+ `UX/`（前端交互）+ `deploy/`（部署脚本）+ `research/`（调研线资产）；本文档集 00-11 的每个功能模块都有对应代码位置（00 §8 有完整对照表）
+- `research/rules/methodology_rules.json` v1.4 是调研线唯一可执行配置源（已从 WorkBuddy 工作区归档入库，137 文件）；产品线的可执行配置是 `quant_engine/strategies/*.yaml` + `config.py`
+- 部署：`deploy/deploy_onekey.sh`（一键上传，LOCAL_DIR=仓库根）+ `deploy/deploy.sh`（服务器 provisioning，注意 G14 脱敏占位符）
+- 测试：`cd test && ../coding/.venv/bin/python -m unittest discover`（2026-10-16 实跑 3/3 通过；sys.path 指向仓库根，任意 cwd 可跑）
 
 ---
 
