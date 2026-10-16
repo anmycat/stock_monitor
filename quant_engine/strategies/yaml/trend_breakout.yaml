@@ -1,0 +1,57 @@
+meta:
+  id: trend_breakout_v1
+  name: 趋势突破策略
+  version: 1
+  category: trend
+  description: 均线多头排列+放量突破，捕捉主升浪
+
+entry:
+  logic: and
+  conditions:
+    - indicator: ma5_above_ma20
+      op: "=="
+      value: true
+      weight: 0.3
+      description: MA5在MA20之上
+    - indicator: rsi
+      op: ">"
+      value: 40
+      weight: 0.2
+      description: RSI大于40
+    - indicator: rsi
+      op: "<"
+      value: 70
+      weight: 0.2
+      description: RSI小于70
+    - indicator: volume_ratio
+      op: ">"
+      value: 1.2
+      weight: 0.3
+      description: 成交量放大
+
+filters:
+  - type: high_position
+    threshold: 0.85
+    description: 排除高位股
+  - type: consecutive_up
+    limit: 5
+    description: 排除连涨股
+  - type: weak_market
+    description: 排除弱势市场
+
+exit:
+  stop_loss: 0.05
+  take_profit: 0.15
+  trailing_stop: false
+
+scoring:
+  min_score: 70
+  weights:
+    trend: 0.4
+    momentum: 0.3
+    volume: 0.3
+
+levels:
+  S: 85
+  A: 75
+  B: 65

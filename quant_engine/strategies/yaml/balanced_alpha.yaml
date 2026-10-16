@@ -1,0 +1,58 @@
+meta:
+  id: balanced_alpha_v1
+  name: 均衡Alpha策略
+  version: 1
+  category: balanced
+  description: 综合估值、动量、稳定性的通用发现策略
+
+entry:
+  logic: and
+  conditions:
+    - indicator: trend_score
+      op: ">"
+      value: 50
+      weight: 0.25
+      description: 趋势分数大于50
+    - indicator: momentum_score
+      op: ">"
+      value: 40
+      weight: 0.25
+      description: 动量分数大于40
+    - indicator: volume_score
+      op: ">"
+      value: 40
+      weight: 0.25
+      description: 量能分数大于40
+    - indicator: stability_score
+      op: ">"
+      value: 50
+      weight: 0.25
+      description: 稳定性分数大于50
+
+filters:
+  - type: high_position
+    threshold: 0.80
+    description: 排除高位股
+  - type: low_liquidity
+    min_volume: 100000
+    description: 排除低流动性
+
+exit:
+  stop_loss: 0.05
+  take_profit: 0.12
+  trailing_stop: false
+
+scoring:
+  min_score: 60
+  weights:
+    value: 0.20
+    momentum: 0.25
+    liquidity: 0.15
+    stability: 0.20
+    volume: 0.10
+    trend: 0.10
+
+levels:
+  S: 80
+  A: 70
+  B: 60

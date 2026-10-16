@@ -1,0 +1,71 @@
+{
+  "total_screenshots": 69,
+  "trade_related": 25,
+  "screenshot_type_distribution": {
+    "行情": 13,
+    "其他": 29,
+    "日K买卖点": 4,
+    "收益曲线": 6,
+    "持仓": 4,
+    "收益": 2,
+    "成交": 6,
+    "分时卖点": 3,
+    "委托": 2
+  },
+  "stock_distribution": [
+    {
+      "code": "600162",
+      "name": "香江控股",
+      "count": 8
+    },
+    {
+      "code": "600610",
+      "name": "中毅达",
+      "count": 5
+    },
+    {
+      "code": "002713",
+      "name": "*ST东易",
+      "count": 3
+    },
+    {
+      "code": "002289",
+      "name": "*ST宇顺",
+      "count": 2
+    },
+    {
+      "code": "002081",
+      "name": "金螳螂",
+      "count": 2
+    },
+    {
+      "code": "002549",
+      "name": "凯美特气",
+      "count": 1
+    },
+    {
+      "code": "601929",
+      "name": "吉视传媒",
+      "count": 1
+    },
+    {
+      "code": "002915",
+      "name": "中欣氟材",
+      "count": 1
+    },
+    {
+      "code": "000547",
+      "name": "航天发展",
+      "count": 1
+    },
+    {
+      "code": "600488",
+      "name": "津药药业",
+      "count": 1
+    }
+  ],
+  "evidence_level_distribution": {
+    "中": 15,
+    "高": 10
+  }
+}

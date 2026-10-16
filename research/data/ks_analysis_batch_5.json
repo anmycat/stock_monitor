@@ -1,0 +1,169 @@
+[
+  {
+    "date": "2026-06-12",
+    "post_id": "1725811431",
+    "img": "raw/em_imgs/2026-06-12_1725811431_0.jpg",
+    "text_context": "$香江控股(SH600162)$",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [],
+    "note": "东方财富「抓涨小达人」营销分享卡片，带分时图和B（买入）点标记，文案称『买入后平均上涨11.51%』，分时区间2.83~3.47（+11.61%/-10.16%）。属策略模拟/推广数据，非真实交易记录，故不提取具体交易动作。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-08-03",
+    "post_id": "1753540536",
+    "img": "raw/em_imgs/2026-08-03_1753540536_0.jpg",
+    "text_context": "$香江控股(SH600162)$周六给你们提示了，不听，只能是活该....",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [],
+    "note": "股吧帖子截图（用户『多空博弈社』08-01 16:16 发帖『香江控股.SH 对不起兄弟们，周一我要发飙了，赶快跑』，阅读1.8万，含2条评论）。纯文字帖，无交易数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-03",
+    "post_id": "1753540536",
+    "img": "raw/em_imgs/2026-08-03_1753540536_1.jpg",
+    "text_context": "$香江控股(SH600162)$周六给你们提示了，不听，只能是活该....",
+    "app": "同花顺",
+    "screenshot_type": "成交",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "卖出", "time": "10:07:41", "quantity": null, "price": 3.190, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:37:56", "quantity": null, "price": 3.170, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:32:00", "quantity": null, "price": 3.310, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:31:00", "quantity": null, "price": 3.360, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:31:00", "quantity": null, "price": 3.370, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:31:00", "quantity": null, "price": 3.360, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:30:42", "quantity": null, "price": 3.310, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "10:05:56", "quantity": null, "price": 5.710, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:32:09", "quantity": null, "price": 5.700, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:32:09", "quantity": null, "price": 5.700, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "09:32:09", "quantity": null, "price": 5.700, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "同花顺App江海证券账户（**0857）卖出成交列表，右侧数量列被截断，数量均不可见。除香江控股外还含海南海药（000566）卖出3笔@5.700及1笔@5.710。列表底部可能还有更多成交被截断。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-08-03",
+    "post_id": "1753540536",
+    "img": "raw/em_imgs/2026-08-03_1753540536_2.jpg",
+    "text_context": "$香江控股(SH600162)$周六给你们提示了，不听，只能是活该....",
+    "app": "同花顺",
+    "screenshot_type": "成交",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "买入", "time": null, "quantity": null, "price": 12.87, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": null, "quantity": null, "price": 12.74, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "买入", "time": null, "quantity": null, "price": 3.24, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": null, "quantity": null, "price": 3.30, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "同花顺交易页『已完成(4)』成交列表，列为『委托/现价』：买入嘉美包装(002969.SZ)委托价12.87（现价12.90）、卖出嘉美包装12.74（现价12.90）、买入香江控股3.24（现价3.17）、卖出香江控股3.30（现价3.17）。时间与数量列被截断不可见。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-08-03",
+    "post_id": "1753540536",
+    "img": "raw/em_imgs/2026-08-03_1753540536_3.jpg",
+    "text_context": "$香江控股(SH600162)$周六给你们提示了，不听，只能是活该....",
+    "app": "同花顺",
+    "screenshot_type": "收益曲线",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "收益", "time": null, "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": 0.5587, "position_pct": 0.244},
+      {"type": "买入", "time": "2026-08-03 09:37:56", "quantity": null, "price": 3.170, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "买入", "time": "2026-08-03 09:32:00", "quantity": null, "price": 3.310, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "2026-08-03 09:31:00", "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "同花顺盈亏分析页：浮动盈亏+55.87%（2026/06/11至今），当日盈亏参考+1.94%，持股天数37，个股仓位24.4%；现价3.14（-1.26%）。交易记录：买入09:37:56@3.170、买入09:32:00@3.310、卖出09:31:00（价格被截断）。数量、金额、成本均以**隐藏。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-18",
+    "post_id": "1760256292",
+    "img": "raw/em_imgs/2026-08-18_1760256292_0.jpg",
+    "text_context": "$新金路(SZ000510)$11号我就说了开始做新金路",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": "000510",
+    "stock_name": "新金路",
+    "actions": [],
+    "note": "『我的主页』帖子列表截图：多空博弈社08-11 19:19发帖『立新能源.SZ 接下来的目标慢慢做新金路』（来自立新能源讨论区）。纯帖子截图无交易数据。顶部状态栏区域显示『腾讯自选股』字样但页面为股吧样式，App归属不确定。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-18",
+    "post_id": "1760255981",
+    "img": "raw/em_imgs/2026-08-18_1760255981_0.jpg",
+    "text_context": "$香江控股(SH600162)$随便砸盘，不然让我给你们抬轿子吗",
+    "app": "同花顺",
+    "screenshot_type": "收益曲线",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "收益", "time": null, "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": 5.5133, "position_pct": 0.176},
+      {"type": "买入", "time": "2026-08-14 14:31:39", "quantity": null, "price": 4.660, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "买入", "time": "2026-08-14 13:47:24", "quantity": null, "price": 4.570, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "买入", "time": "2026-08-14 09:34:24", "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "同花顺盈亏分析页：浮动盈亏+551.33%（2026/06/11至今），当日盈亏参考+2.52%，持股天数46，个股仓位17.6%；现价4.70（+2.84%）。交易记录：08-14三笔买入（14:31:39@4.660、13:47:24@4.570、09:34:24价格被截断）。数量、金额以**隐藏。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-27",
+    "post_id": "1765060761",
+    "img": "raw/em_imgs/2026-08-27_1765060761_0.jpg",
+    "text_context": "$香江控股(SH600162)$没啥意义，想玩随便，就是我们资金优势而已",
+    "app": "同花顺",
+    "screenshot_type": "收益曲线",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "收益", "time": null, "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": 0.9766, "position_pct": 0.401},
+      {"type": "卖出", "time": "2026-08-27 10:06:18", "quantity": null, "price": 4.870, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "买入", "time": "2026-08-27 09:51:01", "quantity": null, "price": 4.620, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": "2026-08-27 09:49:48", "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "同花顺盈亏分析页：浮动盈亏+97.66%（2026/06/11至今），当日盈亏参考+10.54%，持股天数55，个股仓位40.1%；现价4.87（+9.93%）。交易记录：08-27卖出10:06:18@4.870、买入09:51:01@4.620、卖出09:49:48（价格被截断）。数量、金额以**隐藏。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-08-27",
+    "post_id": "1765060761",
+    "img": "raw/em_imgs/2026-08-27_1765060761_1.jpg",
+    "text_context": "$香江控股(SH600162)$没啥意义，想玩随便，就是我们资金优势而已",
+    "app": "腾讯自选股",
+    "screenshot_type": "日K买卖点",
+    "stock_code": "600162",
+    "stock_name": "香江控股",
+    "actions": [
+      {"type": "做T", "time": null, "quantity": null, "price": null, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "腾讯自选股『盈亏分析』页日K图（前复权），标注B/S/T买卖点多个，MA5:4.37/MA10:4.35/MA20:4.06/MA30:3.62/MA60:3.33，区间约2026-06至2026-08，最高5.19。顶部统计数字79/42/1含义被截断（推测为盈利/亏损/其他统计次数）。底部『交易记录』被截断，未含具体成交数字。股票代码依据上下文推断为香江控股。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2026-08-27",
+    "post_id": "1764968534",
+    "img": "raw/em_imgs/2026-08-27_1764968534_0.jpg",
+    "text_context": "$津药药业(SH600488)$\n随便砸盘",
+    "app": "同花顺",
+    "screenshot_type": "成交",
+    "stock_code": "600488",
+    "stock_name": "津药药业",
+    "actions": [
+      {"type": "买入", "time": null, "quantity": null, "price": 5.67, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null},
+      {"type": "卖出", "time": null, "quantity": null, "price": 5.92, "cost": null, "pnl_amount": null, "pnl_pct": null, "position_pct": null}
+    ],
+    "note": "成交/已完委托列表（蓝『买入』橙『卖出』样式与同花顺一致）：买入津药药业600488.SH 委托价5.67（现价5.67）、卖出津药药业5.92（现价5.67）。时间与数量列被截断不可见。App标识按版式推断，存在一定不确定性。",
+    "evidence_level": "中"
+  }
+]

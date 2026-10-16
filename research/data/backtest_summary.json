@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "discipline": "T日信号→T+1开盘成交；止损按开盘/盘中悲观口径",
+    "global_filter_hits": {
+      "main": 30,
+      "ext": 0
+    },
+    "tech_coverage": "ma/rsi/kdj 全部自算（当日已知），chip 仅主池部分覆盖",
+    "pools": {
+      "main": "17只博主交易票（选择偏差）",
+      "ext": "10只东财头部提股（泛化对照）"
+    }
+  },
+  "main": {
+    "rules": {
+      "R01_momentum_breakout": {
+        "name": "动量突破买入（起爆资金跟随）",
+        "filtered_by_global": 0,
+        "stats": {
+          "n": 8,
+          "win_rate": 50.0,
+          "avg_pnl": -0.79,
+          "avg_win": 5.82,
+          "avg_loss": -7.39,
+          "payoff_ratio": 0.79,
+          "expectancy": -0.79,
+          "kelly_full": -13.5,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -6.28,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -19.77,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 2,
+          "win_streak_best": 2
+        }
+      },
+      "R02_limitup_open_low": {
+        "name": "涨停开板低吸（博回封）",
+        "filtered_by_global": 3,
+        "stats": {
+          "n": 17,
+          "win_rate": 35.3,
+          "avg_pnl": 1.66,
+          "avg_win": 14.93,
+          "avg_loss": -5.57,
+          "payoff_ratio": 2.68,
+          "expectancy": 1.66,
+          "kelly_full": 11.1,
+          "kelly_half": 5.6,
+          "kelly_capped": 5.6,
+          "total_pnl": 28.28,
+          "kelly_weighted_pnl": 1.58,
+          "max_drawdown": -26.48,
+          "kelly_max_drawdown": -1.48,
+          "max_consec_loss": 4,
+          "win_streak_best": 4
+        }
+      },
+      "R03_shrink_pullback_ma5": {
+        "name": "缩量回踩MA5低吸",
+        "filtered_by_global": 0,
+        "stats": null
+      },
+      "R04_trend_pullback_ma20": {
+        "name": "多头趋势回踩MA20",
+        "filtered_by_global": 0,
+        "stats": {
+          "n": 68,
+          "win_rate": 41.2,
+          "avg_pnl": 1.12,
+          "avg_win": 11.6,
+          "avg_loss": -6.21,
+          "payoff_ratio": 1.87,
+          "expectancy": 1.12,
+          "kelly_full": 9.7,
+          "kelly_half": 4.8,
+          "kelly_capped": 4.8,
+          "total_pnl": 76.47,
+          "kelly_weighted_pnl": 3.71,
+          "max_drawdown": -75.62,
+          "kelly_max_drawdown": -3.67,
+          "max_consec_loss": 6,
+          "win_streak_best": 6
+        }
+      },
+      "R05_deep_pullback_buy": {
+        "name": "深度回调后低吸（跌透才接）",
+        "filtered_by_global": 0,
+        "stats": {
+          "n": 35,
+          "win_rate": 37.1,
+          "avg_pnl": -0.55,
+          "avg_win": 6.97,
+          "avg_loss": -4.99,
+          "payoff_ratio": 1.4,
+          "expectancy": -0.55,
+          "kelly_full": -7.9,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -19.26,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -45.72,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 5,
+          "win_streak_best": 5
+        }
+      },
+      "R06_inverse_T": {
+        "name": "倒T模式（冲高先卖、回踩再接）",
+        "filtered_by_global": 2,
+        "stats": {
+          "n": 32,
+          "win_rate": 50.0,
+          "avg_pnl": -3.39,
+          "avg_win": 4.66,
+          "avg_loss": -11.45,
+          "payoff_ratio": 0.41,
+          "expectancy": -3.39,
+          "kelly_full": -72.7,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -108.53,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -121.31,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 5,
+          "win_streak_best": 5
+        },
+        "real_T": {
+          "n": 28,
+          "win_rate": 57.1,
+          "avg_pnl": -0.63,
+          "avg_win": 4.66,
+          "avg_loss": -7.69,
+          "payoff_ratio": 0.61,
+          "expectancy": -0.63,
+          "kelly_full": -13.5,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -17.66,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -55.63,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 4,
+          "win_streak_best": 4
+        },
+        "opportunity_cost": {
+          "n": 4,
+          "win_rate": 0.0,
+          "avg_pnl": -22.72,
+          "avg_win": 0,
+          "avg_loss": -22.72,
+          "payoff_ratio": 0.0,
+          "expectancy": -22.72,
+          "kelly_full": 0,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -90.87,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -90.87,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 4,
+          "win_streak_best": 4
+        }
+      }
+    },
+    "pool": {
+      "n": 160,
+      "win_rate": 41.9,
+      "avg_pnl": -0.18,
+      "avg_win": 9.0,
+      "avg_loss": -6.8,
+      "payoff_ratio": 1.32,
+      "expectancy": -0.18,
+      "kelly_full": -2.0,
+      "kelly_half": 0.0,
+      "kelly_capped": 0.0,
+      "total_pnl": -29.32,
+      "kelly_weighted_pnl": 0.0,
+      "max_drawdown": -199.43,
+      "kelly_max_drawdown": 0.0,
+      "max_consec_loss": 6,
+      "win_streak_best": 6
+    }
+  },
+  "ext": {
+    "rules": {
+      "R01_momentum_breakout": {
+        "name": "动量突破买入（起爆资金跟随）",
+        "filtered_by_global": 0,
+        "stats": null
+      },
+      "R02_limitup_open_low": {
+        "name": "涨停开板低吸（博回封）",
+        "filtered_by_global": 0,
+        "stats": null
+      },
+      "R03_shrink_pullback_ma5": {
+        "name": "缩量回踩MA5低吸",
+        "filtered_by_global": 0,
+        "stats": null
+      },
+      "R04_trend_pullback_ma20": {
+        "name": "多头趋势回踩MA20",
+        "filtered_by_global": 0,
+        "stats": {
+          "n": 13,
+          "win_rate": 30.8,
+          "avg_pnl": -1.82,
+          "avg_win": 3.52,
+          "avg_loss": -4.19,
+          "payoff_ratio": 0.84,
+          "expectancy": -1.82,
+          "kelly_full": -51.7,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -23.64,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -27.37,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 7,
+          "win_streak_best": 7
+        }
+      },
+      "R05_deep_pullback_buy": {
+        "name": "深度回调后低吸（跌透才接）",
+        "filtered_by_global": 0,
+        "stats": null
+      },
+      "R06_inverse_T": {
+        "name": "倒T模式（冲高先卖、回踩再接）",
+        "filtered_by_global": 0,
+        "stats": {
+          "n": 43,
+          "win_rate": 72.1,
+          "avg_pnl": 1.82,
+          "avg_win": 3.13,
+          "avg_loss": -1.54,
+          "payoff_ratio": 2.03,
+          "expectancy": 1.82,
+          "kelly_full": 58.4,
+          "kelly_half": 29.2,
+          "kelly_capped": 25.0,
+          "total_pnl": 78.43,
+          "kelly_weighted_pnl": 19.61,
+          "max_drawdown": -7.46,
+          "kelly_max_drawdown": -1.87,
+          "max_consec_loss": 3,
+          "win_streak_best": 3
+        },
+        "real_T": {
+          "n": 38,
+          "win_rate": 78.9,
+          "avg_pnl": 2.13,
+          "avg_win": 3.22,
+          "avg_loss": -1.98,
+          "payoff_ratio": 1.63,
+          "expectancy": 2.13,
+          "kelly_full": 66.0,
+          "kelly_half": 33.0,
+          "kelly_capped": 25.0,
+          "total_pnl": 80.77,
+          "kelly_weighted_pnl": 20.19,
+          "max_drawdown": -6.05,
+          "kelly_max_drawdown": -1.51,
+          "max_consec_loss": 2,
+          "win_streak_best": 2
+        },
+        "opportunity_cost": {
+          "n": 5,
+          "win_rate": 20.0,
+          "avg_pnl": -0.47,
+          "avg_win": 0.27,
+          "avg_loss": -0.65,
+          "payoff_ratio": 0.41,
+          "expectancy": -0.47,
+          "kelly_full": -173.3,
+          "kelly_half": 0.0,
+          "kelly_capped": 0.0,
+          "total_pnl": -2.34,
+          "kelly_weighted_pnl": 0.0,
+          "max_drawdown": -2.61,
+          "kelly_max_drawdown": 0.0,
+          "max_consec_loss": 4,
+          "win_streak_best": 4
+        }
+      }
+    },
+    "pool": {
+      "n": 56,
+      "win_rate": 62.5,
+      "avg_pnl": 0.98,
+      "avg_win": 3.17,
+      "avg_loss": -2.67,
+      "payoff_ratio": 1.19,
+      "expectancy": 0.98,
+      "kelly_full": 30.9,
+      "kelly_half": 15.4,
+      "kelly_capped": 15.4,
+      "total_pnl": 54.79,
+      "kelly_weighted_pnl": 8.46,
+      "max_drawdown": -27.37,
+      "kelly_max_drawdown": -4.22,
+      "max_consec_loss": 7,
+      "win_streak_best": 7
+    }
+  },
+  "pool": {
+    "n": 216,
+    "win_rate": 47.2,
+    "avg_pnl": 0.12,
+    "avg_win": 7.0,
+    "avg_loss": -6.04,
+    "payoff_ratio": 1.16,
+    "expectancy": 0.12,
+    "kelly_full": 1.7,
+    "kelly_half": 0.8,
+    "kelly_capped": 0.0,
+    "total_pnl": 25.47,
+    "kelly_weighted_pnl": 0.0,
+    "max_drawdown": -214.02,
+    "kelly_max_drawdown": 0.0,
+    "max_consec_loss": 7,
+    "win_streak_best": 7
+  }
+}

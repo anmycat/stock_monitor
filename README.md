@@ -5,12 +5,14 @@ A股盘前/盘中/盘后监控与复盘系统：专业交易员级别的智能�
 ## 系统概述
 
 本系统基于专业交易员决策框架构建，具备：
+
 - **多源数据容错**：qtimg为主力源，sina/eastmoney/yfinance为备用
 - **并行化处理**：盘中扫描响应时间降低90%
 - **专业决策引擎**：结合市场环境、时间模式、资金流向综合判断
 - **智能推送**：去重冷却机制，避免通知风暴
 
 本次ETF增强参考了 GitHub 高 star 项目的可复用思路（以本系统为主，外部项目为辅）：
+
 - [OpenBB](https://github.com/OpenBB-finance/OpenBB)：多数据源统一抽象与“connect once, consume everywhere”接口理念
 - [AkShare](https://github.com/akfamily/akshare)：A股/ETF数据覆盖与字段标准化
 - [FinanceDatabase](https://github.com/JerBouma/FinanceDatabase)：ETF分类与可扩展标的池思路
@@ -18,6 +20,7 @@ A股盘前/盘中/盘后监控与复盘系统：专业交易员级别的智能�
 - [microsoft/qlib](https://github.com/microsoft/qlib)：研究到生产的流程化与模型/因子可扩展设计
 
 上游版本快照（核验日期：2026-04-29）：
+
 - `daily_stock_analysis`: `c5ac36e73114ace58ec983ea415f3f67dc25df75`
 - `AkShare`: `release-v1.18.58`（`19c47bdb76247404c496e13037faa52c666b5356`）
 - `Kronos`: `67b630e67f6a18c9e9be918d9b4337c960db1e9a`（仓库：[shiyu-coder/Kronos](https://github.com/shiyu-coder/Kronos)，论文：[arXiv:2508.02739](https://arxiv.org/abs/2508.02739)）
@@ -27,37 +30,40 @@ A股盘前/盘中/盘后监控与复盘系统：专业交易员级别的智能�
 ## 1. 业务逻辑流程
 
 ### 盘前 (09:25)
-| 任务 | 模块 | 状态 |
-|------|------|------|
-| 集合竞价+新闻(交易日) | `guardian.py:_job_morning_call_auction_and_news()` | ✅ 启用 |
-| 新闻速览(非交易日) | `guardian.py:_job_morning_call_auction_and_news()` | ✅ 启用 |
-| 指数开盘情况 | `etf_tracker.py` | ✅ 启用 |
-| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:get_etf_trade_states()` | ✅ 启用 |
-| ETF持仓变化扫描 | `etf_tracker.py:scan_etf_holdings_changes()` | ✅ 启用 |
-| 财经新闻获取 | `weekly_ops.py:fetch_finance_news()` | ✅ 启用 |
-| 新闻情感分析 | `sentiment.py:analyze_news_sentiment()` | ✅ 启用 |
+
+| 任务                   | 模块                                                 | 状态   |
+| -------------------- | -------------------------------------------------- | ---- |
+| 集合竞价+新闻(交易日)         | `guardian.py:_job_morning_call_auction_and_news()` | ✅ 启用 |
+| 新闻速览(非交易日)           | `guardian.py:_job_morning_call_auction_and_news()` | ✅ 启用 |
+| 指数开盘情况               | `etf_tracker.py`                                   | ✅ 启用 |
+| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:get_etf_trade_states()`            | ✅ 启用 |
+| ETF持仓变化扫描            | `etf_tracker.py:scan_etf_holdings_changes()`       | ✅ 启用 |
+| 财经新闻获取               | `weekly_ops.py:fetch_finance_news()`               | ✅ 启用 |
+| 新闻情感分析               | `sentiment.py:analyze_news_sentiment()`            | ✅ 启用 |
 
 ### 盘中 (每30分钟)
-| 任务 | 模块 | 状态 |
-|------|------|------|
-| A段 起爆资金（3秒双快照） | `stock_scanner.py:scan_burst_fund_signals()` | ✅ 启用 |
-| B段 小盘股监控 | `stock_scanner.py:scan_small_cap_monitor()` | ✅ 启用 |
-| C段 现有策略扫盘（决策卡） | `stock_scanner.py:scan_market_trade_candidates()` | ✅ 启用 |
-| 市场环境评估 | `trader_brain.py` | ✅ 启用 |
-| 热门板块发现 | `sector_analysis.py:auto_discover_hot_sectors()` | ✅ 启用 |
-| 游资关注股 | `fund_flow.py:get_famous_trader_stocks()` | ✅ 启用 |
-| 多因子选股 | `factors.py:score_stocks_by_factors()` | ✅ 启用 |
-| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:evaluate_etf_trade_state()` | ✅ 启用 |
-| ETF成分股警报 | `etf_tracker.py:get_etf_stock_alerts()` | ✅ 启用 |
+
+| 任务                   | 模块                                                | 状态   |
+| -------------------- | ------------------------------------------------- | ---- |
+| A段 起爆资金（3秒双快照）       | `stock_scanner.py:scan_burst_fund_signals()`      | ✅ 启用 |
+| B段 小盘股监控             | `stock_scanner.py:scan_small_cap_monitor()`       | ✅ 启用 |
+| C段 现有策略扫盘（决策卡）       | `stock_scanner.py:scan_market_trade_candidates()` | ✅ 启用 |
+| 市场环境评估               | `trader_brain.py`                                 | ✅ 启用 |
+| 热门板块发现               | `sector_analysis.py:auto_discover_hot_sectors()`  | ✅ 启用 |
+| 游资关注股                | `fund_flow.py:get_famous_trader_stocks()`         | ✅ 启用 |
+| 多因子选股                | `factors.py:score_stocks_by_factors()`            | ✅ 启用 |
+| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:evaluate_etf_trade_state()`       | ✅ 启用 |
+| ETF成分股警报             | `etf_tracker.py:get_etf_stock_alerts()`           | ✅ 启用 |
 
 ### 盘后 (11:35 / 15:10)
-| 任务 | 模块 | 状态 |
-|------|------|------|
-| 午间复盘 | `guardian.py:_job_noon_recap()` | ✅ 启用 |
-| 全日复盘 | `guardian.py:_job_close_recap()` | ✅ 启用 |
-| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:get_etf_trade_states()` | ✅ 启用 |
-| 市场宽度统计 | `sector_analysis.py:get_market_breadth()` | ✅ 启用 |
-| AI市场摘要 | `briefing.py:generate_market_brief()` | ✅ 启用 |
+
+| 任务                   | 模块                                        | 状态   |
+| -------------------- | ----------------------------------------- | ---- |
+| 午间复盘                 | `guardian.py:_job_noon_recap()`           | ✅ 启用 |
+| 全日复盘                 | `guardian.py:_job_close_recap()`          | ✅ 启用 |
+| ETF状态Top3（可买/观望/X不买） | `etf_tracker.py:get_etf_trade_states()`   | ✅ 启用 |
+| 市场宽度统计               | `sector_analysis.py:get_market_breadth()` | ✅ 启用 |
+| AI市场摘要               | `briefing.py:generate_market_brief()`     | ✅ 启用 |
 
 ---
 
@@ -107,6 +113,7 @@ stock_monitor/
 ## 3. UI输出规范
 
 ### 3.1 推送格式
+
 ```
 【模块标题】 + Emoji + 中文
 
@@ -117,10 +124,12 @@ stock_monitor/
 ```
 
 ### 3.2 推送字段规范
+
 - 股票格式：`名称(代码)—换手率—推送理由`
 - 涨跌幅：不使用"="号，使用"涨跌"或"%"
 
 ### 3.3 通知去重
+
 - 冷却时间：`NOTIFY_COOLDOWN_SECONDS=300`
 - 去重窗口：`NOTIFY_DEDUPE_SECONDS=1800`
 
@@ -129,6 +138,7 @@ stock_monitor/
 ## 4. 配置要点
 
 ### 4.1 必需配置
+
 ```bash
 QUOTE_SOURCE=qtimg                    # 主力数据源
 QUOTE_SOURCE_POOL=qtimg,eastmoney,sina,akshare  # auto/random可用源白名单
@@ -138,6 +148,7 @@ PUSHDEER_PUSHKEY=xxx
 ```
 
 ### 4.2 可选配置
+
 ```bash
 GEMINI_API_KEY=xxx                   # AI摘要
 TUSHARE_TOKEN=xxx                    # 增强数据
@@ -219,6 +230,7 @@ MORNING_ETF_QUOTE_SOURCE=qtimg    # 早盘ETF成分股行情源
 ```
 
 ### 4.3 daily_stock_analysis集成
+
 ```bash
 DAILY_STOCK_ANALYSIS_REPO_PATH=/path/to/daily_stock_analysis
 DAILY_STOCK_ANALYSIS_QUOTE_PATH=data/daily_stock_analysis/latest_quote.json
@@ -228,6 +240,7 @@ BETTAFISH_REPORT_PATH=data/bettafish/latest_report.json
 ```
 
 ### 4.4 新闻源配置
+
 ```bash
 # JSON新闻源（推荐）- 新浪财经快讯
 FINANCE_NEWS_JSON_URLS=https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&k=%E8%82%A1%E7%A5%A8&num=10&page=1
@@ -249,13 +262,15 @@ NEWS_RELAX_TO_CN_ONLY=true   # 无A股新闻时允许中文通用新闻
 ## 5. 性能优化
 
 ### 5.1 并行化处理
-| 模块 | 优化前 | 优化后 | 提升 |
-|------|--------|--------|------|
-| 盘中扫描 | 216秒 | ~22秒 | 10× |
-| 多因子评分 | 60秒 | ~6秒 | 10× |
-| 游资追踪 | 24秒 | ~5秒 | 5× |
+
+| 模块    | 优化前  | 优化后  | 提升  |
+| ----- | ---- | ---- | --- |
+| 盘中扫描  | 216秒 | ~22秒 | 10× |
+| 多因子评分 | 60秒  | ~6秒  | 10× |
+| 游资追踪  | 24秒  | ~5秒  | 5×  |
 
 ### 5.2 缓存策略
+
 - 行情缓存：30秒
 - K线缓存：300秒
 - ETF持仓：3600秒
@@ -266,6 +281,7 @@ NEWS_RELAX_TO_CN_ONLY=true   # 无A股新闻时允许中文通用新闻
 ## 6. 启动方式
 
 ### 本地
+
 ```bash
 pip install -r requirements.txt
 cp config/.env.example config/.env
@@ -273,6 +289,7 @@ python guardian.py
 ```
 
 ### ECS
+
 ```bash
 systemctl enable guardian
 systemctl start guardian
@@ -283,13 +300,12 @@ read -s ECS_PASSWORD && export ECS_PASSWORD
 ```
 
 ### 历史回放
+
 ```bash
 python scripts/simulate_recent_days.py --days 4 --topn 10
 ```
 
 ---
-
-
 
 ---
 
@@ -301,15 +317,12 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 
 **B段：小盘股监控 (`scan_small_cap_monitor`)**
 
-
 **C段：现有策略扫盘 (`scan_market_trade_candidates`)**
-
-
-
 
 ## 14. 更新日志
 
 ### v2.13 (2026-04-24)
+
 - ✅ **盘中扫描升级为 A/B/C 三段式**：
   - A段起爆资金：3秒双快照（涨幅+成交额增量）
   - B段小盘股监控：市值/换手/成交额联合过滤
@@ -324,6 +337,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - `daily_stock_analysis` / `AkShare` / `Kronos` 最新提交已记录于文档
 
 ### v2.12 (2026-04-09)
+
 - ✅ **基于本周 ECS 日志的稳定性优化**：
   - `get_quote(auto/random)` 改为可配置源池（`QUOTE_SOURCE_POOL`），避免无效源反复探测
   - 默认跳过未配置密钥的数据源（`tushare/mkts`），降低健康告警噪音
@@ -336,6 +350,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - `intraday_scan` 日志增加 `relaxed` 计数，便于复盘阈值效果
 
 ### v2.11 (2026-04-08)
+
 - ✅ **ETF决策面板增强（参考高 star ETF 项目能力）**：
   - 新增 `get_etf_trade_states()` / `evaluate_etf_trade_state()`，输出 `可买/观望/X不买`
   - 决策维度加入：支撑位距离、均线结构、资金流方向、追高约束、综合评分
@@ -346,7 +361,9 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 - ✅ **文档补齐**：
   - README 增补“ETF高 star 项目来源说明”与“ETF状态面板规则”
 
+
 ### v2.10 (2026-04-08)
+
 - ✅ **对齐 daily_stock_analysis 稳健性架构**（不改变推送通道）：
   - 数据源新增熔断/半开探测机制（连续失败后冷却，冷却后单次探测恢复）
   - 健康报告新增 `cfail/circuit/open_remaining` 字段，问题定位更直观
@@ -365,6 +382,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - 保持通知链路不变：`DingTalk + PushDeer`
 
 ### v2.9 (2026-04-07)
+
 - ✅ **ETF持仓变化格式统一**：
   - 第一部分：🔥红利低波ETF成份股持仓变化（买入/卖出）
   - 第二部分：📈行业ETF成份股持仓变化（买入/卖出）
@@ -372,13 +390,14 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - Emoji统一：🟢买入/🔴卖出
   - 合并为单条通知，避免重复打扰
 - ✅ **代码清理**：
-  - 删除未使用的测试文件（test_*.py, smoke_test.py等）
+  - 删除未使用的测试文件（test\_*.py, smoke_test.py等）
   - 删除重复的stock_scanner.py
   - 删除旧backup目录和env备份文件
   - 删除Mac临时文件(._*)
   - 优化目录结构
 
 ### v2.8 (2026-04-06)
+
 - ✅ **ETF持仓优化**：
   - 动态缓存策略：盘中5分钟缓存，盘后1小时缓存
   - 增加重试机制：API失败时最多重试2次
@@ -395,6 +414,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - DSA行情生成增加ETF数据
 
 ### v2.7 (2026-04-02)
+
 - ✅ **新增红利低波ETF追踪**：
   - 新增 `etf_codes_low_vol` 配置组 (515180, 512890, 515300, 561590)
   - 盘前/盘后分开显示：🔥红利低波ETF + 📈行业ETF
@@ -406,6 +426,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - guardian.py 已更新
 
 ### v2.6 (2026-03-27)
+
 - ✅ **修复集合竞价股票代码生成**：`_build_top_codes()` 修复代码格式
   - 修正沪市代码生成 (sh600000-sh603xxx)
   - 修正深市主板代码格式 (sz000001-sz000999)
@@ -449,6 +470,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
   - 基于涨跌幅、上涨股占比、热门板块数自动分类
 
 ### v2.5 (2026-03-24)
+
 - ✅ **集合竞价数据源优化**：添加多数据源轮询（qtimg→EastMoney→AkShare）
 - ✅ 添加 `_get_call_auction_top10_qtimg()` 函数 - GT咪数据
 - ✅ 添加 `_get_call_auction_top10_akshare()` 函数
@@ -464,6 +486,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 - ⚠️ 注意：ECS云服务器存在到国内金融API的网络限制
 
 ### v2.4 (2026-03-23)
+
 - ✅ **修复定时任务不执行问题**：重置损坏的apscheduler.sqlite数据库
 - ✅ 手动触发验证：morning_alert和intraday_scan均可正常执行
 - ✅ 更新README 9.5节：补充不可用新闻源（tonghuashun、policy_json、tushare）
@@ -473,6 +496,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 - ✅ 新增README第13章：定时任务详解+故障排查
 
 ### v2.3 (2026-03-23)
+
 - ✅ 新闻推送时间调整：每日9:25推送（含集合竞价+新闻）
 - ✅ 非交易日仅推送新闻（"非交易日"标题）
 - ✅ 交易日推送完整内容（集合竞价情况+新闻速览）
@@ -489,6 +513,7 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 - ✅ 更新 README 第4.4节新闻源配置文档
 
 ### v2.2 (2026-03-22)
+
 - ✅ 修复 `stock_scanner.py` 缺失函数
 - ✅ `scan_watchlist_stocks()` 已添加到 ECS
 - ✅ `format_stock_alert()` 已添加到 ECS
@@ -497,11 +522,13 @@ python scripts/simulate_recent_days.py --days 4 --topn 10
 - ✅ 验证同步机制（cron已设置）
 
 ### v2.1 (2026-03-22)
+
 - ✅ daily_stock_analysis融合方案（独立运行+数据共享）
 - ✅ 每周Git自动同步配置
 - ✅ 更新README文档结构
 
 ### v2.0 (2026-03-22)
+
 - ✅ 并行化API调用（ThreadPoolExecutor）
 - ✅ 统一缓存管理（CacheManager）
 - ✅ 修复东财API价格BUG

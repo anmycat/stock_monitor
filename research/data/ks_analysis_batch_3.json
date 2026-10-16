@@ -1,0 +1,242 @@
+[
+  {
+    "date": "2025-11-06",
+    "post_id": "1621308552",
+    "img": "raw/em_imgs/2025-11-06_1621308552_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$想砸们，你们谁都跑不了",
+    "app": "未识别",
+    "screenshot_type": "其他",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": 71.10,
+        "pnl_pct": 0.8658,
+        "position_pct": null
+      }
+    ],
+    "note": "图片极小(约130x94)，仅识别出\"71.10万\"与\"+86.58%\"两个数值，疑似个股盈利/收益角标；无App标识、无字段标签，无法确认具体截图类型，信息严重不足。pnl_amount/pnl_pct 为推测该角标展示的盈利金额与收益率。",
+    "evidence_level": "低"
+  },
+  {
+    "date": "2025-11-24",
+    "post_id": "1629501715",
+    "img": "raw/em_imgs/2025-11-24_1629501715_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$挂单的一万手被吞下去了！",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "13:49:43",
+        "quantity": 9995,
+        "price": 15.89,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺行情/逐笔委托页。股票*ST东易，现价15.89(-5.02%，跌停)。识别到\"主力被卖 9995手 @15.89 约1588万(13:49:43)\"，与帖子\"挂单的一万手被吞\"相呼应；该笔为主力成交并非本人委托。另含买卖队列、成交量分布(买/卖15千手、7.53%等)、深证指数12585.08。quantity单位为手。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-11-24",
+    "post_id": "1629501715",
+    "img": "raw/em_imgs/2025-11-24_1629501715_1.jpg",
+    "text_context": "$*ST东易(SZ002713)$挂单的一万手被吞下去了！",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "13:49:43",
+        "quantity": 9995,
+        "price": 15.89,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺行情页(同一帖子第二张)。*ST东易 15.89(-5.02%)。含成交量分布表(>9千手1笔、5千-9千手0笔、1千-5千手0笔、1百-1千手1笔等)及\"主力被卖 9995手 @15.89 1588万(13:49:43)\"。与首图内容一致，均为行情/主力数据，非本人交易记录。quantity单位为手。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-11-24",
+    "post_id": "1629348362",
+    "img": "raw/em_imgs/2025-11-24_1629348362_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$涨停都能卖出去",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": 15.89,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": -0.0502,
+        "position_pct": null
+      }
+    ],
+    "note": "五档盘口+逐笔委托页(界面同花顺风格但无明确\"同花顺\"标识，按风格判定)。*ST东易，现价15.89(-5.02%，即跌停)。五档：卖3/卖2、买1=15.89、买2、买3等；下方逐笔委托列表为13:00前后的公开委托流水(价格15.89/17.55/17.57/16.66/16.25，手数多为2-320手不等)，底部有卖出/买入/撤按钮。无本人持仓或成交信息，纯行情/盘口截图。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-11-25",
+    "post_id": "1630169003",
+    "img": "raw/em_imgs/2025-11-25_1630169003_0.jpg",
+    "text_context": "$ST中迪(SZ000609)$自己的认知不行就转不了钱，活该你们亏",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": "000609",
+    "stock_name": "ST中迪",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "09:33:41",
+        "quantity": 500,
+        "price": 12.720,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "群聊(群聊(13))截图，非交易软件截图。内容为中迪买卖讨论；含一条委托片段\"委托时间09:33:41 委托价12.720\"及\"正好能买500股中迪\"表述，但均为聊天口吻、非本人成交/持仓记录。股票为ST中迪(000609)。quantity=500为聊天所述\"500股\"，非确认成交。",
+    "evidence_level": "低"
+  },
+  {
+    "date": "2025-11-25",
+    "post_id": "1630166455",
+    "img": "raw/em_imgs/2025-11-25_1630166455_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$一帮没用的东西，等你我有实力了再说",
+    "app": "其他",
+    "screenshot_type": "其他",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "群聊(群聊(13))截图，纯文字聊天，无行情/账户界面。讨论\"周五抢筹的国晟加今天的T\"、\"我有12个点\"、\"我给卖了没接回来\"\"我买了水产\"等，无具体股票代码、价格、数量等可提取交易数据。",
+    "evidence_level": "低"
+  },
+  {
+    "date": "2025-11-25",
+    "post_id": "1630164968",
+    "img": "raw/em_imgs/2025-11-25_1630164968_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$一帮无知的纯货还说没大资金，真的很蠢",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "09:30:00",
+        "quantity": 3333,
+        "price": 15.10,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺行情/主力资金页。*ST东易，现价15.15(-4.66%)。识别到多笔\"主力主买/被买\"大单：5000手@15.10 755万(09:35:37)、3333手@15.10 503万(09:30:00)×2、2100手@15.1 317万(09:35:31)、1897手@15.27 290万(09:30:00)、1877手@15.10 283万(09:38:47)；底部\"12777.31\"疑似主力净流入(单位存疑)。与帖子\"说没大资金\"呼应，均为主力资金数据，非本人交易。quantity单位为手。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-11-27",
+    "post_id": "1631378451",
+    "img": "raw/em_imgs/2025-11-27_1631378451_0.jpg",
+    "text_context": "$ST中迪(SZ000609)$",
+    "app": "东方财富",
+    "screenshot_type": "行情",
+    "stock_code": "000609",
+    "stock_name": "ST中迪",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": 12.64,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": -0.0503,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富App行情/分时页。ST中迪(000609)，现价12.64(-5.03%，跌停)，含风险提示公告、今开/最高/最低、换手59.36万、金额7.97亿、总值37.83亿等。社区功能\"逃顶小能手 分时 这波操作很秀\"\"卖出后下跌9.59%\"\"晒我的操作\"及\"多空力度-2109.371\"，疑似他人晒出的卖出操作而非本人账户。无本人持仓/成交数据。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-12-01",
+    "post_id": "1632544633",
+    "img": "raw/em_imgs/2025-12-01_1632544633_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$没必要挂单，你们挂单能有我早？",
+    "app": "未识别",
+    "screenshot_type": "委托",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "委托",
+        "time": "16:17:13",
+        "quantity": null,
+        "price": 12.34,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "委托/持仓页(无App标识，疑似东方财富或同花顺)。当日委托：*ST东易，方向\"证券卖出\"，委价约12.34(存疑，OCR读为12.340)，委量疑似6手但存疑故置空，均价0.000，状态\"已报\"(可撤，未成交/部分不明)。与帖子\"挂单\"相符，为本人挂出的卖出委托。price=12.34、quantity需以原图核对。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-12-02",
+    "post_id": "1633277767",
+    "img": "raw/em_imgs/2025-12-02_1633277767_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$明日反对票让他重组失败",
+    "app": "腾讯自选股",
+    "screenshot_type": "其他",
+    "stock_code": "002163",
+    "stock_name": "海南发展",
+    "actions": [
+      {
+        "type": "其他",
+        "time": null,
+        "quantity": null,
+        "price": 8.23,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": 0.0024,
+        "position_pct": null
+      }
+    ],
+    "note": "腾讯自选股App的新闻/资讯页，非交易截图。内容为公司快评《海南发展控股股东延期注入资产遭否决》，内嵌行情卡：海南发展[002163] 最新8.23 +0.24% 涨跌0.02，前收盘价8.21，市值69.37亿元。图片主题股票为海南发展(002163)，与帖子代码002713(*ST东易)不一致，疑似随手转发新闻。无本人交易数据。",
+    "evidence_level": "中"
+  }
+]

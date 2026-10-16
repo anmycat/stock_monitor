@@ -1,0 +1,217 @@
+[
+  {
+    "date": "2025-12-02",
+    "post_id": "1632780598",
+    "img": "raw/em_imgs/2025-12-02_1632780598_0.jpg",
+    "text_context": "你继续叫啊，怎么不叫了//@我爱中迪:吃饱饭搁这秀？跟二哈一样的",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "000609",
+    "stock_name": "ST中迪",
+    "actions": [],
+    "note": "东方财富“精彩评论”分享卡片，内容为股吧评论互动，无交易数据、持仓或行情数字。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-12-03",
+    "post_id": "1633364180",
+    "img": "raw/em_imgs/2025-12-03_1633364180_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$继续狗叫，就投反对票",
+    "app": "东方财富",
+    "screenshot_type": "持仓",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "持仓",
+        "time": null,
+        "quantity": null,
+        "price": 11.72,
+        "cost": 6.146,
+        "pnl_amount": null,
+        "pnl_pct": 0.90693,
+        "position_pct": null
+      },
+      {
+        "type": "持仓",
+        "time": null,
+        "quantity": null,
+        "price": 6.53,
+        "cost": 5.46,
+        "pnl_amount": null,
+        "pnl_pct": 0.19597,
+        "position_pct": null
+      },
+      {
+        "type": "持仓",
+        "time": null,
+        "quantity": null,
+        "price": 8.76,
+        "cost": 8.245,
+        "pnl_amount": null,
+        "pnl_pct": 0.06246,
+        "position_pct": null
+      },
+      {
+        "type": "持仓",
+        "time": null,
+        "quantity": null,
+        "price": 24.14,
+        "cost": 24.485,
+        "pnl_amount": null,
+        "pnl_pct": -0.01409,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富持仓页面截图，显示4只持仓股票的现价/成本及盈亏百分比。总仓位显示84.7%。个股数量、市值、盈亏金额均被***隐藏，无法读取。持仓股包括茂业商业、海欣食品、航天动力、*ST东易。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-12-03",
+    "post_id": "1633360849",
+    "img": "raw/em_imgs/2025-12-03_1633360849_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$搞起来",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "002713",
+    "stock_name": "东易日盛",
+    "actions": [],
+    "note": "东易日盛2025年第二次临时股东大会网络投票界面，弹窗提示委托提交时间，无个人交易或持仓数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-12-04",
+    "post_id": "1634463359",
+    "img": "raw/em_imgs/2025-12-04_1634463359_0.jpg",
+    "text_context": "$*ST东易(SZ002713)$7000手已经卖出",
+    "app": "东方财富",
+    "screenshot_type": "分时卖点",
+    "stock_code": "002713",
+    "stock_name": "*ST东易",
+    "actions": [
+      {
+        "type": "卖出",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": -0.0621,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富“逃顶小能手”分享图，显示*ST东易分时走势及S点（卖出标记），标注“卖出后下跌6.21%”。具体卖出价格、数量未在图中显示。帖子正文称“7000手已经卖出”。",
+    "evidence_level": "中"
+  },
+  {
+    "date": "2025-12-11",
+    "post_id": "1637465342",
+    "img": "raw/em_imgs/2025-12-11_1637465342_0.jpg",
+    "text_context": "$实达集团(SH600734)$早上我们已经全部切换到",
+    "app": "东方财富",
+    "screenshot_type": "其他",
+    "stock_code": "600734",
+    "stock_name": "实达集团",
+    "actions": [],
+    "note": "东方财富股吧帖子详情页截图，显示用户“多空博弈社”发表的换股观点，无交易数据或持仓信息。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-12-16",
+    "post_id": "1639449042",
+    "img": "raw/em_imgs/2025-12-16_1639449042_0.jpg",
+    "text_context": "$航天电子(SH600879)$今天去做消费，20cm做欢乐家，其他的做龙头，参考以下做",
+    "app": "腾讯自选股",
+    "screenshot_type": "行情",
+    "stock_code": "600879",
+    "stock_name": "航天电子",
+    "actions": [],
+    "note": "腾讯自选股行情列表截图，显示广百股份、中锐股份、航天信息、航天电子、东百集团等股票的最新价与涨跌幅。纯行情图，无个人交易数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-12-19",
+    "post_id": "1641923392",
+    "img": "raw/em_imgs/2025-12-19_1641923392_0.jpg",
+    "text_context": "$平潭发展(SZ000592)$\n我真的在很努力帮助你们了，不听我也没办法",
+    "app": "腾讯自选股",
+    "screenshot_type": "其他",
+    "stock_code": "000592",
+    "stock_name": "平潭发展",
+    "actions": [],
+    "note": "腾讯自选股个人主页帖子截图，显示用户“多空博弈社”关于平潭发展的观点，无交易数据。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2025-12-24",
+    "post_id": "1643700913",
+    "img": "raw/em_imgs/2025-12-24_1643700913_0.jpg",
+    "text_context": "$航天发展(SZ000547)$",
+    "app": "东方财富",
+    "screenshot_type": "收益曲线",
+    "stock_code": "000547",
+    "stock_name": "航天发展",
+    "actions": [
+      {
+        "type": "收益",
+        "time": null,
+        "quantity": null,
+        "price": null,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": 0.3549,
+        "position_pct": null
+      }
+    ],
+    "note": "东方财富“账户表现”收益曲线截图（2025-12-01至2025-12-24），显示本月收益率35.49%，跑赢上证指数34.44%，战胜99.44%股友。收益额、总资产等数字被隐藏。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-02-27",
+    "post_id": "1672390825",
+    "img": "raw/em_imgs/2026-02-27_1672390825_0.jpg",
+    "text_context": "$嘉美包装(SZ002969)$集合竞价砸盘",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002969",
+    "stock_name": "嘉美包装",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "15:00:00",
+        "quantity": 4319,
+        "price": 23.49,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺盘口资金流向明细截图，显示嘉美包装15:00:00“主力主卖”4319手，成交额1015万，成交均价23.49元。此为市场大单资金流向，非个人成交或委托记录。",
+    "evidence_level": "高"
+  },
+  {
+    "date": "2026-02-27",
+    "post_id": "1672390825",
+    "img": "raw/em_imgs/2026-02-27_1672390825_1.jpg",
+    "text_context": "$嘉美包装(SZ002969)$集合竞价砸盘",
+    "app": "同花顺",
+    "screenshot_type": "行情",
+    "stock_code": "002969",
+    "stock_name": "嘉美包装",
+    "actions": [
+      {
+        "type": "其他",
+        "time": "15:00:00",
+        "quantity": 4319,
+        "price": 23.49,
+        "cost": null,
+        "pnl_amount": null,
+        "pnl_pct": null,
+        "position_pct": null
+      }
+    ],
+    "note": "同花顺个股“资金”页面截图，显示嘉美包装当前价23.49元、跌幅1.14%，以及“大资金动向”15:00:00卖出1015万元、4319手、均价23.49元。此为市场资金数据，非个人交易。",
+    "evidence_level": "高"
+  }
+]

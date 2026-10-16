@@ -1,0 +1,1111 @@
+{
+  "meta": {
+    "window": "2026-07-06 ~ 2026-10-13（3个月，27只票）",
+    "samples": {
+      "rule_signals": 216,
+      "blogger_buys": 43,
+      "blogger_sells": 39
+    },
+    "discipline": "信号日T收盘可知数据；PR point-in-time；regime取信号日指数状态"
+  },
+  "R11_market_earning_ratio": {
+    "le_04": {
+      "label": "PR≤0.4 四折带",
+      "signals": null,
+      "signals_n_by_rule": {},
+      "blogger_buys": null,
+      "blogger_buy_stocks": []
+    },
+    "b04_06": {
+      "label": "0.4<PR≤0.6 可买带",
+      "signals": null,
+      "signals_n_by_rule": {},
+      "blogger_buys": null,
+      "blogger_buy_stocks": []
+    },
+    "b06_08": {
+      "label": "0.6<PR≤0.8 观察带",
+      "signals": {
+        "n": 6,
+        "win_rate": 66.7,
+        "avg_pnl": 1.51,
+        "total_pnl": 9.09,
+        "avg_win": 3.88,
+        "avg_loss": -3.22
+      },
+      "signals_n_by_rule": {
+        "R04": 2,
+        "R06": 4
+      },
+      "blogger_buys": null,
+      "blogger_buy_stocks": []
+    },
+    "gt_08": {
+      "label": "PR>0.8 回避带",
+      "signals": {
+        "n": 126,
+        "win_rate": 49.2,
+        "avg_pnl": 0.2,
+        "total_pnl": 24.97,
+        "avg_win": 7.46,
+        "avg_loss": -6.84
+      },
+      "signals_n_by_rule": {
+        "R01": 5,
+        "R02": 11,
+        "R04": 41,
+        "R05": 25,
+        "R06": 44
+      },
+      "blogger_buys": {
+        "n": 17,
+        "win_rate": 23.5,
+        "avg_pnl": -2.22,
+        "total_pnl": -37.76,
+        "avg_win": 5.36,
+        "avg_loss": -4.55
+      },
+      "blogger_buy_stocks": [
+        "华电辽能",
+        "津药药业",
+        "百合花",
+        "立新能源",
+        "贤丰控股",
+        "远东股份",
+        "金螳螂"
+      ]
+    },
+    "na_loss": {
+      "label": "亏损/ROE≤0 不适用",
+      "signals": {
+        "n": 84,
+        "win_rate": 42.9,
+        "avg_pnl": -0.1,
+        "total_pnl": -8.59,
+        "avg_win": 6.55,
+        "avg_loss": -5.09
+      },
+      "signals_n_by_rule": {
+        "R01": 3,
+        "R02": 6,
+        "R04": 38,
+        "R05": 10,
+        "R06": 27
+      },
+      "blogger_buys": {
+        "n": 26,
+        "win_rate": 38.5,
+        "avg_pnl": -0.41,
+        "total_pnl": -10.73,
+        "avg_win": 5.21,
+        "avg_loss": -3.93
+      },
+      "blogger_buy_stocks": [
+        "博纳影业",
+        "康欣新材",
+        "深物业A",
+        "爱丽家居",
+        "香江控股",
+        "黄河旋风"
+      ]
+    },
+    "na": {
+      "label": "无PR数据",
+      "signals": null,
+      "signals_n_by_rule": {},
+      "blogger_buys": null,
+      "blogger_buy_stocks": []
+    },
+    "no_data": {
+      "label": "无行情匹配",
+      "signals": null,
+      "signals_n_by_rule": {},
+      "blogger_buys": null,
+      "blogger_buy_stocks": []
+    },
+    "filter_effect": {
+      "rule_signals_before": {
+        "n": 216,
+        "win_rate": 47.2,
+        "avg_pnl": 0.12,
+        "total_pnl": 25.47,
+        "avg_win": 7.0,
+        "avg_loss": -6.04
+      },
+      "rule_signals_after": {
+        "n": 6,
+        "win_rate": 66.7,
+        "avg_pnl": 1.51,
+        "total_pnl": 9.09,
+        "avg_win": 3.88,
+        "avg_loss": -3.22
+      },
+      "rule_signals_dropped": {
+        "n": 210,
+        "win_rate": 46.7,
+        "avg_pnl": 0.08,
+        "total_pnl": 16.38,
+        "avg_win": 7.12,
+        "avg_loss": -6.09
+      },
+      "blogger_buys_after": null,
+      "blogger_buys_dropped": {
+        "n": 43,
+        "win_rate": 32.6,
+        "avg_pnl": -1.13,
+        "total_pnl": -48.49,
+        "avg_win": 5.25,
+        "avg_loss": -4.21
+      }
+    },
+    "stock_pr_snapshot": {
+      "000011.SZ": {
+        "name": "深物业A",
+        "close": 11.74,
+        "pe_ttm": null,
+        "roe_ttm": -1.46,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "000510.SZ": {
+        "name": "新金路",
+        "close": 14.82,
+        "pe_ttm": null,
+        "roe_ttm": -20.89,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "001258.SZ": {
+        "name": "立新能源",
+        "close": 9.75,
+        "pe_ttm": 61.48,
+        "roe_ttm": 4.93,
+        "pr": 12.47,
+        "band": "gt_08"
+      },
+      "001330.SZ": {
+        "name": "博纳影业",
+        "close": 7.4,
+        "pe_ttm": null,
+        "roe_ttm": -14.39,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "002081.SZ": {
+        "name": "金螳螂",
+        "close": 4.57,
+        "pe_ttm": 30.86,
+        "roe_ttm": 2.85,
+        "pr": 10.827,
+        "band": "gt_08"
+      },
+      "002141.SZ": {
+        "name": "贤丰控股",
+        "close": 5.58,
+        "pe_ttm": 808.7,
+        "roe_ttm": 0.96,
+        "pr": 842.391,
+        "band": "gt_08"
+      },
+      "002165.SZ": {
+        "name": "红宝丽",
+        "close": 6.78,
+        "pe_ttm": null,
+        "roe_ttm": -0.77,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "600076.SH": {
+        "name": "康欣新材",
+        "close": 2.18,
+        "pe_ttm": null,
+        "roe_ttm": -10.51,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "600162.SH": {
+        "name": "香江控股",
+        "close": 3.94,
+        "pe_ttm": null,
+        "roe_ttm": -1.47,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "600172.SH": {
+        "name": "黄河旋风",
+        "close": 13.1,
+        "pe_ttm": null,
+        "roe_ttm": -119.28,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "600396.SH": {
+        "name": "华电辽能",
+        "close": 11.7,
+        "pe_ttm": 363.35,
+        "roe_ttm": 3.46,
+        "pr": 105.016,
+        "band": "gt_08"
+      },
+      "600488.SH": {
+        "name": "津药药业",
+        "close": 6.16,
+        "pe_ttm": 102.67,
+        "roe_ttm": 2.13,
+        "pr": 48.2,
+        "band": "gt_08"
+      },
+      "600664.SH": {
+        "name": "哈药股份",
+        "close": 6.56,
+        "pe_ttm": 32.8,
+        "roe_ttm": 8.77,
+        "pr": 3.74,
+        "band": "gt_08"
+      },
+      "600869.SH": {
+        "name": "远东股份",
+        "close": 16.54,
+        "pe_ttm": 296.95,
+        "roe_ttm": 2.87,
+        "pr": 103.466,
+        "band": "gt_08"
+      },
+      "601086.SH": {
+        "name": "国芳集团",
+        "close": 13.19,
+        "pe_ttm": 69.42,
+        "roe_ttm": 7.33,
+        "pr": 9.471,
+        "band": "gt_08"
+      },
+      "603221.SH": {
+        "name": "爱丽家居",
+        "close": 24.46,
+        "pe_ttm": null,
+        "roe_ttm": -3.11,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "603823.SH": {
+        "name": "百合花",
+        "close": 39.98,
+        "pe_ttm": 90.86,
+        "roe_ttm": 7.27,
+        "pr": 12.498,
+        "band": "gt_08"
+      },
+      "300059.SZ": {
+        "name": "东方财富",
+        "close": 18.06,
+        "pe_ttm": 19.58,
+        "roe_ttm": 15.8,
+        "pr": 1.239,
+        "band": "gt_08"
+      },
+      "600030.SH": {
+        "name": "中信证券",
+        "close": 25.99,
+        "pe_ttm": 10.0,
+        "roe_ttm": 13.49,
+        "pr": 0.741,
+        "band": "b06_08"
+      },
+      "002725.SZ": {
+        "name": "跃岭股份",
+        "close": 10.51,
+        "pe_ttm": null,
+        "roe_ttm": -0.71,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "002131.SZ": {
+        "name": "利欧股份",
+        "close": 4.31,
+        "pe_ttm": null,
+        "roe_ttm": -2.32,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "000547.SZ": {
+        "name": "航天发展",
+        "close": 13.18,
+        "pe_ttm": null,
+        "roe_ttm": -27.22,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "000592.SZ": {
+        "name": "平潭发展",
+        "close": 7.77,
+        "pe_ttm": null,
+        "roe_ttm": -10.96,
+        "pr": null,
+        "band": "na_loss"
+      },
+      "688498.SH": {
+        "name": "源杰科技",
+        "close": 1163.0,
+        "pe_ttm": 172.04,
+        "roe_ttm": 28.58,
+        "pr": 6.02,
+        "band": "gt_08"
+      },
+      "300308.SZ": {
+        "name": "中际旭创",
+        "close": 735.0,
+        "pe_ttm": 39.79,
+        "roe_ttm": 62.62,
+        "pr": 0.635,
+        "band": "b06_08"
+      },
+      "600584.SH": {
+        "name": "长电科技",
+        "close": 60.16,
+        "pe_ttm": 55.7,
+        "roe_ttm": 6.79,
+        "pr": 8.204,
+        "band": "gt_08"
+      },
+      "603986.SH": {
+        "name": "兆易创新",
+        "close": 306.22,
+        "pe_ttm": 26.77,
+        "roe_ttm": 29.02,
+        "pr": 0.922,
+        "band": "gt_08"
+      }
+    }
+  },
+  "R12_expectation_gap": {
+    "scan_5d": {
+      "10": {
+        "kept": {
+          "n": 159,
+          "win_rate": 43.4,
+          "avg_pnl": -0.38,
+          "total_pnl": -59.68,
+          "avg_win": 7.65,
+          "avg_loss": -6.53
+        },
+        "dropped": {
+          "n": 23,
+          "win_rate": 52.2,
+          "avg_pnl": 1.87,
+          "total_pnl": 43.08,
+          "avg_win": 9.29,
+          "avg_loss": -6.22
+        }
+      },
+      "15": {
+        "kept": {
+          "n": 171,
+          "win_rate": 45.0,
+          "avg_pnl": -0.09,
+          "total_pnl": -16.03,
+          "avg_win": 7.77,
+          "avg_loss": -6.53
+        },
+        "dropped": {
+          "n": 11,
+          "win_rate": 36.4,
+          "avg_pnl": -0.05,
+          "total_pnl": -0.57,
+          "avg_win": 10.42,
+          "avg_loss": -6.03
+        }
+      },
+      "20": {
+        "kept": {
+          "n": 177,
+          "win_rate": 44.6,
+          "avg_pnl": -0.03,
+          "total_pnl": -5.25,
+          "avg_win": 7.98,
+          "avg_loss": -6.49
+        },
+        "dropped": {
+          "n": 5,
+          "win_rate": 40.0,
+          "avg_pnl": -2.27,
+          "total_pnl": -11.35,
+          "avg_win": 4.46,
+          "avg_loss": -6.76
+        }
+      },
+      "25": {
+        "kept": {
+          "n": 181,
+          "win_rate": 44.2,
+          "avg_pnl": -0.13,
+          "total_pnl": -22.98,
+          "avg_win": 7.92,
+          "avg_loss": -6.5
+        },
+        "dropped": {
+          "n": 1,
+          "win_rate": 100.0,
+          "avg_pnl": 6.38,
+          "total_pnl": 6.38,
+          "avg_win": 6.38,
+          "avg_loss": null
+        }
+      },
+      "30": {
+        "kept": {
+          "n": 181,
+          "win_rate": 44.2,
+          "avg_pnl": -0.13,
+          "total_pnl": -22.98,
+          "avg_win": 7.92,
+          "avg_loss": -6.5
+        },
+        "dropped": {
+          "n": 1,
+          "win_rate": 100.0,
+          "avg_pnl": 6.38,
+          "total_pnl": 6.38,
+          "avg_win": 6.38,
+          "avg_loss": null
+        }
+      }
+    },
+    "scan_10d": {
+      "15": {
+        "kept": {
+          "n": 144,
+          "win_rate": 44.4,
+          "avg_pnl": 0.17,
+          "total_pnl": 25.16,
+          "avg_win": 7.57,
+          "avg_loss": -5.74
+        },
+        "dropped": {
+          "n": 14,
+          "win_rate": 50.0,
+          "avg_pnl": 1.37,
+          "total_pnl": 19.22,
+          "avg_win": 9.11,
+          "avg_loss": -6.36
+        }
+      },
+      "20": {
+        "kept": {
+          "n": 152,
+          "win_rate": 44.7,
+          "avg_pnl": 0.31,
+          "total_pnl": 46.89,
+          "avg_win": 7.81,
+          "avg_loss": -5.77
+        },
+        "dropped": {
+          "n": 6,
+          "win_rate": 50.0,
+          "avg_pnl": -0.42,
+          "total_pnl": -2.51,
+          "avg_win": 5.7,
+          "avg_loss": -6.54
+        }
+      },
+      "25": {
+        "kept": {
+          "n": 153,
+          "win_rate": 44.4,
+          "avg_pnl": 0.26,
+          "total_pnl": 39.89,
+          "avg_win": 7.81,
+          "avg_loss": -5.78
+        },
+        "dropped": {
+          "n": 5,
+          "win_rate": 60.0,
+          "avg_pnl": 0.9,
+          "total_pnl": 4.49,
+          "avg_win": 5.7,
+          "avg_loss": -6.31
+        }
+      },
+      "30": {
+        "kept": {
+          "n": 154,
+          "win_rate": 44.2,
+          "avg_pnl": 0.22,
+          "total_pnl": 33.89,
+          "avg_win": 7.81,
+          "avg_loss": -5.78
+        },
+        "dropped": {
+          "n": 4,
+          "win_rate": 75.0,
+          "avg_pnl": 2.62,
+          "total_pnl": 10.49,
+          "avg_win": 5.7,
+          "avg_loss": -6.62
+        }
+      },
+      "40": {
+        "kept": {
+          "n": 156,
+          "win_rate": 44.2,
+          "avg_pnl": 0.19,
+          "total_pnl": 29.82,
+          "avg_win": 7.74,
+          "avg_loss": -5.79
+        },
+        "dropped": {
+          "n": 2,
+          "win_rate": 100.0,
+          "avg_pnl": 7.28,
+          "total_pnl": 14.56,
+          "avg_win": 7.28,
+          "avg_loss": null
+        }
+      }
+    },
+    "per_rule_at_default": {
+      "R01": {
+        "name": "动量突破买入（起爆资金跟随）",
+        "before": {
+          "n": 8,
+          "win_rate": 50.0,
+          "avg_pnl": -0.79,
+          "total_pnl": -6.28,
+          "avg_win": 5.82,
+          "avg_loss": -7.39
+        },
+        "after": {
+          "n": 8,
+          "win_rate": 50.0,
+          "avg_pnl": -0.79,
+          "total_pnl": -6.28,
+          "avg_win": 5.82,
+          "avg_loss": -7.39
+        }
+      },
+      "R02": {
+        "name": "涨停开板低吸（博回封）",
+        "before": {
+          "n": 17,
+          "win_rate": 35.3,
+          "avg_pnl": 1.66,
+          "total_pnl": 28.28,
+          "avg_win": 14.93,
+          "avg_loss": -5.57
+        },
+        "after": {
+          "n": 12,
+          "win_rate": 33.3,
+          "avg_pnl": 1.13,
+          "total_pnl": 13.54,
+          "avg_win": 15.61,
+          "avg_loss": -6.12
+        }
+      },
+      "R04": {
+        "name": "多头趋势回踩MA20",
+        "before": {
+          "n": 81,
+          "win_rate": 39.5,
+          "avg_pnl": 0.65,
+          "total_pnl": 52.83,
+          "avg_win": 10.59,
+          "avg_loss": -5.84
+        },
+        "after": {
+          "n": 78,
+          "win_rate": 41.0,
+          "avg_pnl": 0.98,
+          "total_pnl": 76.08,
+          "avg_win": 10.59,
+          "avg_loss": -5.71
+        }
+      },
+      "R05": {
+        "name": "深度回调后低吸（跌透才接）",
+        "before": {
+          "n": 35,
+          "win_rate": 37.1,
+          "avg_pnl": -0.55,
+          "total_pnl": -19.26,
+          "avg_win": 6.97,
+          "avg_loss": -4.99
+        },
+        "after": {
+          "n": 35,
+          "win_rate": 37.1,
+          "avg_pnl": -0.55,
+          "total_pnl": -19.26,
+          "avg_win": 6.97,
+          "avg_loss": -4.99
+        }
+      },
+      "R06": {
+        "name": "倒T模式（冲高先卖、回踩再接）",
+        "before": {
+          "n": 75,
+          "win_rate": 62.7,
+          "avg_pnl": -0.4,
+          "total_pnl": -30.1,
+          "avg_win": 3.65,
+          "avg_loss": -7.2
+        },
+        "after": {
+          "n": 72,
+          "win_rate": 62.5,
+          "avg_pnl": -0.53,
+          "total_pnl": -38.04,
+          "avg_win": 3.49,
+          "avg_loss": -7.22
+        }
+      }
+    },
+    "filter_effect": {
+      "before": {
+        "n": 216,
+        "win_rate": 47.2,
+        "avg_pnl": 0.12,
+        "total_pnl": 25.47,
+        "avg_win": 7.0,
+        "avg_loss": -6.04
+      },
+      "after": {
+        "n": 205,
+        "win_rate": 47.8,
+        "avg_pnl": 0.13,
+        "total_pnl": 26.04,
+        "avg_win": 6.86,
+        "avg_loss": -6.04
+      },
+      "dropped": {
+        "n": 11,
+        "win_rate": 36.4,
+        "avg_pnl": -0.05,
+        "total_pnl": -0.57,
+        "avg_win": 10.42,
+        "avg_loss": -6.03
+      }
+    },
+    "blogger": {
+      "before": {
+        "n": 43,
+        "win_rate": 32.6,
+        "avg_pnl": -1.13,
+        "total_pnl": -48.49,
+        "avg_win": 5.25,
+        "avg_loss": -4.21
+      },
+      "after": {
+        "n": 36,
+        "win_rate": 38.9,
+        "avg_pnl": -0.54,
+        "total_pnl": -19.53,
+        "avg_win": 5.25,
+        "avg_loss": -4.23
+      },
+      "dropped": {
+        "n": 7,
+        "win_rate": 0.0,
+        "avg_pnl": -4.14,
+        "total_pnl": -28.96,
+        "avg_win": null,
+        "avg_loss": -4.14
+      }
+    }
+  },
+  "R13_bull_bear_regime": {
+    "regime_days": {
+      "bear": 37,
+      "neutral": 26,
+      "bull": 3
+    },
+    "regime_timeline": [
+      {
+        "regime": "bear",
+        "from": "2026-07-06",
+        "to": "2026-08-04",
+        "idx_change_pct": -5.42
+      },
+      {
+        "regime": "neutral",
+        "from": "2026-08-05",
+        "to": "2026-08-21",
+        "idx_change_pct": 0.69
+      },
+      {
+        "regime": "bear",
+        "from": "2026-08-24",
+        "to": "2026-08-25",
+        "idx_change_pct": 0.19
+      },
+      {
+        "regime": "neutral",
+        "from": "2026-08-26",
+        "to": "2026-09-03",
+        "idx_change_pct": 0.76
+      },
+      {
+        "regime": "bear",
+        "from": "2026-09-04",
+        "to": "2026-09-07",
+        "idx_change_pct": 0.07
+      },
+      {
+        "regime": "neutral",
+        "from": "2026-09-08",
+        "to": "2026-09-09",
+        "idx_change_pct": 0.28
+      },
+      {
+        "regime": "bear",
+        "from": "2026-09-10",
+        "to": "2026-09-18",
+        "idx_change_pct": -0.57
+      },
+      {
+        "regime": "bull",
+        "from": "2026-09-21",
+        "to": "2026-09-23",
+        "idx_change_pct": -0.34
+      },
+      {
+        "regime": "neutral",
+        "from": "2026-09-24",
+        "to": "2026-09-30",
+        "idx_change_pct": -1.19
+      },
+      {
+        "regime": "bear",
+        "from": "2026-10-08",
+        "to": "2026-10-13",
+        "idx_change_pct": -0.29
+      }
+    ],
+    "by_regime": {
+      "bull": {
+        "signals": {
+          "n": 12,
+          "win_rate": 8.3,
+          "avg_pnl": -4.93,
+          "total_pnl": -59.2,
+          "avg_win": 4.44,
+          "avg_loss": -5.79
+        },
+        "blogger_buys": {
+          "n": 3,
+          "win_rate": 33.3,
+          "avg_pnl": -3.55,
+          "total_pnl": -10.66,
+          "avg_win": 0.9,
+          "avg_loss": -5.78
+        },
+        "signal_n_by_rule": {
+          "R01": 2,
+          "R02": 1,
+          "R04": 6,
+          "R06": 3
+        }
+      },
+      "bear": {
+        "signals": {
+          "n": 111,
+          "win_rate": 49.5,
+          "avg_pnl": 1.03,
+          "total_pnl": 114.46,
+          "avg_win": 7.98,
+          "avg_loss": -5.79
+        },
+        "blogger_buys": {
+          "n": 17,
+          "win_rate": 70.6,
+          "avg_pnl": 2.8,
+          "total_pnl": 47.62,
+          "avg_win": 5.67,
+          "avg_loss": -4.09
+        },
+        "signal_n_by_rule": {
+          "R01": 2,
+          "R02": 9,
+          "R04": 39,
+          "R05": 22,
+          "R06": 39
+        }
+      },
+      "neutral": {
+        "signals": {
+          "n": 93,
+          "win_rate": 49.5,
+          "avg_pnl": -0.32,
+          "total_pnl": -29.79,
+          "avg_win": 5.88,
+          "avg_loss": -6.39
+        },
+        "blogger_buys": {
+          "n": 23,
+          "win_rate": 4.3,
+          "avg_pnl": -3.72,
+          "total_pnl": -85.45,
+          "avg_win": 4.61,
+          "avg_loss": -4.09
+        },
+        "signal_n_by_rule": {
+          "R01": 4,
+          "R02": 7,
+          "R04": 36,
+          "R05": 13,
+          "R06": 33
+        }
+      }
+    },
+    "filter_effect": {
+      "before": {
+        "n": 216,
+        "win_rate": 47.2,
+        "avg_pnl": 0.12,
+        "total_pnl": 25.47,
+        "avg_win": 7.0,
+        "avg_loss": -6.04
+      },
+      "after": {
+        "n": 105,
+        "win_rate": 44.8,
+        "avg_pnl": -0.85,
+        "total_pnl": -88.99,
+        "avg_win": 5.85,
+        "avg_loss": -6.28
+      },
+      "dropped": {
+        "n": 111,
+        "win_rate": 49.5,
+        "avg_pnl": 1.03,
+        "total_pnl": 114.46,
+        "avg_win": 7.98,
+        "avg_loss": -5.79
+      }
+    },
+    "index_perf": {}
+  },
+  "combo_naive_all_three": {
+    "before": {
+      "n": 216,
+      "win_rate": 47.2,
+      "avg_pnl": 0.12,
+      "total_pnl": 25.47,
+      "avg_win": 7.0,
+      "avg_loss": -6.04
+    },
+    "after": {
+      "n": 2,
+      "win_rate": 50.0,
+      "avg_pnl": -2.02,
+      "total_pnl": -4.04,
+      "avg_win": 1.96,
+      "avg_loss": -6.0
+    },
+    "kept_by_rule": {
+      "R04": 1,
+      "R06": 1
+    }
+  },
+  "combo_adopted": {
+    "before": {
+      "n": 216,
+      "win_rate": 47.2,
+      "avg_pnl": 0.12,
+      "total_pnl": 25.47,
+      "avg_win": 7.0,
+      "avg_loss": -6.04
+    },
+    "after": {
+      "n": 195,
+      "win_rate": 49.7,
+      "avg_pnl": 0.33,
+      "total_pnl": 64.21,
+      "avg_win": 6.86,
+      "avg_loss": -6.13
+    },
+    "kept_by_rule": {
+      "R01": 8,
+      "R02": 12,
+      "R04": 78,
+      "R05": 25,
+      "R06": 72
+    }
+  },
+  "extra_analysis": {
+    "pr_spearman": {
+      "rule_signals": -0.091,
+      "blogger_buys": 0.221
+    },
+    "R13_variants": {
+      "idx_bias20<=-2 禁R05低吸（急跌不接飞刀）": {
+        "before": {
+          "n": 216,
+          "win_rate": 47.2,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.04
+        },
+        "after": {
+          "n": 206,
+          "win_rate": 49.0,
+          "avg_pnl": 0.31,
+          "total_pnl": 63.64,
+          "avg_win": 7.0,
+          "avg_loss": -6.12
+        },
+        "dropped": {
+          "n": 10,
+          "win_rate": 10.0,
+          "avg_pnl": -3.82,
+          "total_pnl": -38.17,
+          "avg_win": 7.04,
+          "avg_loss": -5.02
+        }
+      },
+      "idx_bias20<=-3 禁R05低吸": {
+        "before": {
+          "n": 216,
+          "win_rate": 47.2,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.04
+        },
+        "after": {
+          "n": 215,
+          "win_rate": 47.4,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.09
+        },
+        "dropped": {
+          "n": 1,
+          "win_rate": 0.0,
+          "avg_pnl": 0.0,
+          "total_pnl": 0.0,
+          "avg_win": null,
+          "avg_loss": 0.0
+        }
+      },
+      "idx_bias20>=+2 禁R01/R02追高（急涨不追）": {
+        "before": {
+          "n": 216,
+          "win_rate": 47.2,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.04
+        },
+        "after": {
+          "n": 215,
+          "win_rate": 47.0,
+          "avg_pnl": 0.07,
+          "total_pnl": 15.67,
+          "avg_win": 6.97,
+          "avg_loss": -6.04
+        },
+        "dropped": {
+          "n": 1,
+          "win_rate": 100.0,
+          "avg_pnl": 9.8,
+          "total_pnl": 9.8,
+          "avg_win": 9.8,
+          "avg_loss": null
+        }
+      },
+      "idx_bias20>=+3 禁R01/R02追高": {
+        "before": {
+          "n": 216,
+          "win_rate": 47.2,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.04
+        },
+        "after": {
+          "n": 216,
+          "win_rate": 47.2,
+          "avg_pnl": 0.12,
+          "total_pnl": 25.47,
+          "avg_win": 7.0,
+          "avg_loss": -6.04
+        },
+        "dropped": null
+      }
+    },
+    "sensitivity_excl_R06": {
+      "all_rules": {
+        "n": 216,
+        "win_rate": 47.2,
+        "avg_pnl": 0.12,
+        "total_pnl": 25.47,
+        "avg_win": 7.0,
+        "avg_loss": -6.04
+      },
+      "excl_R06": {
+        "n": 141,
+        "win_rate": 39.0,
+        "avg_pnl": 0.39,
+        "total_pnl": 55.57,
+        "avg_win": 9.86,
+        "avg_loss": -5.66
+      },
+      "R11": {
+        "before": {
+          "n": 141,
+          "win_rate": 39.0,
+          "avg_pnl": 0.39,
+          "total_pnl": 55.57,
+          "avg_win": 9.86,
+          "avg_loss": -5.66
+        },
+        "after": {
+          "n": 2,
+          "win_rate": 50.0,
+          "avg_pnl": 0.38,
+          "total_pnl": 0.75,
+          "avg_win": 6.75,
+          "avg_loss": -6.0
+        }
+      },
+      "R12": {
+        "before": {
+          "n": 141,
+          "win_rate": 39.0,
+          "avg_pnl": 0.39,
+          "total_pnl": 55.57,
+          "avg_win": 9.86,
+          "avg_loss": -5.66
+        },
+        "after": {
+          "n": 133,
+          "win_rate": 39.8,
+          "avg_pnl": 0.48,
+          "total_pnl": 64.08,
+          "avg_win": 9.72,
+          "avg_loss": -5.64
+        }
+      },
+      "R13_bear_ban": {
+        "before": {
+          "n": 141,
+          "win_rate": 39.0,
+          "avg_pnl": 0.39,
+          "total_pnl": 55.57,
+          "avg_win": 9.86,
+          "avg_loss": -5.66
+        },
+        "after": {
+          "n": 69,
+          "win_rate": 30.4,
+          "avg_pnl": -1.51,
+          "total_pnl": -104.3,
+          "avg_win": 8.55,
+          "avg_loss": -5.91
+        }
+      }
+    }
+  }
+}
