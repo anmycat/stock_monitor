@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "2.0",
+  "version": "2.1",
   "date": "2026-10-16",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md",
@@ -17,8 +17,8 @@
     {"id": "03", "file": "03_数据模型.md", "title": "数据模型", "answers": "存储双轨、SQLite 表结构、Signal 契约、持仓状态机、回报协议、Redis Key 规范"},
     {"id": "04", "file": "04_因子研究规范.md", "title": "因子研究规范", "answers": "因子口径、筹码算法、资金四分类、评级校准、产品八因子、研究纪律"},
     {"id": "05", "file": "05_策略矩阵.md", "title": "策略矩阵", "answers": "股票池、双流水线、射程矩阵、产品策略（内置+YAML+权重）、采纳配置"},
-    {"id": "06", "file": "06_回测与资金管理.md", "title": "回测与资金管理", "answers": "回测纪律、Kelly 三级修正、半年实盘验证净结论、已知局限"},
-    {"id": "07", "file": "07_执行与故障恢复.md", "title": "执行与故障恢复", "answers": "部署架构、调度、推送渠道、WebSocket 机制、故障矩阵、安全"},
+    {"id": "06", "file": "06_回测与资金管理.md", "title": "回测与资金管理", "answers": "回测纪律、Kelly 三级修正（v1.5 3M 参数表）、半年验证净结论 + 3 个月复验裁定（§7.5）、已知局限（含诚实边界）"},
+    {"id": "07", "file": "07_执行与故障恢复.md", "title": "执行与故障恢复", "answers": "部署架构、调度、推送渠道、WebSocket 机制、故障矩阵、安全、B 线工程止损清单（§15，B1-B9 状态表）"},
     {"id": "08", "file": "08_验收标准.md", "title": "验收标准", "answers": "PRD 符合度、各层可判定验收线、部署实测结果"},
     {"id": "09", "file": "09_实施路线.md", "title": "实施路线", "answers": "已完成时间线、三阶段路线、PRD P0-P3、增强优先级、立即下一步"},
     {"id": "10", "file": "10_风险登记.md", "title": "风险登记", "answers": "方法论/工程/合规/业务风险与对策"},
@@ -31,7 +31,7 @@
     "validation_window": "2026-04-13 ~ 2026-10-13（122 个交易日，27 只股票）",
     "samples": {"rule_signals": 614, "baseline_days": 3151, "chip_samples": 3151},
     "baseline_avg_pnl": "+1.67%/笔（胜率 48.4%）",
-    "adopted_config": "仅 R13 急跌禁低吸变体（指数 bias20≤-2% 禁 R05）：被禁 35 笔均 -1.65%，+0.22%→+0.34%/笔，累计 +137.69%→+195.46%",
+    "adopted_config": "v1.5（2026-10-16 迭代）：R12（pre10>25% 弱过滤，v1.5 恢复默认）+ R13 急跌禁低吸变体（指数 bias20≤-2% 禁 R05）为默认过滤；R06 倒T 已移出买入信号池（avoidance）；3M 复验：无过滤 +0.20% → v1.4 采纳 +0.34% → v1.5 定稿（剔 R06）+0.88%（累计 ×2.0）",
     "strongest_rule": "R02 涨停低开 +3.53%（n=44，超额 +1.86pp）",
     "most_robust_chip_rule": "C01 低位突破确认 +2.79%（n=376，超额 +1.12pp）",
     "capital_ordering": "起爆日 HC-01 +6.17% > 慢资金日 SC-01 +1.48% > 游资日 YZ-01 +0.98% > 派发日 DR-01 -0.20%",
@@ -52,6 +52,7 @@
     "git_2026_10_16": "commit b4ef673e v5.0 布局重构；git status 干净；origin/main 未 push（本地领先 1 提交，待用户决定）",
     "ecs_runtime_findings_2026_10_16": "SSH 全量日志分析完成（报告=13_系统运行分析报告.md）：三阶段（6/14-6/22 部署混乱期 25,218 ERROR/2.9M 行；6/23-10/2 反复重启期 worker OOM×7；10/3 起稳定期 13.5 天零干预）；根因定位：① DeepSeek 密钥 401 失效（本地与服务器同钥同后果，非配置漂移；OPENAI_BASE_URL 缺 /v1 为次因）② worker 内存泄漏峰值 572-689MB（机器总内存 1.6G），OOM 全史 8 次+今日 1 次，MemoryMax 未设限 ③ evaluation 500=Redis 旧 run 缺 5 字段 pydantic 校验失败 ④ 市场宽度脏数据（100 只全涨/均涨幅 11.35%/文案 >100% 未夹紧）⑤ guardian v2 空转崩溃 370,749 次；健康面：调度闭环/东财冷却切换/akshare 降级/快照回退/钉钉推送/WATCH 信号产出均正常；代码同源（main.py 151/routes.py 833 行数一致）"
   },
-  "executable_config": "research/rules/methodology_rules.json v1.4（R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly 参数 + 验证记录）",
+  "executable_config": "research/rules/methodology_rules.json v1.4（R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly 参数 + 验证记录）；v1.5 参数裁定（R06 avoidance/Kelly 3M 口径/R12 默认开启）已入 prd 文档，rules JSON 升版待执行（14 §4 止损周门禁）",
+  "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行",
   "disclaimer": "个人研究工具，全部输出不构成投资建议。市场有风险，投资需谨慎。"
 }
