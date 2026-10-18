@@ -1,12 +1,12 @@
 import re
 from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, field_validator, model_validator
 from loguru import logger
 from .dependencies import (
     datacenter, signal_generator, backtest_engine, etf_monitor,
     cooldown_manager, sector_monitor, market_alert, hot_money_monitor,
-    strategy_registry, hotspot_service
+    strategy_registry, hotspot_service, etf_holdings_monitor, news_monitor
 )
 from .auth import verify_api_key
 from ..services.ai_summary import AISummary
@@ -166,6 +166,47 @@ class ETFHoldingsChangesResponse(BaseModel):
     nav_change_pct: Optional[float] = None
     alert_count: Optional[int] = None
     generated_at: Optional[str] = None
+
+
+class NewsBriefItem(BaseModel):
+    time: str = ''
+    source: str = ''
+    title: str = ''
+    url: str = ''
+
+
+class NewsSectorGroup(BaseModel):
+    sector: str
+    count: int = 0
+    shown: int = 0
+    truncated: bool = False
+    items: List[NewsBriefItem] = []
+
+
+class NewsDigestResponse(BaseModel):
+    generated_at: str = ''
+    window_start: str = ''
+    window_end: str = ''
+    from_last_push: bool = False
+    total: int = 0
+    dedup_dropped: int = 0
+    sector_count: int = 0
+    hidden_sectors: int = 0
+    hidden_items: int = 0
+    sources: Dict[str, int] = {}
+    sectors: List[NewsSectorGroup] = []
+
+
+class NewsSectorSummaryItem(BaseModel):
+    sector: str
+    count: int = 0
+
+
+class NewsSectorsResponse(BaseModel):
+    generated_at: str = ''
+    sectors: List[NewsSectorSummaryItem] = []
+    hidden_sectors: int = 0
+    hidden_items: int = 0
 
 
 class MarketSentimentResponse(BaseModel):
@@ -383,6 +424,57 @@ def get_etf_holdings_changes(code: str):
         raise
     except Exception as e:
         logger.error(f"API error in get_etf_holdings_changes: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/news/latest", response_model=NewsDigestResponse,
+            dependencies=[Depends(verify_api_key)])
+def get_news_latest():
+    """最近一次早间财经要闻摘要（9:15按板块推送的内容，含未展示板块统计）"""
+    try:
+        cached = datacenter.cache.get('news:latest')
+        if not cached:
+            raise HTTPException(status_code=404,
+                                detail="暂无早间新闻摘要（每日9:15首次推送后生成）")
+        return NewsDigestResponse(**cached)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_news_latest: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/news/sectors", response_model=NewsSectorsResponse,
+            dependencies=[Depends(verify_api_key)])
+def get_news_sectors():
+    """最近一次早间新闻的板块分布（含推送文案未展示的板块计数）"""
+    try:
+        cached = datacenter.cache.get('news:sectors')
+        if not cached:
+            raise HTTPException(status_code=404,
+                                detail="暂无板块分布（每日9:15首次推送后生成）")
+        return NewsSectorsResponse(**cached)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_news_sectors: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/news/digest", response_model=NewsDigestResponse,
+            dependencies=[Depends(verify_api_key)])
+def get_news_digest():
+    """按需生成一次早间新闻摘要（实时抓取+去重+分类，不写入推送状态）"""
+    try:
+        digest = news_monitor.collect_digest()
+        if not digest or not digest.get('total'):
+            raise HTTPException(status_code=404,
+                                detail="当前时间窗内无新增新闻")
+        return NewsDigestResponse(**digest)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_news_digest: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
