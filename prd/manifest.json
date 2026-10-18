@@ -1,9 +1,9 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "2.3",
+  "version": "2.4",
   "date": "2026-10-18",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
-  "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md",
+  "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
   "content_tracks": {
     "track_a_product": "产品实现线：quant_engine v5.0.0（FastAPI+Redis+Celery），ECS 8.134.89.55:8000，PRD v3.0 符合度 100%",

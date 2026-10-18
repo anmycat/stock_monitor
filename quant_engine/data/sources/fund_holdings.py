@@ -203,14 +203,14 @@ class EastMoneyFundHoldingsSource:
 
     @staticmethod
     def _normalize_code(symbol: str) -> str:
-        """东财市场前缀码 -> 项目标准码（600519.SH / 300750.SZ / 8xxxxx.BJ）"""
-        if symbol.startswith(('0', '3')):
-            return f"{symbol}.SZ"
-        if symbol.startswith(('6', '9')):
-            return f"{symbol}.SH"
-        if symbol.startswith(('4', '8')):
-            return f"{symbol}.BJ"
-        return symbol
+        """东财市场前缀码 -> 项目标准码（600519.SH / 300750.SZ / 920819.BJ）
+
+        统一走 utils.code_utils.normalize_code，覆盖全部代码段
+        （含 92 开头北交所新段与 5 开头沪市基金）；无法识别时原样
+        返回（由 CodeGuard 盘前校验发现并告警）。
+        """
+        from ...utils.code_utils import normalize_code
+        return normalize_code(symbol) or symbol
 
     @staticmethod
     def _to_float(text: str) -> float:

@@ -1,8 +1,11 @@
 """东方财富数据源"""
+import re
 import requests
 import pandas as pd
 from typing import List, Dict, Optional
 from loguru import logger
+
+from ...utils.code_utils import to_secid, market_by_symbol, MARKET_BJ
 
 
 class EastMoneySource:
@@ -14,6 +17,38 @@ class EastMoneySource:
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://quote.eastmoney.com/',
     }
+
+    # 全市场列表 fs 过滤（深主板+创业板+沪主板+科创）
+    # 注意：此 fs 不含 ETF/LOF 基金（m:1+t:3）与北交所（m:2+t:8）。
+    # 覆盖率扩展需实测确认后启用；代码解析的正确性已由 _market_from_em 保证，
+    # 北交所代码不会因本 fs 缺失而被错判（查不到即不返回，不会错标市场）。
+    CLIST_FS = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23"
+
+    @staticmethod
+    def _market_from_em(f12: str, f13=None) -> Optional[str]:
+        """由东财字段推断标准市场后缀
+
+        优先使用 f13（东财市场字段：1=沪市, 0=深市场组）；但北交所在东财
+        体系 f13 同样为 0（920819 实测），因此 f13=0 时须按代码前缀
+        规则细分 BJ/SZ，不能一概判 SZ（历史 bug：920819 被错判）。
+        f13 缺失时直接走前缀规则兜底（ETF 5 开头→SH、科创 688→SH）。
+        """
+        symbol = str(f12 or '').strip()
+        if not re.match(r'^\d{6}$', symbol):
+            return None
+        by_prefix = market_by_symbol(symbol)
+        if f13 is None:
+            return by_prefix
+        try:
+            f13i = int(f13)
+        except (TypeError, ValueError):
+            return by_prefix
+        if f13i == 1:
+            return 'SH'
+        if f13i == 0:
+            # 北交所 4/8/92 开头在东财归 0 组，按前缀规则细分 SZ/BJ
+            return by_prefix
+        return by_prefix
 
     @staticmethod
     def get_all_stocks() -> pd.DataFrame:
@@ -28,8 +63,8 @@ class EastMoneySource:
                 "fltt": "2",
                 "invt": "2",
                 "fid": "f3",
-                "fs": "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23",
-                "fields": "f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f14,f15,f16,f17,f18",
+                "fs": EastMoneySource.CLIST_FS,
+                "fields": "f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18",
             }
             response = requests.get(url, params=params, headers=EastMoneySource.HEADERS, timeout=15)
             if response.status_code == 200:
@@ -38,8 +73,13 @@ class EastMoneySource:
                     items = data['data'].get('diff', [])
                     records = []
                     for item in items:
+                        f12 = item.get('f12', '')
+                        market = EastMoneySource._market_from_em(f12, item.get('f13'))
+                        if not market:
+                            logger.warning(f"EM clist: unrecognized code {f12!r}, skipped")
+                            continue
                         records.append({
-                            'code': item.get('f12', ''),
+                            'code': f"{f12}.{market}",
                             'name': item.get('f14', ''),
                             'price': item.get('f2', 0),
                             'change_pct': item.get('f3', 0),
@@ -47,8 +87,6 @@ class EastMoneySource:
                             'amount': item.get('f6', 0),
                         })
                     df = pd.DataFrame(records)
-                    if not df.empty:
-                        df['code'] = df['code'].apply(lambda x: f"{x}.SZ" if x.startswith(('0', '3')) else f"{x}.SH")
                     return df
             return pd.DataFrame()
         except Exception as e:
@@ -59,19 +97,22 @@ class EastMoneySource:
     def get_realtime_quote(codes: List[str]) -> pd.DataFrame:
         """获取指定股票实时行情"""
         try:
-            # 转换代码格式
+            # 转换代码格式（统一走 code_utils，支持 SH/SZ/BJ）
             em_codes = []
             for code in codes:
-                symbol = code.split('.')[0]
-                if code.endswith('.SH'):
-                    em_codes.append(f"1.{symbol}")
-                else:
-                    em_codes.append(f"0.{symbol}")
+                secid = to_secid(code)
+                if not secid:
+                    logger.warning(f"EM realtime: invalid code {code!r}, skipped")
+                    continue
+                em_codes.append(secid)
+
+            if not em_codes:
+                return pd.DataFrame()
 
             url = "https://push2.eastmoney.com/api/qt/ulist.np/get"
             params = {
                 "fltt": "2",
-                "fields": "f2,f3,f4,f5,f6,f12,f14",
+                "fields": "f2,f3,f4,f5,f6,f12,f13,f14",
                 "secids": ",".join(em_codes),
             }
             response = requests.get(url, params=params, headers=EastMoneySource.HEADERS, timeout=15)
@@ -82,12 +123,12 @@ class EastMoneySource:
                     records = []
                     for item in items:
                         f12 = item.get('f12', '')
-                        if f12.startswith(('0', '3')):
-                            code = f"{f12}.SZ"
-                        else:
-                            code = f"{f12}.SH"
+                        market = EastMoneySource._market_from_em(f12, item.get('f13'))
+                        if not market:
+                            logger.warning(f"EM ulist: unrecognized code {f12!r}, skipped")
+                            continue
                         records.append({
-                            'code': code,
+                            'code': f"{f12}.{market}",
                             'name': item.get('f14', ''),
                             'price': item.get('f2', 0),
                             'change_pct': item.get('f3', 0),

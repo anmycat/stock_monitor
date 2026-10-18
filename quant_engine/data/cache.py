@@ -154,6 +154,16 @@ class RedisCache:
             logger.error(f"Redis exists error [{key}]: {e}")
             return False
 
+    def keys(self, pattern: str) -> list:
+        """按 pattern 扫描键（SCAN，非阻塞；失败返回空列表）"""
+        if not self._connected:
+            return []
+        try:
+            return list(self.client.scan_iter(match=pattern, count=100))
+        except Exception as e:
+            logger.error(f"Redis keys error [{pattern}]: {e}")
+            return []
+
     def __del__(self):
         """析构时确保资源释放"""
         try:
