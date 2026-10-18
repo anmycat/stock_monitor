@@ -1,6 +1,7 @@
 from ..data.datacenter import DataCenter
 from ..services.signal_generator import SignalGenerator
 from ..services.etf_monitor import ETFMonitor
+from ..services.etf_holdings_monitor import ETFHoldingsMonitor
 from ..services.cooldown import CooldownManager
 from ..services.sector_monitor import SectorMonitor
 from ..services.market_alert import MarketAlert
@@ -13,6 +14,7 @@ datacenter = DataCenter()
 signal_generator = SignalGenerator(datacenter)
 backtest_engine = BacktestEngine(datacenter)
 etf_monitor = ETFMonitor(datacenter)
+etf_holdings_monitor = ETFHoldingsMonitor(datacenter)
 cooldown_manager = CooldownManager(datacenter.cache)
 sector_monitor = SectorMonitor(datacenter)
 market_alert = MarketAlert(datacenter)

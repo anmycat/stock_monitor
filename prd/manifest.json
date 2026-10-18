@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "2.1",
-  "date": "2026-10-16",
+  "version": "2.2",
+  "date": "2026-10-18",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -11,49 +11,154 @@
     "reconciliation": "两轨差异并列呈现不调和（00 §0）；验证结论只对调研口径成立，不可外推为产品盘中信号收益承诺（01 §1）"
   },
   "documents": [
-    {"id": "00", "file": "00_总体设计与系统边界.md", "title": "总体设计与系统边界", "answers": "系统是什么/不是什么、双轨内容线、六层架构、设计哲学与核心机制"},
-    {"id": "01", "file": "01_需求规格与交易约束.md", "title": "需求规格与交易约束", "answers": "当日可知纪律、口径/制度/仓位/风控约束、功能需求清单、业务 KPI"},
-    {"id": "02", "file": "02_数据源与行情适配.md", "title": "数据源与行情适配", "answers": "数据口径、四源容错、行情接口实测调研（含注册标注）、failover 与质量闸门"},
-    {"id": "03", "file": "03_数据模型.md", "title": "数据模型", "answers": "存储双轨、SQLite 表结构、Signal 契约、持仓状态机、回报协议、Redis Key 规范"},
-    {"id": "04", "file": "04_因子研究规范.md", "title": "因子研究规范", "answers": "因子口径、筹码算法、资金四分类、评级校准、产品八因子、研究纪律"},
-    {"id": "05", "file": "05_策略矩阵.md", "title": "策略矩阵", "answers": "股票池、双流水线、射程矩阵、产品策略（内置+YAML+权重）、采纳配置"},
-    {"id": "06", "file": "06_回测与资金管理.md", "title": "回测与资金管理", "answers": "回测纪律、Kelly 三级修正（v1.5 3M 参数表）、半年验证净结论 + 3 个月复验裁定（§7.5）、已知局限（含诚实边界）"},
-    {"id": "07", "file": "07_执行与故障恢复.md", "title": "执行与故障恢复", "answers": "部署架构、调度、推送渠道、WebSocket 机制、故障矩阵、安全、B 线工程止损清单（§15，B1-B9 状态表）"},
-    {"id": "08", "file": "08_验收标准.md", "title": "验收标准", "answers": "PRD 符合度、各层可判定验收线、部署实测结果"},
-    {"id": "09", "file": "09_实施路线.md", "title": "实施路线", "answers": "已完成时间线、三阶段路线、PRD P0-P3、增强优先级、立即下一步"},
-    {"id": "10", "file": "10_风险登记.md", "title": "风险登记", "answers": "方法论/工程/合规/业务风险与对策"},
-    {"id": "11", "file": "11_参考资料.md", "title": "参考资料", "answers": "外部来源、源文件映射总表、数据/脚本/代码资产索引、规则库版本史"},
-    {"id": "12", "file": "12_审计清单.md", "title": "完整性审查清单", "answers": "重组审计方法、完整性核对、读取受限留痕、缺陷修正、复查清单"},
-    {"id": "13", "file": "13_系统运行分析报告.md", "title": "系统运行分析报告", "answers": "ECS 生产日志全史（6/7 至今）：三阶段时间线、九类事件分类统计、五类问题根因分析（P0×2/P1×3）、健康面证据、分级处置清单"},
-    {"id": "14", "file": "14_项目迭代计划.md", "title": "项目迭代计划", "answers": "v1.4→v1.5 分级迭代项（P0×3/P1×6/P2×3）、最近3个月实盘行情命中率验证（58 交易日/288 笔）、各项裁定（执行×5/观察×1/撤回×1）、Kelly 下修表、月度稳定性与 9 月失效归因"}
+    {
+      "id": "00",
+      "file": "00_总体设计与系统边界.md",
+      "title": "总体设计与系统边界",
+      "answers": "系统是什么/不是什么、双轨内容线、六层架构、设计哲学与核心机制"
+    },
+    {
+      "id": "01",
+      "file": "01_需求规格与交易约束.md",
+      "title": "需求规格与交易约束",
+      "answers": "当日可知纪律、口径/制度/仓位/风控约束、功能需求清单、业务 KPI"
+    },
+    {
+      "id": "02",
+      "file": "02_数据源与行情适配.md",
+      "title": "数据源与行情适配",
+      "answers": "数据口径、四源容错、行情接口实测调研（含注册标注）、failover 与质量闸门"
+    },
+    {
+      "id": "03",
+      "file": "03_数据模型.md",
+      "title": "数据模型",
+      "answers": "存储双轨、SQLite 表结构、Signal 契约、持仓状态机、回报协议、Redis Key 规范"
+    },
+    {
+      "id": "04",
+      "file": "04_因子研究规范.md",
+      "title": "因子研究规范",
+      "answers": "因子口径、筹码算法、资金四分类、评级校准、产品八因子、研究纪律"
+    },
+    {
+      "id": "05",
+      "file": "05_策略矩阵.md",
+      "title": "策略矩阵",
+      "answers": "股票池、双流水线、射程矩阵、产品策略（内置+YAML+权重）、采纳配置"
+    },
+    {
+      "id": "06",
+      "file": "06_回测与资金管理.md",
+      "title": "回测与资金管理",
+      "answers": "回测纪律、Kelly 三级修正（v1.5 3M 参数表）、半年验证净结论 + 3 个月复验裁定（§7.5）、已知局限（含诚实边界）"
+    },
+    {
+      "id": "07",
+      "file": "07_执行与故障恢复.md",
+      "title": "执行与故障恢复",
+      "answers": "部署架构、调度、推送渠道、WebSocket 机制、故障矩阵、安全、B 线工程止损清单（§15，B1-B9 状态表）"
+    },
+    {
+      "id": "08",
+      "file": "08_验收标准.md",
+      "title": "验收标准",
+      "answers": "PRD 符合度、各层可判定验收线、部署实测结果"
+    },
+    {
+      "id": "09",
+      "file": "09_实施路线.md",
+      "title": "实施路线",
+      "answers": "已完成时间线、三阶段路线、PRD P0-P3、增强优先级、立即下一步"
+    },
+    {
+      "id": "10",
+      "file": "10_风险登记.md",
+      "title": "风险登记",
+      "answers": "方法论/工程/合规/业务风险与对策"
+    },
+    {
+      "id": "11",
+      "file": "11_参考资料.md",
+      "title": "参考资料",
+      "answers": "外部来源、源文件映射总表、数据/脚本/代码资产索引、规则库版本史"
+    },
+    {
+      "id": "12",
+      "file": "12_审计清单.md",
+      "title": "完整性审查清单",
+      "answers": "重组审计方法、完整性核对、读取受限留痕、缺陷修正、复查清单"
+    },
+    {
+      "id": "13",
+      "file": "13_系统运行分析报告.md",
+      "title": "系统运行分析报告",
+      "answers": "ECS 生产日志全史（6/7 至今）：三阶段时间线、九类事件分类统计、五类问题根因分析（P0×2/P1×3）、健康面证据、分级处置清单"
+    },
+    {
+      "id": "14",
+      "file": "14_项目迭代计划.md",
+      "title": "项目迭代计划",
+      "answers": "v1.4→v1.5 分级迭代项（P0×3/P1×6/P2×3）、最近3个月实盘行情命中率验证（58 交易日/288 笔）、各项裁定（执行×5/观察×1/撤回×1）、Kelly 下修表、月度稳定性与 9 月失效归因"
+    }
   ],
   "key_facts": {
     "validation_window": "2026-04-13 ~ 2026-10-13（122 个交易日，27 只股票）",
-    "samples": {"rule_signals": 614, "baseline_days": 3151, "chip_samples": 3151},
+    "samples": {
+      "rule_signals": 614,
+      "baseline_days": 3151,
+      "chip_samples": 3151
+    },
     "baseline_avg_pnl": "+1.67%/笔（胜率 48.4%）",
     "adopted_config": "v1.5（2026-10-16 迭代）：R12（pre10>25% 弱过滤，v1.5 恢复默认）+ R13 急跌禁低吸变体（指数 bias20≤-2% 禁 R05）为默认过滤；R06 倒T 已移出买入信号池（avoidance）；3M 复验：无过滤 +0.20% → v1.4 采纳 +0.34% → v1.5 定稿（剔 R06）+0.88%（累计 ×2.0）",
     "strongest_rule": "R02 涨停低开 +3.53%（n=44，超额 +1.86pp）",
     "most_robust_chip_rule": "C01 低位突破确认 +2.79%（n=376，超额 +1.12pp）",
     "capital_ordering": "起爆日 HC-01 +6.17% > 慢资金日 SC-01 +1.48% > 游资日 YZ-01 +0.98% > 派发日 DR-01 -0.20%",
-    "kelly_v14": {"R02": "半凯利 13.13%", "R01": "12.18%", "R04": "3.54%", "R05": "0.91%（微仓）", "all": "4.53%"},
-    "kelly_3m_reestimate": {"R02": "9.15%", "R01": "2.46%", "R04": "2.92%", "R05": "2.66%", "all": "3.70%", "note": "3 个月窗口（2026-07-16~10-13）重估，盈亏比系统性走低，v1.5 按 3M 值下修（14 §5.6）"},
+    "kelly_v14": {
+      "R02": "半凯利 13.13%",
+      "R01": "12.18%",
+      "R04": "3.54%",
+      "R05": "0.91%（微仓）",
+      "all": "4.53%"
+    },
+    "kelly_3m_reestimate": {
+      "R02": "9.15%",
+      "R01": "2.46%",
+      "R04": "2.92%",
+      "R05": "2.66%",
+      "all": "3.70%",
+      "note": "3 个月窗口（2026-07-16~10-13）重估，盈亏比系统性走低，v1.5 按 3M 值下修（14 §5.6）"
+    },
     "iteration_plan_2026_10_16": "v1.4→v1.5 迭代计划（14_项目迭代计划.md）：① 剔除 R06 倒T（两窗口稳定亏损，采纳配置均盈亏 +0.34%→+0.88%、累计 ×2.0）② Kelly 按 3M 下修 ③ R12+R13v 固化为默认（3M 复验通过）④ R04 降权 ⑤ C01 筹码叠加层验证不通过撤回（淘汰组为正收益）⑥ 9 月环境性失效（胜率 27.1%）→ 回测池扩容 100+/12 个月；工程线 P0：DeepSeek 密钥轮换/MemoryMax/mask guardian",
     "production": "ECS 8.134.89.55:8000（/stock_monitor），quant-engine + worker + beat + Redis 8.0.5，PRD v3.0 符合度 100%",
     "market_data_finding": "东财 push2 burst 后秒封（实测 0/15，>65s 未恢复）；腾讯/新浪 15/15 稳定；Tushare 需注册（100+20 积分）",
-    "tushare_emergency": "Tushare Pro token 已于 2026-10-16 配置到 .env 应急位（收费源）：仅免费源全不可用时切换，恢复即切回；代码中无 tushare 通路，启用前需先加 TushareSource 适配器（02 §3.5）"
+    "tushare_emergency": "Tushare Pro token 已于 2026-10-16 配置到 .env 应急位（收费源）：仅免费源全不可用时切换，恢复即切回；代码中无 tushare 通路，启用前需先加 TushareSource 适配器（02 §3.5）",
+    "etf_holdings_monitor_2026_10_18": "ETF持仓成分股监控（C 线新功能，用户需求）：14 只热门 ETF 季度持仓快照 + 环比 diff（数量=持股数/方向=新进退出增持减持/价格=持仓市值+权重）+ 盘后每日检查 + 多渠道推送；数据源=天天基金 FundArchivesDatas type=jjcc（topline=100，实测三坑：≥200 降级为10/空表头/2026Q1 历史季净值跳变）；告警以权重变化为主判（≥0.3pct）剔除 ETF 份额申赎缩放噪声；Redis 键 etf_holdings:{code}:{quarter} 等；实现=services/etf_holdings_monitor.py + data/sources/fund_holdings.py + worker check_etf_holdings + 3 个 API；测试 17/17（fixture=真实响应）；ECS 部署后按 08 §10 H5-H8 验收"
   },
   "audit_2026_10_16": {
     "reorg_completeness": "18/20 完整合并；2/20 读取受限（SECURITY_FIX_PLAN.md、DEPLOY_GUIDE.md，主题有同源覆盖，待审批后补齐）",
-    "defects_fixed": ["README.md 过期未并入（旧 v2 版，10-16 二轮已删，废纸篓可恢复）", "纠正'无独立 PRD'误判（主 PRD=股票机器人prd.md v3.0）", "统一 v1.4 口径（v1.3 旧数字归档）", "AI 总结时间两说并列保留", "双轨策略差异不调和", "补入初轮遗漏的 QUICK_START_BUSINESS.md（审计自查发现）", "二轮：删 coding/.env 旧版（被 quant_engine/.env 6-14 取代）", "二轮：删 .git/gk、.git/opencode 工具残留（git 数据零触碰，fsck 通过）", "二轮：删 prd/.qoder IDE 元数据、.claude/ 空壳、.DS_Store×2（__pycache__ 经核对镜像活跃测试文件，保留）", "二轮：发现 deploy.sh heredoc 钉钉凭据被脱敏为占位符的配置漂移风险（10_风险登记 G14）"],
+    "defects_fixed": [
+      "README.md 过期未并入（旧 v2 版，10-16 二轮已删，废纸篓可恢复）",
+      "纠正'无独立 PRD'误判（主 PRD=股票机器人prd.md v3.0）",
+      "统一 v1.4 口径（v1.3 旧数字归档）",
+      "AI 总结时间两说并列保留",
+      "双轨策略差异不调和",
+      "补入初轮遗漏的 QUICK_START_BUSINESS.md（审计自查发现）",
+      "二轮：删 coding/.env 旧版（被 quant_engine/.env 6-14 取代）",
+      "二轮：删 .git/gk、.git/opencode 工具残留（git 数据零触碰，fsck 通过）",
+      "二轮：删 prd/.qoder IDE 元数据、.claude/ 空壳、.DS_Store×2（__pycache__ 经核对镜像活跃测试文件，保留）",
+      "二轮：发现 deploy.sh heredoc 钉钉凭据被脱敏为占位符的配置漂移风险（10_风险登记 G14）"
+    ],
     "consistency_checks": "7/7 通过（窗口样本/采纳配置/Kelly/八因子/东财实测/部署时间线/ECS 地址）",
     "config_verified_2026_10_16": "钉钉 Webhook+密钥已配置生效（6-11 测试 ✅）；DeepSeek deepseek-chat(w=0.6)+MiMo mimo-v2.5-pro(w=0.4) 双模型已配置（07 §5.5）；Tushare Pro token 已入 .env 应急位，策略=免费源不可用才切、恢复即切回，代码无 tushare 通路需先加适配器（02 §3.5）",
     "reorg_round3_2026_10_16": "coding/ 按职能重组：quant_engine/（项目代码）+ test/（3 个测试，sys.path 修正，unittest 3/3 通过）+ UX/（static/index.html 独立原型，零引用迁出不影响运行）+ deploy/（3 个部署脚本，LOCAL_DIR 错位已修复）；修复 services/__init__.py 对已删 notification.py 的断链 import（D13，此前全包不可导入）",
     "reorg_round4_2026_10_16": "撤销 coding/ 中间层（语义矛盾+部署映射绕层），quant_engine/test/UX/deploy 提升至仓库根与 prd/ 平级：test sys.path 与 deploy LOCAL_DIR 语义不变代码零改动，验证 unittest 3/3；建 research/ 归档调研线 137 文件/5.4M（rules v1.4+docs16+system 旧稿15+data47+scripts46+corpus6+raw 复现数据），修复 prd 三处悬空引用；git 重构 commit b4ef673e：249 文件入版本控制（v5.0 代码首次入库）、v2.x 结构 60 文件删除（历史留痕）、.gitignore 凭据审计 0 泄漏；根 README 重写为 v5.0 入口（D18：git 版 v2 README 复活后重写）",
     "git_2026_10_16": "commit b4ef673e v5.0 布局重构；git status 干净；origin/main 未 push（本地领先 1 提交，待用户决定）",
     "ecs_runtime_findings_2026_10_16": "SSH 全量日志分析完成（报告=13_系统运行分析报告.md）：三阶段（6/14-6/22 部署混乱期 25,218 ERROR/2.9M 行；6/23-10/2 反复重启期 worker OOM×7；10/3 起稳定期 13.5 天零干预）；根因定位：① DeepSeek 401（10-17 定性修正：账户欠费停机，非密钥失效——充值后原密钥实测 200，不轮换；OPENAI_BASE_URL 的 /v1 本地已正确、服务器端待复核）② worker 内存泄漏峰值 572-689MB（机器总内存 1.6G），OOM 全史 8 次+今日 1 次，MemoryMax 未设限 ③ evaluation 500=Redis 旧 run 缺 5 字段 pydantic 校验失败 ④ 市场宽度脏数据（100 只全涨/均涨幅 11.35%/文案 >100% 未夹紧）⑤ guardian v2 空转崩溃 370,749 次；健康面：调度闭环/东财冷却切换/akshare 降级/快照回退/钉钉推送/WATCH 信号产出均正常；代码同源（main.py 151/routes.py 833 行数一致）",
-    "correction_2026_10_17_ai401": "D23：13 §6.1/10 G15/07 §5.5 的'密钥失效需轮换'结论被用户反馈推翻——401 实为 DeepSeek 账户欠费停机的表现形式，充值即恢复（实测 HTTP 200）。教训：服务端 401 先查账户余额再动密钥；处置降级为余额监控+失败告警（B1'）"
+    "correction_2026_10_17_ai401": "D23：13 §6.1/10 G15/07 §5.5 的'密钥失效需轮换'结论被用户反馈推翻——401 实为 DeepSeek 账户欠费停机的表现形式，充值即恢复（实测 HTTP 200）。教训：服务端 401 先查账户余额再动密钥；处置降级为余额监控+失败告警（B1'）",
+    "feature_2026_10_18_etf_holdings": "D24（12 §3.11）：代码 4 文件（fund_holdings.py 新建 / etf_holdings_monitor.py 新建 / worker.py 接入 / routes.py+dependencies.py 3 端点）+ 测试 17/17 + 既有 3/3 回归 + 全量 py_compile 与导入冒烟；文档 9 文件同步（01 §7.3 / 02 §3.6 / 03 §4.3 / 07 四处 / 08 §10 / 10 G22-G24 / 14 §7 / README / manifest）；本地补装 fastapi 0.109.0 + uvicorn 0.27.0 进 coding/.venv（该 venv 与 requirements.txt 不符，缺 fastapi/uvicorn）；设计裁定：权重主判剔除份额缩放、退出=退出前100大非清仓、净值跳变>50% 仅 warning 不停告警、无备用源失败当日跳过"
   },
   "executable_config": "research/rules/methodology_rules.json v1.4（R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly 参数 + 验证记录）；v1.5 参数裁定（R06 avoidance/Kelly 3M 口径/R12 默认开启）已入 prd 文档，rules JSON 升版待执行（14 §4 止损周门禁）",
-  "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行",
+  "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行；C 线 ETF持仓监控 2026-10-18 已实现待部署验收（14 §7）",
   "disclaimer": "个人研究工具，全部输出不构成投资建议。市场有风险，投资需谨慎。"
 }

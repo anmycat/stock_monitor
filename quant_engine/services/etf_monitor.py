@@ -7,26 +7,30 @@ from ..data.datacenter import DataCenter
 from ..data.akshare_source import AKShareSource
 
 
+# 热门ETF监控清单（行情监控与持仓监控共用，新增/删除需同步两侧文档）
+HOT_ETFS = [
+    {"code": "510880.SH", "name": "红利ETF", "category": "价值"},
+    {"code": "510050.SH", "name": "上证50ETF", "category": "大盘"},
+    {"code": "510300.SH", "name": "沪深300ETF", "category": "大盘"},
+    {"code": "510500.SH", "name": "中证500ETF", "category": "中盘"},
+    {"code": "512100.SH", "name": "中证1000ETF", "category": "小盘"},
+    {"code": "159915.SZ", "name": "创业板ETF", "category": "成长"},
+    {"code": "588000.SH", "name": "科创50ETF", "category": "科创"},
+    {"code": "512010.SH", "name": "医药ETF", "category": "行业"},
+    {"code": "512660.SH", "name": "军工ETF", "category": "行业"},
+    {"code": "512880.SH", "name": "证券ETF", "category": "行业"},
+    {"code": "515030.SH", "name": "新能源ETF", "category": "行业"},
+    {"code": "512690.SH", "name": "酒ETF", "category": "消费"},
+    {"code": "159995.SZ", "name": "芯片ETF", "category": "科技"},
+    {"code": "516510.SH", "name": "云计算ETF", "category": "科技"},
+]
+
+
 class ETFMonitor:
     def __init__(self, datacenter: DataCenter):
         self.datacenter = datacenter
         self.akshare = AKShareSource()
-        self.target_etfs = [
-            {"code": "510880.SH", "name": "红利ETF", "category": "价值"},
-            {"code": "510050.SH", "name": "上证50ETF", "category": "大盘"},
-            {"code": "510300.SH", "name": "沪深300ETF", "category": "大盘"},
-            {"code": "510500.SH", "name": "中证500ETF", "category": "中盘"},
-            {"code": "512100.SH", "name": "中证1000ETF", "category": "小盘"},
-            {"code": "159915.SZ", "name": "创业板ETF", "category": "成长"},
-            {"code": "588000.SH", "name": "科创50ETF", "category": "科创"},
-            {"code": "512010.SH", "name": "医药ETF", "category": "行业"},
-            {"code": "512660.SH", "name": "军工ETF", "category": "行业"},
-            {"code": "512880.SH", "name": "证券ETF", "category": "行业"},
-            {"code": "515030.SH", "name": "新能源ETF", "category": "行业"},
-            {"code": "512690.SH", "name": "酒ETF", "category": "消费"},
-            {"code": "159995.SZ", "name": "芯片ETF", "category": "科技"},
-            {"code": "516510.SH", "name": "云计算ETF", "category": "科技"},
-        ]
+        self.target_etfs = HOT_ETFS
         self._cache = {}
         self._cache_time = 0
 
