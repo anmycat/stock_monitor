@@ -44,6 +44,28 @@ class Settings(BaseSettings):
     SERPAPI_API_KEY: str = ""
     TAVILY_API_KEY: str = ""
 
+    # 早间财经新闻推送配置（每日9:15，按板块，去重）
+    NEWS_WINDOW_HOURS: int = 20          # 无上次推送记录时的回看窗口（小时）
+    NEWS_MAX_PER_SECTOR: int = 6         # 每板块最多展示条数
+    NEWS_MAX_SECTORS: int = 8            # 文案最多展示板块数
+    NEWS_MAX_TOTAL: int = 120            # 单次抓取总量上限
+    NEWS_DEDUP_THRESHOLD: float = 0.85   # 标题近似去重相似度阈值
+    NEWS_SEEN_TTL_HOURS: int = 48        # 去重指纹保留时长（跨推送去重）
+    NEWS_X_BEARER_TOKEN: str = ""        # X(Twitter) API v2 Bearer Token（留空关闭）
+    NEWS_X_QUERY: str = "$SPX OR $DJIA OR $NDX OR #stocks -is:retweet"
+    NEWS_TDX_MCP_ENDPOINT: str = ""      # 通达信 MCP HTTP 端点（留空关闭）
+    NEWS_TDX_MCP_API_KEY: str = ""       # 通达信 MCP API Key
+    NEWS_RSS_FEEDS: str = ""             # 额外RSS源，格式 "名称|url,名称2|url2"
+
+    class Config:
+        env_file = ".env"
+
+    @property
+    def NEWS_RSS_FEEDS_LIST(self) -> list:
+        if not self.NEWS_RSS_FEEDS:
+            return []
+        return [s.strip() for s in self.NEWS_RSS_FEEDS.split(',') if s.strip()]
+
     class Config:
         env_file = ".env"
 

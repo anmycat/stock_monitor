@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "2.2",
+  "version": "2.3",
   "date": "2026-10-18",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md",
@@ -133,7 +133,8 @@
     "production": "ECS 8.134.89.55:8000（/stock_monitor），quant-engine + worker + beat + Redis 8.0.5，PRD v3.0 符合度 100%",
     "market_data_finding": "东财 push2 burst 后秒封（实测 0/15，>65s 未恢复）；腾讯/新浪 15/15 稳定；Tushare 需注册（100+20 积分）",
     "tushare_emergency": "Tushare Pro token 已于 2026-10-16 配置到 .env 应急位（收费源）：仅免费源全不可用时切换，恢复即切回；代码中无 tushare 通路，启用前需先加 TushareSource 适配器（02 §3.5）",
-    "etf_holdings_monitor_2026_10_18": "ETF持仓成分股监控（C 线新功能，用户需求）：14 只热门 ETF 季度持仓快照 + 环比 diff（数量=持股数/方向=新进退出增持减持/价格=持仓市值+权重）+ 盘后每日检查 + 多渠道推送；数据源=天天基金 FundArchivesDatas type=jjcc（topline=100，实测三坑：≥200 降级为10/空表头/2026Q1 历史季净值跳变）；告警以权重变化为主判（≥0.3pct）剔除 ETF 份额申赎缩放噪声；Redis 键 etf_holdings:{code}:{quarter} 等；实现=services/etf_holdings_monitor.py + data/sources/fund_holdings.py + worker check_etf_holdings + 3 个 API；测试 17/17（fixture=真实响应）；ECS 部署后按 08 §10 H5-H8 验收"
+    "etf_holdings_monitor_2026_10_18": "ETF持仓成分股监控（C 线新功能，用户需求）：14 只热门 ETF 季度持仓快照 + 环比 diff（数量=持股数/方向=新进退出增持减持/价格=持仓市值+权重）+ 盘后每日检查 + 多渠道推送；数据源=天天基金 FundArchivesDatas type=jjcc（topline=100，实测三坑：≥200 降级为10/空表头/2026Q1 历史季净值跳变）；告警以权重变化为主判（≥0.3pct）剔除 ETF 份额申赎缩放噪声；Redis 键 etf_holdings:{code}:{quarter} 等；实现=services/etf_holdings_monitor.py + data/sources/fund_holdings.py + worker check_etf_holdings + 3 个 API；测试 17/17（fixture=真实响应）；ECS 部署后按 08 §10 H5-H8 验收",
+    "morning_news_monitor_2026_10_18": "早间财经新闻推送（D 线新功能，用户需求：每日9:15/去重/尽量多源/按板块/钉钉）：数据源=东财快讯(fastColumn 101/102/103，必须带 req_trace，键名 fastNewsList)、同花顺 push/stock、新浪7×24直播（三源免费实测可用）+ 通用RSS适配器 + X API v2 与通达信 MCP（凭据门控默认关闭）；实测不可用：财联社电报404(需签名)/金十502/东财旧接口404/36氪和讯网易RSS返HTML/富途一财百度404；去重三层：规范化标题SHA1(跨推送48h) + difflib近似≥0.85 + 源优先级(东财>同花顺>新浪>RSS>X>通达信)；板块分类=25行业+宏观政策+全球市场关键词字典，多板块上限3，未匹配入综合要闻，泛词(全球/国际)已剔除防误判；时间窗=上次推送起(周一覆盖周末)，执行窗口9:14-9:35 check_date每日一次；限量 6条/8板块/15000字符，hidden计数API可查；Redis键 news:check_date/last_push_at/seen/latest/sectors；实现=data/sources/news_sources.py + services/news_monitor.py + worker check_morning_news + 3 API（40路由）+ config NEWS_*；测试 27/27（fixture=真实响应×5）+ 既有20/20回归；修复1个真bug：RSS解析Element真值判断"
   },
   "audit_2026_10_16": {
     "reorg_completeness": "18/20 完整合并；2/20 读取受限（SECURITY_FIX_PLAN.md、DEPLOY_GUIDE.md，主题有同源覆盖，待审批后补齐）",
@@ -156,9 +157,10 @@
     "git_2026_10_16": "commit b4ef673e v5.0 布局重构；git status 干净；origin/main 未 push（本地领先 1 提交，待用户决定）",
     "ecs_runtime_findings_2026_10_16": "SSH 全量日志分析完成（报告=13_系统运行分析报告.md）：三阶段（6/14-6/22 部署混乱期 25,218 ERROR/2.9M 行；6/23-10/2 反复重启期 worker OOM×7；10/3 起稳定期 13.5 天零干预）；根因定位：① DeepSeek 401（10-17 定性修正：账户欠费停机，非密钥失效——充值后原密钥实测 200，不轮换；OPENAI_BASE_URL 的 /v1 本地已正确、服务器端待复核）② worker 内存泄漏峰值 572-689MB（机器总内存 1.6G），OOM 全史 8 次+今日 1 次，MemoryMax 未设限 ③ evaluation 500=Redis 旧 run 缺 5 字段 pydantic 校验失败 ④ 市场宽度脏数据（100 只全涨/均涨幅 11.35%/文案 >100% 未夹紧）⑤ guardian v2 空转崩溃 370,749 次；健康面：调度闭环/东财冷却切换/akshare 降级/快照回退/钉钉推送/WATCH 信号产出均正常；代码同源（main.py 151/routes.py 833 行数一致）",
     "correction_2026_10_17_ai401": "D23：13 §6.1/10 G15/07 §5.5 的'密钥失效需轮换'结论被用户反馈推翻——401 实为 DeepSeek 账户欠费停机的表现形式，充值即恢复（实测 HTTP 200）。教训：服务端 401 先查账户余额再动密钥；处置降级为余额监控+失败告警（B1'）",
-    "feature_2026_10_18_etf_holdings": "D24（12 §3.11）：代码 4 文件（fund_holdings.py 新建 / etf_holdings_monitor.py 新建 / worker.py 接入 / routes.py+dependencies.py 3 端点）+ 测试 17/17 + 既有 3/3 回归 + 全量 py_compile 与导入冒烟；文档 9 文件同步（01 §7.3 / 02 §3.6 / 03 §4.3 / 07 四处 / 08 §10 / 10 G22-G24 / 14 §7 / README / manifest）；本地补装 fastapi 0.109.0 + uvicorn 0.27.0 进 coding/.venv（该 venv 与 requirements.txt 不符，缺 fastapi/uvicorn）；设计裁定：权重主判剔除份额缩放、退出=退出前100大非清仓、净值跳变>50% 仅 warning 不停告警、无备用源失败当日跳过"
+    "feature_2026_10_18_etf_holdings": "D24（12 §3.11）：代码 4 文件（fund_holdings.py 新建 / etf_holdings_monitor.py 新建 / worker.py 接入 / routes.py+dependencies.py 3 端点）+ 测试 17/17 + 既有 3/3 回归 + 全量 py_compile 与导入冒烟；文档 9 文件同步（01 §7.3 / 02 §3.6 / 03 §4.3 / 07 四处 / 08 §10 / 10 G22-G24 / 14 §7 / README / manifest）；本地补装 fastapi 0.109.0 + uvicorn 0.27.0 进 coding/.venv（该 venv 与 requirements.txt 不符，缺 fastapi/uvicorn）；设计裁定：权重主判剔除份额缩放、退出=退出前100大非清仓、净值跳变>50% 仅 warning 不停告警、无备用源失败当日跳过",
+    "feature_2026_10_18_morning_news": "D25（12 §3.12）：代码 2 新 5 改（news_sources.py 6源适配器 / news_monitor.py 去重+分类+文案 / worker.py 9:15 任务 / routes.py+dependencies.py 3 端点 / config.py NEWS_* 配置组）+ 测试 27/27 + 回归 20/20 + 全量 compileall 与导入冒烟（40 路由）；数据源实测 8 候选：3 可用 + RSS 适配器 + 2 凭据门控，不可用清单写入 02 §3.7；设计裁定：去重三层/泛词剔除/多板块上限3/时间窗取上次推送/限量文案/三源全失败不推送/凭据源不进主流程；文档 9 文件同步（01 §7.4 N1-N7 / 02 §3.7 / 03 §4.4 / 07 四处 / 08 §11 / 10 G25-G27 / 12 §3.12 / 14 §8 / README / manifest）"
   },
   "executable_config": "research/rules/methodology_rules.json v1.4（R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly 参数 + 验证记录）；v1.5 参数裁定（R06 avoidance/Kelly 3M 口径/R12 默认开启）已入 prd 文档，rules JSON 升版待执行（14 §4 止损周门禁）",
-  "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行；C 线 ETF持仓监控 2026-10-18 已实现待部署验收（14 §7）",
+  "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行；C 线 ETF持仓监控 2026-10-18 已实现待部署验收（14 §7）；D 线早间新闻推送 2026-10-18 已实现待部署验收（14 §8）",
   "disclaimer": "个人研究工具，全部输出不构成投资建议。市场有风险，投资需谨慎。"
 }

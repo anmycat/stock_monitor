@@ -134,6 +134,37 @@ def check_etf_holdings(datacenter, notifier):
         logger.error(f"ETF holdings check error: {e}")
 
 
+def check_morning_news(datacenter, notifier):
+    """每日9:15早间财经要闻推送（按板块、去重、多渠道；含周末）
+
+    执行窗口 9:14-9:35（覆盖交易日前与非交易日），Redis键
+    news:check_date 保证每日只推一次。抓取自上次推送以来的多源新闻，
+    去重后按板块分组推送；无新增不推送。
+    """
+    try:
+        from .services.news_monitor import MorningNewsMonitor
+        now = datetime.now()
+        t = now.hour * 60 + now.minute
+        if not (9 * 60 + 14 <= t <= 9 * 60 + 35):
+            return
+        today = now.strftime('%Y-%m-%d')
+        if datacenter.cache.get('news:check_date') == today:
+            return
+        monitor = MorningNewsMonitor(datacenter)
+        digest = monitor.check_and_push(notifier)
+        datacenter.cache.set('news:check_date', today, ttl=2 * 86400)
+        if digest:
+            logger.info(
+                f"Morning news pushed: {digest['total']} items "
+                f"across {digest['sector_count']} sectors "
+                f"(dropped {digest['dedup_dropped']})"
+            )
+        else:
+            logger.info("Morning news check done, no new items")
+    except Exception as e:
+        logger.error(f"Morning news check error: {e}")
+
+
 def save_summary_to_cache(datacenter, summary_type: str, summary_data: Dict):
     """保存总结到Redis缓存，供 Web页面显示"""
     cache_key = f"ai_summary:{summary_type}"
@@ -269,6 +300,8 @@ def main():
             else:
                 # 盘后/非交易时段：每日一次ETF持仓变化检查（含周末，季报披露日不固定）
                 check_etf_holdings(datacenter, notifier)
+                # 每日9:15早间财经要闻（按板块，含周末；窗口9:14-9:35，日期去重）
+                check_morning_news(datacenter, notifier)
                 sleep_sec = get_sleep_seconds(phase)
                 if sleep_sec > 60:
                     logger.info(f"Phase {phase}, sleeping {sleep_sec}s")
