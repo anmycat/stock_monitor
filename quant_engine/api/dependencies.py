@@ -3,6 +3,7 @@ from ..services.signal_generator import SignalGenerator
 from ..services.etf_monitor import ETFMonitor
 from ..services.etf_holdings_monitor import ETFHoldingsMonitor
 from ..services.news_monitor import MorningNewsMonitor
+from ..services.code_guard import CodeGuard
 from ..services.cooldown import CooldownManager
 from ..services.sector_monitor import SectorMonitor
 from ..services.market_alert import MarketAlert
@@ -17,6 +18,7 @@ backtest_engine = BacktestEngine(datacenter)
 etf_monitor = ETFMonitor(datacenter)
 etf_holdings_monitor = ETFHoldingsMonitor(datacenter)
 news_monitor = MorningNewsMonitor(datacenter)
+code_guard = CodeGuard(datacenter)
 cooldown_manager = CooldownManager(datacenter.cache)
 sector_monitor = SectorMonitor(datacenter)
 market_alert = MarketAlert(datacenter)

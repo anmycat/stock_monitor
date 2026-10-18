@@ -134,6 +134,57 @@ def check_etf_holdings(datacenter, notifier):
         logger.error(f"ETF holdings check error: {e}")
 
 
+def check_code_guard_static(datacenter, notifier):
+    """盘前代码一致性静态校验（交易日 9:00-9:15，每日一次）
+
+    对全部持久化监控目标（热门ETF/ETF持仓成分股/stock_list缓存）做
+    代码-市场-名称四重校验，发现错码自动修复脏缓存并推送告警。
+    详见 services/code_guard.py。
+    """
+    try:
+        from .services.code_guard import CodeGuard
+        now = datetime.now()
+        if not is_trading_day(now):
+            return
+        t = now.hour * 60 + now.minute
+        # 盘前窗口 9:00-9:15（PRE_MARKET），避免凌晨/盘中误跑
+        if not (9 * 60 <= t < 9 * 60 + 15):
+            return
+        today = now.strftime('%Y-%m-%d')
+        if datacenter.cache.get('code_guard:check_date_static') == today:
+            return
+        guard = CodeGuard(datacenter)
+        guard.check_and_push(notifier, mode='static')
+        datacenter.cache.set('code_guard:check_date_static', today, ttl=2 * 86400)
+    except Exception as e:
+        logger.error(f"Code guard static check error: {e}")
+
+
+def check_code_guard_auction(datacenter, notifier):
+    """集合竞价代码一致性校验（交易日 9:15-9:25，每日一次）
+
+    利用竞价期间的虚拟匹配价，与 quote:{code} 缓存中的昨收做连续性
+    校验，发现缓存串号（价格跳空超阈值）即清理并告警。
+    """
+    try:
+        from .services.code_guard import CodeGuard
+        now = datetime.now()
+        if not is_trading_day(now):
+            return
+        t = now.hour * 60 + now.minute
+        # 集合竞价窗口 9:15-9:25（SELF_CHECK）
+        if not (9 * 60 + 15 <= t < 9 * 60 + 25):
+            return
+        today = now.strftime('%Y-%m-%d')
+        if datacenter.cache.get('code_guard:check_date_auction') == today:
+            return
+        guard = CodeGuard(datacenter)
+        guard.check_and_push(notifier, mode='auction')
+        datacenter.cache.set('code_guard:check_date_auction', today, ttl=2 * 86400)
+    except Exception as e:
+        logger.error(f"Code guard auction check error: {e}")
+
+
 def check_morning_news(datacenter, notifier):
     """每日9:15早间财经要闻推送（按板块、去重、多渠道；含周末）
 
@@ -220,6 +271,13 @@ def main():
                 logger.info("System self-check...")
                 active_pool = burst_monitor.refresh_active_pool()
                 logger.info(f"Active pool: {len(active_pool)} stocks")
+                # 集合竞价（9:15-9:25）顺便校验代码缓存一致性：
+                # 用竞价匹配价与 quote 缓存做连续性校验，拦截缓存串号
+                check_code_guard_auction(datacenter, notifier)
+                # 保险：若 PRE_MARKET 错过 9:14 窗口，此处补跑
+                # （check_date 幂等去重，不会重复推送）
+                check_morning_news(datacenter, notifier)
+                check_etf_holdings(datacenter, notifier)
                 time.sleep(600)
 
             elif phase == "CALL_AUCTION":
@@ -298,6 +356,8 @@ def main():
                 time.sleep(3600)  # 1小时后进入盘后
 
             else:
+                # 盘前（交易日9:00-9:15）代码一致性静态校验，拦截错码/改名/退市
+                check_code_guard_static(datacenter, notifier)
                 # 盘后/非交易时段：每日一次ETF持仓变化检查（含周末，季报披露日不固定）
                 check_etf_holdings(datacenter, notifier)
                 # 每日9:15早间财经要闻（按板块，含周末；窗口9:14-9:35，日期去重）

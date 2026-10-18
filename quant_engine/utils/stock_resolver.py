@@ -82,8 +82,8 @@ class StockResolver:
                 if stock.get('code', '').upper() == code:
                     return stock
         else:
-            # 尝试补全后缀
-            for suffix in ['.SH', '.SZ']:
+            # 尝试补全后缀（含北交所）
+            for suffix in ['.SH', '.SZ', '.BJ']:
                 full_code = code + suffix
                 for stock in self._stock_cache:
                     if stock.get('code', '') == full_code:

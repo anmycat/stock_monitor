@@ -6,7 +6,8 @@ from loguru import logger
 from .dependencies import (
     datacenter, signal_generator, backtest_engine, etf_monitor,
     cooldown_manager, sector_monitor, market_alert, hot_money_monitor,
-    strategy_registry, hotspot_service, etf_holdings_monitor, news_monitor
+    strategy_registry, hotspot_service, etf_holdings_monitor, news_monitor,
+    code_guard
 )
 from .auth import verify_api_key
 from ..services.ai_summary import AISummary
@@ -207,6 +208,29 @@ class NewsSectorsResponse(BaseModel):
     sectors: List[NewsSectorSummaryItem] = []
     hidden_sectors: int = 0
     hidden_items: int = 0
+
+
+class CodeGuardIssueItem(BaseModel):
+    severity: str
+    type: str
+    code: str
+    name: str = ''
+    message: str = ''
+    detail: Dict = {}
+    repaired: bool = False
+
+
+class CodeGuardReportResponse(BaseModel):
+    mode: str = 'static'
+    checked: int = 0
+    quoted: int = 0
+    issue_count: int = 0
+    error_count: int = 0
+    warning_count: int = 0
+    by_type: Dict[str, int] = {}
+    issues: List[CodeGuardIssueItem] = []
+    started_at: str = ''
+    duration_sec: float = 0
 
 
 class MarketSentimentResponse(BaseModel):
@@ -475,6 +499,44 @@ def get_news_digest():
         raise
     except Exception as e:
         logger.error(f"API error in get_news_digest: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.post("/system/code-guard/check", response_model=CodeGuardReportResponse,
+             dependencies=[Depends(verify_api_key)])
+def run_code_guard_check(mode: str = Query("static", pattern="^(static|auction)$")):
+    """手动触发代码一致性校验（static=盘前静态校验 / auction=集合竞价缓存校验）
+
+    对全部持久化监控目标（热门ETF/ETF持仓成分股/stock_list）做
+    代码-市场-名称-价格四重校验；market_mismatch 自动修复脏缓存。
+    """
+    try:
+        report = (code_guard.check_static() if mode == 'static'
+                  else code_guard.check_auction())
+        if not report:
+            raise HTTPException(status_code=500, detail="校验失败：无目标或数据源异常")
+        return CodeGuardReportResponse(**report)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in run_code_guard_check: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/system/code-guard/report", response_model=CodeGuardReportResponse,
+            dependencies=[Depends(verify_api_key)])
+def get_code_guard_report():
+    """最近一次代码一致性校验报告（每日盘前/集合竞价由 worker 生成）"""
+    try:
+        report = code_guard.get_report()
+        if not report:
+            raise HTTPException(status_code=404,
+                                detail="暂无校验报告（每日9:00盘前校验后生成）")
+        return CodeGuardReportResponse(**report)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_code_guard_report: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
