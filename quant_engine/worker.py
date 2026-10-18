@@ -104,6 +104,36 @@ def get_sector_data(datacenter):
         return []
 
 
+def check_etf_holdings(datacenter, notifier):
+    """盘后ETF持仓变化检查（每日一次，含周末；季报披露日不固定）
+
+    抓取热门ETF季度持仓，与已存快照比对，发现新季度且变化过阈值时推送。
+    Redis键 etf_holdings:check_date 保证每日只跑一次。
+    """
+    try:
+        from .services.etf_holdings_monitor import ETFHoldingsMonitor
+        today = datetime.now().strftime('%Y-%m-%d')
+        if datacenter.cache.get('etf_holdings:check_date') == today:
+            return
+        monitor = ETFHoldingsMonitor(datacenter)
+        push_list = monitor.check_all()
+        datacenter.cache.set('etf_holdings:check_date', today, ttl=2 * 86400)
+        for changes in push_list:
+            etf_code = changes['etf_code'].split('.')[0]
+            title = f"📦 ETF持仓变化: {changes['etf_name']}({etf_code})"
+            msg = f"{title}\n\n{monitor.format_changes_message(changes)}"
+            notifier.send_custom_message(title, msg)
+            logger.info(
+                f"ETF holdings alert pushed: {etf_code} "
+                f"{changes['previous_quarter']}→{changes['current_quarter']} "
+                f"x{changes['alert_count']}"
+            )
+        if not push_list:
+            logger.info("ETF holdings check done, no alertable changes")
+    except Exception as e:
+        logger.error(f"ETF holdings check error: {e}")
+
+
 def save_summary_to_cache(datacenter, summary_type: str, summary_data: Dict):
     """保存总结到Redis缓存，供 Web页面显示"""
     cache_key = f"ai_summary:{summary_type}"
@@ -237,6 +267,8 @@ def main():
                 time.sleep(3600)  # 1小时后进入盘后
 
             else:
+                # 盘后/非交易时段：每日一次ETF持仓变化检查（含周末，季报披露日不固定）
+                check_etf_holdings(datacenter, notifier)
                 sleep_sec = get_sleep_seconds(phase)
                 if sleep_sec > 60:
                     logger.info(f"Phase {phase}, sleeping {sleep_sec}s")
