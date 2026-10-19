@@ -56,7 +56,6 @@ class CodeGuard:
     KEY_CHECK_DATE_AUCTION = "code_guard:check_date_auction"
     KEY_REPORT = "code_guard:report"
     KEY_NAMES = "code_guard:names"            # 权威 code→name 映射
-    KEY_DELISTED = "code_guard:delisted"      # 疑似退市代码集合
     TTL_REPORT = 7 * 86400
     TTL_CHECK_DATE = 2 * 86400
     TTL_NAMES = 7 * 86400
@@ -227,8 +226,8 @@ class CodeGuard:
             auth = self._match_authoritative(code, authoritative)
             if auth is None:
                 # 2. 存在性：权威源查无（连按静态规则市场都查不到）
-                #   注意：腾讯批量可能因限流丢批，误报风险——标记 warning
-                #   并允许重试；连续两次查无才升级 error（由 check_and_push 计数）
+                #   恒定为 warning：腾讯批量可能因限流丢批造成误报，
+                #   保守不升级 error；疑似退市由人工看报告确认
                 issues.append(self._issue(
                     SEV_WARNING, 'missing', code, info['name'],
                     f"权威行情源未返回（疑似退市/错码/限流丢批）: {code}"))
