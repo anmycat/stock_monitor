@@ -262,10 +262,6 @@ def main():
             if phase != last_phase:
                 logger.info(f"Phase: {phase}")
                 last_phase = phase
-                # 新交易日刷新活跃池
-                if phase == "SELF_CHECK":
-                    active_pool = burst_monitor.refresh_active_pool()
-                    logger.info(f"Active pool: {len(active_pool)} stocks")
 
             if phase == "SELF_CHECK":
                 logger.info("System self-check...")
@@ -278,7 +274,9 @@ def main():
                 # （check_date 幂等去重，不会重复推送）
                 check_morning_news(datacenter, notifier)
                 check_etf_holdings(datacenter, notifier)
-                time.sleep(600)
+                # 睡到竞价结束（9:25）进入 CALL_AUCTION；不用硬编码 600s——
+                # worker 晚启动/重启时不会睡过头错过集合竞价播报
+                time.sleep(max(get_sleep_seconds("SELF_CHECK"), 5))
 
             elif phase == "CALL_AUCTION":
                 market = analyzer.analyze_market()
@@ -288,7 +286,8 @@ def main():
                 notifier.send_custom_message("集合竞价播报", msg)
                 save_summary_to_cache(datacenter, "call_auction", summary)
                 logger.info("Call auction summary generated and pushed")
-                time.sleep(300)
+                # 睡到 9:30 开盘；不用硬编码 300s——晚启动时同样不睡过头
+                time.sleep(max(get_sleep_seconds("CALL_AUCTION"), 5))
 
             elif phase in ["MORNING_SESSION", "AFTERNOON_SESSION"]:
                 # 起爆资金监控

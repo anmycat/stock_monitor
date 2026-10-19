@@ -352,6 +352,11 @@ class TestDigestAndMessage(unittest.TestCase):
         """预览模式：fixture三源 → 有摘要且不写状态"""
         m = _make_monitor()
         m.source_manager = _make_source_manager_stub()
+        # 冻结时间窗起点：fixture 新闻发布于 2026-10-18 14:45-22:18，而
+        # 回看窗默认 now-20h，随墙钟推移会把 fixture 全部滤光（时间炸弹，
+        # 2026-10-20 实测复现）。窗口语义是 published_at>=起点，起点须早于
+        # fixture 最早一条，固定之使用例与创建时间解耦。
+        m._window_start = lambda: (datetime(2026, 10, 18, 14, 0), False)
         digest = m.collect_digest()
         self.assertIsNotNone(digest)
         self.assertGreater(digest['total'], 0)
