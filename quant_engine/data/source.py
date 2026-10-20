@@ -9,13 +9,21 @@ from .sources.sina import SinaSource
 from .akshare_source import AKShareSource
 
 
-# 数据源优先级配置
+# 数据源优先级配置（2026-10-20 按用户决策调整：东财出口 IP 经常被风控，
+# ECS 实测 22 连败，降为备路；腾讯第一、新浪第二互为配合）
+#
+# 依据：PERFORMANCE_RESEARCH_2026-10-20 §3.1——东财降级后，腾讯/新浪
+# 双线覆盖：
+#   realtime  腾讯批量（qt.gtimg）→ 新浪批量（hq.sinajs）→ 东财备路
+#   stock_list 新浪 hs_a 全市场（实测 5574 只含北交所）→ 东财备路
+#   daily     腾讯 fqkline（前复权）→ 新浪 getKLineData → 东财备路
+#   minute    akshare（未安装；腾讯分钟线未实现，gates 放行降级不断链）
+# akshare 已移出全部主路（本地/ECS 均未安装，调用必失败拖慢降级链）
 _PRIORITY = {
-    'stock_list': ['akshare'],
-    'realtime': ['eastmoney', 'tencent', 'akshare'],
-    'etf': ['akshare'],
-    'daily': ['akshare', 'eastmoney', 'tencent'],
-    'minute': ['akshare', 'tencent'],
+    'stock_list': ['sina', 'eastmoney'],
+    'realtime': ['tencent', 'sina', 'eastmoney'],
+    'daily': ['tencent', 'sina', 'eastmoney'],
+    'minute': ['akshare'],
 }
 
 
@@ -78,18 +86,8 @@ class CompositeSource:
             return result
         return pd.DataFrame()
 
-    def get_etf_quotes(self) -> pd.DataFrame:
-        """获取ETF行情"""
-        result = source_manager.execute_with_fallback(
-            _PRIORITY['etf'], self.sources, 'get_etf_quotes',
-            skip_delay=True,
-        )
-        if result is not None and not result.empty:
-            return result
-        return pd.DataFrame()
-
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:
-        """获取日线数据"""
+        """获取日线数据（腾讯 fqkline → 新浪 getKLineData → 东财）"""
         result = source_manager.execute_with_fallback(
             _PRIORITY['daily'], self.sources, 'get_daily_data',
             code, days, skip_delay=True,

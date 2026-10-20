@@ -1,10 +1,9 @@
-"""ETF监控模块 - 使用akshare专用接口"""
+"""ETF监控模块 - 腾讯第一的实时行情路（2026-10-20 起）"""
 import time
 import pandas as pd
 from typing import List, Dict
 from loguru import logger
 from ..data.datacenter import DataCenter
-from ..data.akshare_source import AKShareSource
 
 
 # 热门ETF监控清单（行情监控与持仓监控共用，新增/删除需同步两侧文档）
@@ -29,34 +28,40 @@ HOT_ETFS = [
 class ETFMonitor:
     def __init__(self, datacenter: DataCenter):
         self.datacenter = datacenter
-        self.akshare = AKShareSource()
         self.target_etfs = HOT_ETFS
         self._cache = {}
         self._cache_time = 0
 
     def get_etf_status(self) -> List[Dict]:
-        """获取ETF状态 - 使用akshare专用接口"""
+        """获取ETF状态 - 腾讯第一的实时行情路（2026-10-20 改造）
+
+        原实现直调 AKShareSource().get_etf_quotes()（akshare 未安装，
+        ETF 监控全量"数据获取中"）。现改为按 target_codes 直查
+        CompositeSource.get_realtime_quote（腾讯批量第一、新浪第二、
+        东财备路），顺带修复"拉全市场再过滤"的冗余（见 PRD 02 §3.8）。
+        """
         current_time = time.time()
-        
+
         # 缓存5分钟
         if self._cache and current_time - self._cache_time < 300:
             return self._cache.get('data', [])
-        
+
         results = []
         target_codes = {etf['code'] for etf in self.target_etfs}
         etf_dict = {etf['code']: etf for etf in self.target_etfs}
-        
-        # 使用akshare ETF接口
+
+        # 按目标代码直查（腾讯源原生支持 ETF 5 开头代码）
         try:
-            df = self.akshare.get_etf_quotes()
+            df = self.datacenter.get_realtime_quote(
+                [etf['code'] for etf in self.target_etfs])
             if df is not None and not df.empty:
                 for _, row in df.iterrows():
                     code = row.get('code', '')
                     if code in target_codes:
                         etf_info = etf_dict.get(code, {})
-                        price = float(row.get('price', 0))
-                        change_pct = float(row.get('change_pct', 0))
-                        volume = float(row.get('volume', 0))
+                        price = float(row.get('price', 0) or 0)
+                        change_pct = float(row.get('change_pct', 0) or 0)
+                        volume = float(row.get('volume', 0) or 0)
                         results.append({
                             'code': code,
                             'name': etf_info.get('name', row.get('name', '')),
