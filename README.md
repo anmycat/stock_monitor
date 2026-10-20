@@ -7,11 +7,11 @@ A股智能投研系统：**产品线**（quant_engine v5.0 盘中决策引擎）
 ```
 stock_monitor/                  ← 本仓库根 = 服务器 /stock_monitor
 ├── quant_engine/    生产代码：FastAPI + Redis + Celery beat/worker 三服务
-├── test/            测试（3 个，unittest 直跑）
+├── test/            测试（10 个，unittest 直跑）
 ├── UX/              前端原型（Apple Design System，尚未接入后端）
 ├── deploy/          部署脚本（本地上传 + 服务器 provisioning）
-├── prd/             产品文档：15 个按功能模块命名的文档（00-12 + README + manifest）
-├── research/        调研线资产：rules v1.4 + 16 份调研原文 + 验证数据与脚本
+├── prd/             产品文档：15 个按功能模块命名的文档（00-14）+ README + manifest
+├── research/        调研线资产：rules v1.4 + 20 份调研原文（00-19）+ 验证数据与脚本
 ├── coding/          仅含本地 .venv 虚拟环境（不入 git，可随时重建）
 └── .git/
 ```
