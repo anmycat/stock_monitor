@@ -17,3 +17,4 @@ PyYAML>=6.0.1
 akshare>=1.13.20
 paramiko>=3.4.0
 hmmlearn>=0.3.0
+pytdx>=1.72  # 通达信分钟线（TCP 7709，PRD 02 §3.9）

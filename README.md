@@ -54,11 +54,12 @@ SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 ssh
 
 ## 当前状态（2026-10-20）
 
-- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**本地已提交待推送部署**（领先 origin/main 15 个提交）
+- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**本地已提交待推送部署**（领先 origin/main 16 个提交）
 - **策略**：trend / dip / defense + 三个 YAML 策略（trend_breakout_v1 / dip_reversal_v1 / balanced_alpha_v1）+ 八因子评分 + 三层漏斗
 - **当日新增（F 线·数据源重组）**：修复两条断裂链路——stock_list（原仅 akshare 未安装 → 退化为 5 只兜底；新浪 `get_all_stocks` 实测 5574 只，含科创 617/北交所 351/创业板 936）、daily（原仅 akshare 实现 → signals 恒空；腾讯 fqkline + 新浪 getKLineData 双第一线）；ETF 监控改按目标代码直查实时路。详见 `prd/02 §3.8`
-- **当日调研（未接入）**：同花顺/通达信免费接口实测——TDX（pytdx）5/15/30/60 分钟K 完整可用，可补 gates 分钟断链（P1 建议）；THS 涨停池/日K/分时可用（P2 建议）。详见 `prd/02 §3.9`
-- **待办**：① M1 清偿部署债：推送 15 个提交 + ECS 部署验收（交易时段验证 `/api/market` 覆盖数、`/api/signals` 非空、`/api/etf` 实时价）② TDX 作 minute 第一线接入（P1，待确认）③ THS 涨停池作 daily 第三线 + 特色数据（P2，待确认）④ `/api/evaluation/runs` 500 错误 ⑤ 回测池扩容 100 只/12 个月
+- **当日落地（TDX minute）**：通达信 pytdx 分钟线接入（`sources/tdx.py`，`minute` 第一线）——补齐 gates 分钟断链（接入前无任何源实现 `get_minute_data`，gates 恒放行降级）；5/15/30/60 分钟K，服务器池探活 + 掉线重试 + 全失败降级不断链。详见 `prd/02 §3.9`
+- **当日调研（P2 待确认）**：同花顺涨停池/日K/分时实测可用，拟作 daily 第三线 + 信号归因素材
+- **待办**：① M1 清偿部署债：推送 16 个提交 + ECS 部署验收（交易时段验证 `/api/market` 覆盖数、`/api/signals` 非空、`/api/etf` 实时价、**TDX 117.34.114.x 可达性**）② THS daily 第三线接入（P2，待确认）③ `/api/evaluation/runs` 500 错误 ④ 回测池扩容 100 只/12 个月
 
 ## 双轨说明（重要）
 
