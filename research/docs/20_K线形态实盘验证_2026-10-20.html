@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四大K线形态3个月实盘验证报告</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: #f5f6f8; color: #24292f; line-height: 1.65; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { background: linear-gradient(135deg, #fff 0%, #fdf2f2 100%); border: 1px solid #f0d9d9;
+           border-radius: 12px; padding: 26px 28px; margin-bottom: 22px; }
+  header h1 { font-size: 24px; color: #8c1f28; margin-bottom: 10px; }
+  header .meta { font-size: 13px; color: #6a737d; }
+  header .meta b { color: #24292f; }
+  .badge { display: inline-block; background: #8c1f28; color: #fff; font-size: 12px;
+           padding: 2px 10px; border-radius: 10px; margin-right: 8px; vertical-align: middle; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; }
+  .card h3 { font-size: 13px; color: #8c1f28; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: #444c56; }
+  .card .num { font-size: 20px; font-weight: 700; }
+  .neg { color: #1e8e3a; } .pos { color: #d93026; }
+  section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            padding: 22px 26px; margin-bottom: 20px; }
+  section h2 { font-size: 18px; color: #8c1f28; border-left: 4px solid #c0392b;
+               padding-left: 10px; margin-bottom: 14px; }
+  section h3 { font-size: 15px; margin: 14px 0 8px; color: #24292f; }
+  .chart { width: 100%; height: 340px; }
+  .chart-tall { width: 100%; height: 380px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cap { font-size: 12px; color: #8a9199; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: center; }
+  th { background: #fafbfc; color: #444c56; font-weight: 600; }
+  td.l { text-align: left; }
+  .toggle { margin: 6px 0 10px; }
+  .toggle button { font-size: 12px; padding: 3px 12px; border: 1px solid #d0d7de; background: #f6f8fa;
+                   border-radius: 6px; cursor: pointer; margin-right: 6px; }
+  .toggle button.on { background: #8c1f28; color: #fff; border-color: #8c1f28; }
+  .verdict { background: #fdf6f6; border: 1px solid #f0d9d9; border-radius: 8px;
+             padding: 12px 16px; font-size: 14px; margin-top: 12px; }
+  .disclaimer { background: #fff8e6; border: 1px solid #f0e0b0; border-radius: 8px;
+                padding: 14px 18px; font-size: 13px; color: #6a5a1e; margin-top: 20px; }
+  @media (max-width: 760px) { .cards, .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="badge">实盘验证</span>四大K线形态3个月实盘验证报告</h1>
+  <div class="meta">
+    验证对象：<b>长阴短柱次日反包 / 底部双倍阳 / 后量超前量 / 探底形态</b>（4 张战法图片规则化）<br>
+    数据窗口：<b>2026-07-01 ~ 2026-10-12（3个月+）</b>，全市场 <b>4,229</b> 只A股 × 229个交易日不复权日K，287,211 个股票×日样本<br>
+    数据来源与时点：通达信 TCP 117.34.114.x:7709（2026-10-20 22:36 拉取，与东方财富接口交叉校验一致）；股票池=新浪 hs_a 列表（2026-10-20）<br>
+    纪律：T日收盘信号 → T+1开盘成交 → 持有5/10日收盘卖出，无未来函数；剔除一字涨停入场日
+  </div>
+</header>
+
+<div class="cards">
+  <div class="card"><h3>总体判定</h3><p><span class="num neg">4/4 跑输基准</span><br>无一形态通过"方向一致+聚类显著+参数不敏感"三重检验</p></div>
+  <div class="card"><h3>P3 后量超前量</h3><p>5日超额 <span class="num neg">-2.51%</span><br>唯一按日聚类仍显著为负（t=-2.26，4/4个月为负）</p></div>
+  <div class="card"><h3>因果链断裂点</h3><p>每个"放量确认"条件都让超额<b>向下</b>：<br>P1 加缩量 -2.23%→-4.34%；P2 加倍量阳 +0.17%→-1.30%</p></div>
+  <div class="card"><h3>市场背景</h3><p>窗口内创业板指 <span class="num neg">-30.4%</span>、深成指 -23.2%<br>成长股熊市，底部看多形态天然不利</p></div>
+  <div class="card"><h3>位置 vs 量能</h3><p>位置上下文（横盘/底部/低位）超额 <span class="pos">+0.13%~+0.60%</span><br>量能确认条件超额全部转负</p></div>
+  <div class="card"><h3>落地建议</h3><p>不纳入买入规则库（不设R14-R17）<br>P3 转"派发风险回避信号"候选，牛熊分段复验</p></div>
+</div>
+
+<section>
+  <h2>一、市场背景：验证窗口是成长股熊市</h2>
+  <div id="chartIndex" class="chart"></div>
+  <div class="cap">数据来源：通达信日K（2026-10-20 拉取），2026-07-01 ~ 2026-10-12 收盘价涨跌幅，不复权。四形态均为"底部看多"形态，在此环境下接受检验。</div>
+  <div class="verdict">全市场基准（窗口内所有股票×日，T+1开盘买持有5日收盘卖）：<b class="neg">-0.435%/5日</b>，胜率 46.1%（n=287,191）。分月基准：7月 -1.24% → 8月 +1.67% → 9月 -0.91% → 10月(半月) -4.60%。</div>
+</section>
+
+<section>
+  <h2>二、主结果：四形态全部跑输基准</h2>
+  <div id="chartMain" class="chart-tall"></div>
+  <div class="cap">数据来源：本次回测（research/data/pattern_validation.json）。柱=5日持有均值；虚线=全市场基准 -0.435%。显著性以按买入日聚类口径为准（同交易日信号不独立）。P1/P4 完整形态样本极小（19/16笔），数值仅供方向参考。</div>
+  <table>
+    <tr><th>形态</th><th>样本n</th><th>5日均值</th><th>5日胜率</th><th>5日超额vs基准</th><th>Welch p</th><th>按日聚类超额</th><th>聚类t</th><th>10日均值</th></tr>
+    <tr><td class="l">P1 长阴短柱反包</td><td>19</td><td class="neg">-6.86%</td><td>31.6%</td><td class="neg">-6.43%</td><td>0.0008</td><td class="neg">-3.78%/日</td><td>-1.78</td><td class="neg">-10.98%</td></tr>
+    <tr><td class="l">P2 底部双倍阳</td><td>378</td><td class="neg">-1.30%</td><td>41.3%</td><td class="neg">-0.86%</td><td>0.073</td><td class="neg">-0.82%/日</td><td>-1.34</td><td class="neg">-0.93%</td></tr>
+    <tr><td class="l">P3 后量超前量</td><td>491</td><td class="neg">-2.94%</td><td>34.2%</td><td class="neg">-2.51%</td><td>&lt;0.001</td><td class="neg">-1.39%/日</td><td><b>-2.26</b></td><td class="neg">-2.40%</td></tr>
+    <tr><td class="l">P4 探底形态</td><td>16</td><td class="neg">-2.26%</td><td>50.0%</td><td class="neg">-1.83%</td><td>0.41</td><td class="neg">-1.44%/日</td><td>-0.63</td><td class="pos">+1.84%</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>三、条件分解：图片的因果链每一环都朝反方向走</h2>
+  <p style="font-size:13.5px;color:#444c56;">按图片的条件顺序逐级叠加独立回测（入场=该级最后条件满足日的次日开盘，持有5日）。<b>同一入场时点的相邻级对比最干净</b>——它们全部同向恶化。</p>
+  <div class="grid2">
+    <div><h3>P1 长阴短柱·次日反包</h3><div id="chartP1" class="chart"></div></div>
+    <div><h3>P2 底部双倍阳</h3><div id="chartP2" class="chart"></div></div>
+    <div><h3>P3 后量超前量</h3><div id="chartP3" class="chart"></div></div>
+    <div><h3>P4 探底形态</h3><div id="chartP4" class="chart"></div></div>
+  </div>
+  <table>
+    <tr><th>形态</th><th>断裂点</th><th>图片宣称</th><th>实测（同入场时点对比）</th></tr>
+    <tr><td class="l">P1</td><td>S1→S2</td><td class="l">"缩量说明抛压有限，是底部暴力洗盘"</td><td class="l neg">缩量长阴 -4.34% vs 放量长阴 -2.23%——缩量是<b>承接缺失</b>，不是洗盘结束</td></tr>
+    <tr><td class="l">P2</td><td>S0→S1</td><td class="l">"倍量阳线是主力吸筹"</td><td class="l neg">加倍量阳后 +0.17%→-1.12%→-1.30%，逐级更差</td></tr>
+    <tr><td class="l">P3</td><td>S1→S3</td><td class="l">"后量超前量=多头力量强势回归"</td><td class="l neg">-1.40%→-2.86%→-2.94%；下跌市中放量长阳更接近<b>派发/诱多</b></td></tr>
+    <tr><td class="l">P4</td><td>S1→S3</td><td class="l">"长下影=下方支撑强、共识高"</td><td class="l neg">-1.22%→-2.26%；起作用的只是"位置低+跌了两天"，与共识无关</td></tr>
+  </table>
+  <div class="verdict">共性：<b>位置判断有轻微价值（S0 超额 +0.13%~+0.60%），量能确认条件是负向的</b>。"把放量当主力吸筹"是四张图片共同的断裂点——放量在下跌市中的含义是分歧与流动性供给。</div>
+</section>
+
+<section>
+  <h2>四、月度稳定性（超额已按各月基准调整）</h2>
+  <div class="toggle">
+    <button id="btnChart" class="on" onclick="showMonthly('chart')">图</button>
+    <button id="btnTable" onclick="showMonthly('table')">表</button>
+  </div>
+  <div id="monthlyChart" class="chart-tall"></div>
+  <div id="monthlyTable" style="display:none;">
+    <table>
+      <tr><th>形态</th><th>7月<br>(基准-1.24%)</th><th>8月<br>(基准+1.67%)</th><th>9月<br>(基准-0.91%)</th><th>10月半月<br>(基准-4.60%)</th></tr>
+      <tr><td class="l">P1 长阴短柱反包</td><td class="neg">-9.59%</td><td class="neg">-2.24%</td><td class="pos">+1.32%</td><td class="neg">-9.47%</td></tr>
+      <tr><td class="l">P2 底部双倍阳</td><td class="pos">+0.57%</td><td class="neg">-0.86%</td><td class="neg">-2.05%</td><td class="pos">+0.16%</td></tr>
+      <tr><td class="l">P3 后量超前量</td><td class="neg">-3.56%</td><td class="neg">-3.46%</td><td class="neg">-1.23%</td><td class="neg">-0.12%</td></tr>
+      <tr><td class="l">P4 探底形态</td><td class="neg">-0.54%</td><td class="neg">-2.84%</td><td class="pos">+13.13%</td><td class="neg">-8.99%</td></tr>
+    </table>
+  </div>
+  <div class="cap">数据来源：本次回测；超额=形态当月5日均值-当月全市场基准（基准样本量 9.3万/8.9万/8.9万/1.7万）。P3 是唯一四个月超额全负的形态；P1/P4 月度样本 1~10 笔，数值为噪声级。</div>
+</section>
+
+<section>
+  <h2>五、参数敏感性：结论不依赖特定阈值</h2>
+  <table>
+    <tr><th>形态</th><th>参数</th><th>取值</th><th>n</th><th>5日均值</th><th>5日超额</th><th>胜率</th></tr>
+    <tr><td class="l" rowspan="6">P1</td><td class="l" rowspan="3">长阴实体幅度</td><td>3%</td><td>65</td><td class="neg">-1.16%</td><td class="neg">-0.72%</td><td>49.2%</td></tr>
+    <tr><td>4%（默认）</td><td>19</td><td class="neg">-6.86%</td><td class="neg">-6.43%</td><td>31.6%</td></tr>
+    <tr><td>5%</td><td>4</td><td class="neg">-10.35%</td><td class="neg">-9.92%</td><td>25.0%</td></tr>
+    <tr><td class="l" rowspan="3">短柱量比阈值</td><td>0.6×</td><td>6</td><td class="neg">-13.02%</td><td class="neg">-12.58%</td><td>0.0%</td></tr>
+    <tr><td>0.7×（默认）</td><td>19</td><td class="neg">-6.86%</td><td class="neg">-6.43%</td><td>31.6%</td></tr>
+    <tr><td>0.8×</td><td>30</td><td class="neg">-6.21%</td><td class="neg">-5.78%</td><td>33.3%</td></tr>
+    <tr><td class="l" rowspan="6">P2</td><td class="l" rowspan="3">倍量倍数</td><td>1.5×</td><td>843</td><td class="neg">-1.25%</td><td class="neg">-0.81%</td><td>43.1%</td></tr>
+    <tr><td>1.8×（默认）</td><td>378</td><td class="neg">-1.30%</td><td class="neg">-0.86%</td><td>41.3%</td></tr>
+    <tr><td>2.2×</td><td>157</td><td class="neg">-1.12%</td><td class="neg">-0.68%</td><td>44.6%</td></tr>
+    <tr><td class="l" rowspan="3">底部位置(60日)</td><td>≤0.2</td><td>137</td><td class="neg">-2.71%</td><td class="neg">-2.27%</td><td>32.1%</td></tr>
+    <tr><td>≤0.3（默认）</td><td>378</td><td class="neg">-1.30%</td><td class="neg">-0.86%</td><td>41.3%</td></tr>
+    <tr><td>≤0.4</td><td>664</td><td class="neg">-1.30%</td><td class="neg">-0.87%</td><td>40.4%</td></tr>
+    <tr><td class="l" rowspan="3">P3</td><td class="l" rowspan="3">放量倍数</td><td>1.5×</td><td>888</td><td class="neg">-2.87%</td><td class="neg">-2.43%</td><td>35.7%</td></tr>
+    <tr><td>2.0×（默认）</td><td>491</td><td class="neg">-2.94%</td><td class="neg">-2.51%</td><td>34.2%</td></tr>
+    <tr><td>2.5×</td><td>258</td><td class="neg">-2.59%</td><td class="neg">-2.15%</td><td>33.3%</td></tr>
+    <tr><td class="l" rowspan="6">P4</td><td class="l" rowspan="3">下影线幅度</td><td>1.5%</td><td>27</td><td class="neg">-0.60%</td><td class="neg">-0.16%</td><td>59.3%</td></tr>
+    <tr><td>2%（默认）</td><td>16</td><td class="neg">-2.26%</td><td class="neg">-1.83%</td><td>50.0%</td></tr>
+    <tr><td>3%</td><td>6</td><td class="neg">-2.56%</td><td class="neg">-2.12%</td><td>50.0%</td></tr>
+    <tr><td class="l" rowspan="3">低位位置(60日)</td><td>≤0.25</td><td>8</td><td class="neg">-3.15%</td><td class="neg">-2.71%</td><td>50.0%</td></tr>
+    <tr><td>≤0.35（默认）</td><td>16</td><td class="neg">-2.26%</td><td class="neg">-1.83%</td><td>50.0%</td></tr>
+    <tr><td>≤0.45</td><td>28</td><td class="neg">-1.10%</td><td class="neg">-0.67%</td><td>50.0%</td></tr>
+  </table>
+  <div class="cap">数据来源：本次回测；基准 -0.435%/5日。P2 六组、P3 三组参数超额全部为负，P1 六组全负且越严格越差；P4 组样本过小（n=6~28）仅供方向参考。</div>
+</section>
+
+<section>
+  <h2>六、方法、纪律与局限</h2>
+  <h3>执行纪律（与项目 docs/09 实盘模拟验证方法论一致）</h3>
+  <table>
+    <tr><th class="l">项目</th><th class="l">口径</th></tr>
+    <tr><td class="l">信号时点</td><td class="l">T日收盘后确认，只用T日及之前数据（无未来函数）</td></tr>
+    <tr><td class="l">成交</td><td class="l">T+1开盘价成交（跳空按实际开盘价）；剔除一字涨停入场日（P1 1笔、P3 2笔，被剔除者均值+10.6%/+26.4%，即偶尔一字涨停但买不到）</td></tr>
+    <tr><td class="l">持有</td><td class="l">5日为主口径，10日为辅；收盘价卖出</td></tr>
+    <tr><td class="l">票池</td><td class="l">新浪hs_a 5,027只 → 剔北交所/ST → 窗口前≥65根K + 日均额≥5000万 + 有成交≥55天 → <b>4,229只</b></td></tr>
+    <tr><td class="l">基准</td><td class="l">窗口内全部287,191个(票,日)同纪律样本；显著性同时给Welch t与按买入日聚类t（后者为准）</td></tr>
+    <tr><td class="l">数据校验</td><td class="l">逐根K线校验格式/价格/单调性拒收乱码；600000末值与东方财富接口交叉一致；四形态各抽信号人工核对条件通过</td></tr>
+  </table>
+  <h3>局限（如实声明）</h3>
+  <table>
+    <tr><th class="l">#</th><th class="l">局限</th></tr>
+    <tr><td class="l">1</td><td class="l"><b>单一市场环境</b>：窗口为成长股熊市（创业板指-30.4%），不能证明形态在牛市中无效，只能证明在此量价环境中不构成有效买入信号</td></tr>
+    <tr><td class="l">2</td><td class="l">P1/P4完整形态样本极小（19/16笔），结论主要靠条件分解的大样本阶段（S0-S2合计数万）支撑</td></tr>
+    <tr><td class="l">3</td><td class="l">不复权口径：除权日跳空可能造成少量形态误判（已用跌幅≥9.5%剔除跌停/除权极端日兜底）</td></tr>
+    <tr><td class="l">4</td><td class="l">存活偏差（池为当前上市股票）与未计交易成本（约0.15%/笔，对负超额结论只会更悲观）</td></tr>
+    <tr><td class="l">5</td><td class="l">多重检验：约60组检验中个别为正属正常噪声；采信标准为"方向一致+聚类显著+参数不敏感"三者同时满足，按此标准无一形态通过</td></tr>
+  </table>
+  <h3>对项目的落地建议</h3>
+  <table>
+    <tr><th class="l">#</th><th class="l">建议</th></tr>
+    <tr><td class="l">1</td><td class="l">四形态均不纳入买入规则库（不设R14-R17），rules/methodology_rules.json 不动</td></tr>
+    <tr><td class="l">2</td><td class="l">P3"后量超前量"转入<b>回避信号</b>候选：其镜像用法"缩量回调后放量长阳=派发风险，禁止追入"与R08游资反向闸门同向；建议牛熊分段（≥1年窗口）复验后再决定入库</td></tr>
+    <tr><td class="l">3</td><td class="l">位置判断的小额正超额与筹码峰C01/C02互证，共同支持"低位+缩量是朋友，放量确认要警惕"</td></tr>
+    <tr><td class="l">4</td><td class="l">新增可复用资产：4,995只票日K缓存 + 通达信网关market参数反转坑位记录，后续全市场形态验证可直接复用</td></tr>
+  </table>
+</section>
+
+<div class="disclaimer">
+  <b>免责声明</b>：以上内容基于公开数据和量化分析，仅供参考，不构成投资建议。市场有风险，投资需谨慎。任何投资决策应结合个人风险承受能力、资金状况和投资目标独立判断，必要时咨询持牌专业机构。过往表现不预示未来收益。
+</div>
+
+</div>
+
+<script>
+var RED = '#d93026', GREEN = '#1e8e3a', GREY = '#8a9199';
+var BASE = -0.435;
+
+/* ---------- 指数背景 ---------- */
+echarts.init(document.getElementById('chartIndex')).setOption({
+  tooltip: { trigger: 'axis', valueFormatter: function (v) { return v + '%'; } },
+  grid: { left: 50, right: 30, top: 30, bottom: 40 },
+  xAxis: { type: 'category', data: ['上证指数', '沪深300', '深证成指', '创业板指'] },
+  yAxis: { type: 'value', name: '区间涨跌幅(%)', splitLine: { lineStyle: { color: '#eee' } } },
+  series: [{ type: 'bar', barWidth: 46,
+    data: [
+      { value: -7.66, itemStyle: { color: GREEN } },
+      { value: -13.53, itemStyle: { color: GREEN } },
+      { value: -23.17, itemStyle: { color: GREEN } },
+      { value: -30.44, itemStyle: { color: GREEN } }
+    ],
+    label: { show: true, position: 'top', formatter: '{c}%', color: '#444c56' } }]
+});
+
+/* ---------- 主结果 ---------- */
+var mainNames = ['P1 长阴短柱反包', 'P2 底部双倍阳', 'P3 后量超前量', 'P4 探底形态'];
+var mainMean = [-6.863, -1.297, -2.941, -2.263];
+var mainExc = [-6.428, -0.862, -2.507, -1.829];
+function col(v) { return v >= 0 ? RED : GREEN; }
+echarts.init(document.getElementById('chartMain')).setOption({
+  tooltip: { trigger: 'axis' },
+  legend: { data: ['5日持有均值', '5日超额vs基准'], top: 0 },
+  grid: { left: 50, right: 30, top: 40, bottom: 40 },
+  xAxis: { type: 'category', data: mainNames },
+  yAxis: { type: 'value', name: '%', splitLine: { lineStyle: { color: '#eee' } } },
+  series: [
+    { name: '5日持有均值', type: 'bar', barWidth: 34,
+      data: mainMean.map(function (v) { return { value: v, itemStyle: { color: col(v) } }; }),
+      label: { show: true, position: 'top', formatter: '{c}%' } },
+    { name: '5日超额vs基准', type: 'bar', barWidth: 34,
+      data: mainExc.map(function (v) { return { value: v, itemStyle: { color: col(v), opacity: 0.55 } }; }),
+      label: { show: true, position: 'top', formatter: '{c}%' } },
+    { name: '基准', type: 'line', data: [BASE, BASE, BASE, BASE], symbol: 'none',
+      lineStyle: { type: 'dashed', color: GREY }, tooltip: { show: false } }
+  ]
+});
+
+/* ---------- 条件分解 ---------- */
+var stageData = {
+  P1: { title: 'P1 长阴短柱·次日反包', conds: ['S0 横盘震荡', 'S1 +长阴(≥4%)', 'S2 +短柱(≤0.7×)', 'S3 +次日放量阳', 'S4 +反包=完整'],
+        means: [-0.067, -2.229, -4.335, -6.760, -6.862], ns: [149197, 7026, 644, 33, 19] },
+  P2: { title: 'P2 底部双倍阳', conds: ['S0 底部区域', 'S1 +第一根倍量阳', 'S2 +第二根倍量阳=完整'],
+        means: [0.169, -1.119, -1.297], ns: [95020, 1708, 378] },
+  P3: { title: 'P3 后量超前量', conds: ['S0 缩量回调段', 'S1 +大阳线', 'S2 +放量(≥2×)', 'S3 后量超前量=完整', 'S4 价也超前高'],
+        means: [-0.849, -1.403, -2.859, -2.941, -2.565], ns: [53240, 7555, 529, 491, 410] },
+  P4: { title: 'P4 探底形态', conds: ['S0 低位运行', 'S1 +中大阳放量', 'S2 +连续两日回调', 'S3 探底长下影阳=完整'],
+        means: [0.132, -1.216, -0.967, -2.263], ns: [115479, 2780, 696, 16] }
+};
+['P1', 'P2', 'P3', 'P4'].forEach(function (pid) {
+  var d = stageData[pid];
+  echarts.init(document.getElementById('chart' + pid)).setOption({
+    tooltip: { trigger: 'axis', formatter: function (ps) {
+      var p = ps[0], i = p.dataIndex;
+      return d.conds[i] + '<br>5日均值: ' + d.means[i] + '%<br>样本: ' + d.ns[i] + ' 笔';
+    } },
+    grid: { left: 46, right: 16, top: 26, bottom: 30 },
+    xAxis: { type: 'category', data: d.conds, axisLabel: { fontSize: 10, interval: 0, rotate: 28 } },
+    yAxis: { type: 'value', name: '%', splitLine: { lineStyle: { color: '#eee' } } },
+    series: [{ type: 'bar', barWidth: 30,
+      data: d.means.map(function (v) { return { value: v, itemStyle: { color: col(v) } }; }),
+      label: { show: true, position: 'top', fontSize: 10, formatter: '{c}' },
+      markLine: { silent: true, symbol: 'none', data: [{ yAxis: BASE }],
+        lineStyle: { type: 'dashed', color: GREY }, label: { formatter: '基准' } } }]
+  });
+});
+
+/* ---------- 月度超额 ---------- */
+var monthlyChart = echarts.init(document.getElementById('monthlyChart'));
+var monthlyOpt = {
+  tooltip: { trigger: 'axis', valueFormatter: function (v) { return v + '%'; } },
+  legend: { data: ['P1', 'P2', 'P3', 'P4'], top: 0 },
+  grid: { left: 50, right: 30, top: 40, bottom: 40 },
+  xAxis: { type: 'category', data: ['2026-07', '2026-08', '2026-09', '2026-10(半月)'] },
+  yAxis: { type: 'value', name: '月度超额(%)', splitLine: { lineStyle: { color: '#eee' } } },
+  series: [
+    { name: 'P1', type: 'bar', data: [-9.59, -2.24, 1.32, -9.47] },
+    { name: 'P2', type: 'bar', data: [0.57, -0.86, -2.05, 0.16] },
+    { name: 'P3', type: 'bar', data: [-3.56, -3.46, -1.23, -0.12] },
+    { name: 'P4', type: 'bar', data: [-0.54, -2.84, 13.13, -8.99] }
+  ]
+};
+monthlyChart.setOption(monthlyOpt);
+function showMonthly(mode) {
+  document.getElementById('monthlyChart').style.display = mode === 'chart' ? 'block' : 'none';
+  document.getElementById('monthlyTable').style.display = mode === 'table' ? 'block' : 'none';
+  document.getElementById('btnChart').className = mode === 'chart' ? 'on' : '';
+  document.getElementById('btnTable').className = mode === 'table' ? 'on' : '';
+  if (mode === 'chart') { monthlyChart.resize(); }
+}
+</script>
+</body>
+</html>
