@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P3 牛熊分段复验 · 2026-10-20</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f6f3; --card: #ffffff; --text: #2c2c2a; --muted: #5f5e5a;
+    --border: #e3e1da; --red: #c7484a; --green: #3d8b5f; --amber: #b0720f;
+    --blue: #2f6db5; --purple: #5b4cb8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; line-height: 1.65; padding: 32px 20px 48px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .meta { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 12.5px; color: var(--muted); margin-bottom: 22px; }
+  .meta b { color: var(--text); font-weight: 500; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi .label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .kpi .value { font-size: 21px; font-weight: 600; }
+  .kpi .note { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .neg { color: var(--green); } .pos { color: var(--red); } .zero { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; }
+  .card h2 { font-size: 15.5px; font-weight: 600; margin-bottom: 4px; }
+  .card .desc { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; }
+  .chart { width: 100%; height: 340px; }
+  .chart-tall { height: 380px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 8px 0 4px; }
+  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
+  th { background: #f1efe8; font-weight: 500; }
+  .verdict { border-left: 4px solid var(--amber); background: #fdf8ec; }
+  .verdict h2 { color: var(--amber); }
+  ul.tight { padding-left: 20px; font-size: 13px; }
+  ul.tight li { margin-bottom: 6px; }
+  .foot { font-size: 11.5px; color: var(--muted); margin-top: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>P3「后量超前量」牛熊分段复验：负Edge是"熊市"还是"这段熊市"？</h1>
+  <div class="sub">D28 · 2026-10-20 · 全市场 4,640 只 A 股 × 548 个交易日（2024-07-15 ~ 2026-10-20）· 信号窗口 2025-01-06 ~ 2026-10-13</div>
+
+  <div class="meta">
+    <b>纪律</b>：T 日收盘信号 → T+1 开盘买 → 持有 5 日收盘卖，无未来函数；剔一字涨停入场。基准 = 全样本同纪律 1,968,877 个(票,日)，+0.579%/5日，胜率 50.5%。
+    <b>regime</b>：上证收盘 vs MA60（±2%），按买入日归类（BULL 155 天 / FLAT 211 天 / BEAR 74 天）。
+    <b>市场背景</b>：窗口内上证 +18.52%（整体上涨市，内含 2026-07~10 持续深熊）。数据：通达信 TCP 2026-10-20 23:19 拉取，与东财交叉校验一致。
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label">22 个月总超额</div><div class="value zero">-0.264%</div><div class="note">t=-1.76 · 聚类 t=-0.96 → 不显著</div></div>
+    <div class="kpi"><div class="label">BEAR 段超额（全部熊市日）</div><div class="value neg">-1.838%</div><div class="note">t=-3.57 · 聚类 t=-2.04 → 显著为负</div></div>
+    <div class="kpi"><div class="label">2026H1 熊市日超额</div><div class="value pos">+2.170%</div><div class="note">t=1.98 · 聚类 t=1.51 → 方向为正</div></div>
+    <div class="kpi"><div class="label">2026H2 熊市日超额</div><div class="value neg">-4.793%</div><div class="note">t=-6.62 · 聚类 t=-3.11 → 双检验显著</div></div>
+    <div class="kpi"><div class="label">裁定</div><div class="value" style="color:var(--amber)">否决</div><div class="note">负Edge不随时间稳定，不设规则</div></div>
+  </div>
+
+  <div class="card">
+    <h2>一、regime 分段：表面支持"熊市回避"</h2>
+    <div class="desc">22 个月数据，volmult=2.0。BEAR 段 -1.84% 双检验显著——但第四节将证明这个显著值由单一子段驱动。</div>
+    <div id="c1" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>二、半年 × regime 分解：负Edge只住在 2026H2（关键证据）</h2>
+    <div class="desc">12 个(半年×regime)单元中，只有 2026H2 的两个单元为负且量级可观；仅 2026H2 BEAR 双检验显著。2026H1 熊市日方向为正——同一"熊市"标签、相反结论。</div>
+    <div id="c2" class="chart chart-tall"></div>
+  </div>
+
+  <div class="card">
+    <h2>三、BEAR 段月度明细：负值月份与 2026-07~10 严丝合缝</h2>
+    <div class="desc">熊市日按月的 P3 原始 5 日均值。2025-01 / 2025-04 / 2026-03 / 2026-04 / 2026-06 的熊市日全部为正（浅回调/超跌反弹），只有 2026-07~10 持续深熊期深度为负。</div>
+    <div id="c3" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>四、参数敏感性：三组 volmult 结构同构，但救不了时间不稳定性</h2>
+    <div class="desc">敏感性通过 ≠ 结论成立：参数不敏感只排除"阈值过拟合"，排除不了"Edge 只在最近一段行情出现"。</div>
+    <div id="c4" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>五、与 docs/20 互相验证（子窗口复现）</h2>
+    <div class="desc">在两年数据上截取 docs/20 同窗口：方向一致、量级同阶——3 个月窗口的测算本身稳健，问题在于把它外推成"熊市回避规则"。</div>
+    <table>
+      <tr><th>口径</th><th>n</th><th>5日超额</th><th>Welch t</th><th>聚类 t</th></tr>
+      <tr><td>docs/20（200根池 4,229 只）</td><td>491</td><td class="neg">-2.507%</td><td>-5.96</td><td>-2.26</td></tr>
+      <tr><td>本次（500根池 4,640 只）</td><td>517</td><td class="neg">-3.635%</td><td>-9.01</td><td>-2.65</td></tr>
+    </table>
+  </div>
+
+  <div class="card verdict">
+    <h2>六、裁定：否决（P3 不纳入规则库，不设回避闸门）</h2>
+    <ul class="tight">
+      <li><b>单 episode 结论不外推</b>（docs/09 §8.3）：强负Edge样本只有 2026-07~10 一个深熊 episode；2026H1 熊市日反向（+2.17%）。</li>
+      <li><b>Kelly 纪律的规则层类推</b>：n&lt;10 不给仓位——1 个 episode 不给规则。</li>
+      <li><b>D21 教训</b>：过滤层先过"被淘汰组显著为负"检验——被淘汰组（2026H1 熊市日 P3 信号）方向为正，硬上闸门会在浅回调市拦掉正收益信号。</li>
+      <li><b>regime 标签太粗</b>：MA60±2% 分不出"持续深熊"与"浅回调"；能分开的定义样本内只有 1 个 episode，无法验证。</li>
+      <li><b>复查条件</b>：出现第二个独立深熊 episode 且 P3 负Edge重现（双检验显著），才复验"深熊条件性回避闸门"；单 episode 不论证。</li>
+      <li><b>本轮仍然落地</b>：L1 验证标准三件套（docs/09 §11）+ L2 取数设施（回测池扩容就绪）；本报告本身是三件套的第一次完整实战。</li>
+    </ul>
+  </div>
+
+  <div class="foot">免责声明：本报告为个人研究记录，全部输出不构成投资建议。市场有风险，投资需谨慎。数据来源：通达信 TCP 117.34.114.x:7709（2026-10-20 拉取）｜股票池：新浪 hs_a｜复现：research/scripts/validate_p3_regime.py</div>
+</div>
+
+<script>
+var RED = '#c7484a', GREEN = '#3d8b5f', GRAY = '#8a8880', BLUE = '#2f6db5', PURPLE = '#5b4cb8', AMBER = '#b0720f';
+var AXIS = '#5f5e5a', SPLIT = '#e8e6de';
+function baseOpt(extra) {
+  var o = {
+    backgroundColor: 'transparent',
+    grid: { left: 56, right: 24, top: 42, bottom: 46 },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { top: 0, textStyle: { color: AXIS, fontSize: 12 }, itemWidth: 14, itemHeight: 9 },
+    xAxis: { type: 'category', axisLine: { lineStyle: { color: SPLIT } }, axisLabel: { color: AXIS, fontSize: 12 }, axisTick: { show: false } },
+    yAxis: { type: 'value', name: '5日超额 %', nameTextStyle: { color: AXIS, fontSize: 11 }, axisLabel: { color: AXIS, formatter: '{value}%' }, splitLine: { lineStyle: { color: SPLIT } } }
+  };
+  for (var k in extra) { o[k] = extra[k]; }
+  return o;
+}
+function barColor(v) { return v >= 0 ? RED : GREEN; }
+
+var c1 = echarts.init(document.getElementById('c1'));
+c1.setOption(baseOpt({
+  tooltip: { trigger: 'axis', valueFormatter: function(v) { return v + '%'; } },
+  xAxis: { data: ['总体', 'BULL 牛市', 'FLAT 震荡', 'BEAR 熊市'] },
+  series: [{
+    type: 'bar', barWidth: 52, data: [
+      { value: -0.264, itemStyle: { color: GRAY } },
+      { value: 0.102, itemStyle: { color: RED } },
+      { value: -0.138, itemStyle: { color: GREEN } },
+      { value: -1.838, itemStyle: { color: GREEN } }
+    ],
+    label: { show: true, position: 'top', color: AXIS, fontSize: 12, formatter: function(p) { return p.value + '%'; } },
+    markLine: { silent: true, symbol: 'none', lineStyle: { color: GRAY, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } }
+  }]
+}));
+
+var halves = ['2025H1', '2025H2', '2026H1', '2026H2'];
+var c2 = echarts.init(document.getElementById('c2'));
+c2.setOption(baseOpt({
+  tooltip: { trigger: 'axis', valueFormatter: function(v) { return v == null ? '样本不足' : v + '%'; } },
+  legend: { data: ['BULL', 'FLAT', 'BEAR'], top: 0 },
+  xAxis: { data: halves },
+  series: [
+    { name: 'BULL', type: 'bar', barGap: '12%', data: [-0.279, 0.075, 0.206, null], itemStyle: { color: RED }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: function(p) { return p.value == null ? 'n=0' : p.value + '%'; } } },
+    { name: 'FLAT', type: 'bar', data: [-0.124, 0.474, -0.266, -1.372], itemStyle: { color: BLUE }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: '{c}%' } },
+    { name: 'BEAR', type: 'bar', data: [-0.261, -1.860, 2.170, -4.793], itemStyle: { color: PURPLE }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: function(p) { return p.value + '%'; } } }
+  ],
+  markLine: { silent: true, symbol: 'none', lineStyle: { color: GRAY, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } }
+}));
+
+var months = ['2025-01', '2025-04', '2026-03', '2026-04', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
+var mVals = [2.974, 4.891, 2.559, 5.123, 4.279, -5.428, -4.329, -3.477, -4.628];
+var c3 = echarts.init(document.getElementById('c3'));
+c3.setOption(baseOpt({
+  tooltip: { trigger: 'axis', valueFormatter: function(v) { return v + '%'; } },
+  xAxis: { data: months, axisLabel: { color: AXIS, fontSize: 11, rotate: 30 } },
+  series: [{
+    type: 'bar', barWidth: 40,
+    data: mVals.map(function(v) { return { value: v, itemStyle: { color: barColor(v) } }; }),
+    label: { show: true, position: 'top', color: AXIS, fontSize: 11, formatter: function(p) { return p.value + '%'; } },
+    markLine: { silent: true, symbol: 'none', lineStyle: { color: GRAY, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } }
+  }]
+}));
+
+var c4 = echarts.init(document.getElementById('c4'));
+c4.setOption(baseOpt({
+  tooltip: { trigger: 'axis', valueFormatter: function(v) { return v + '%'; } },
+  legend: { data: ['BULL', 'FLAT', 'BEAR'], top: 0 },
+  xAxis: { data: ['volmult=1.5', 'volmult=2.0', 'volmult=2.2'] },
+  series: [
+    { name: 'BULL', type: 'bar', data: [-0.067, 0.102, 0.051], itemStyle: { color: RED }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: '{c}%' } },
+    { name: 'FLAT', type: 'bar', data: [-0.167, -0.138, -0.255], itemStyle: { color: BLUE }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: '{c}%' } },
+    { name: 'BEAR', type: 'bar', data: [-1.701, -1.838, -1.506], itemStyle: { color: PURPLE }, label: { show: true, position: 'top', fontSize: 11, color: AXIS, formatter: '{c}%' } }
+  ],
+  markLine: { silent: true, symbol: 'none', lineStyle: { color: GRAY, type: 'dashed' }, data: [{ yAxis: 0 }], label: { show: false } }
+}));
+
+window.addEventListener('resize', function() { [c1, c2, c3, c4].forEach(function(c) { c.resize(); }); });
+</script>
+</body>
+</html>
