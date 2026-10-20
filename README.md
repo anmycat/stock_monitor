@@ -52,12 +52,13 @@ SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 ssh
 | 调研规则 v1.4 与验证数据 | `research/README.md` → `research/rules/methodology_rules.json` |
 | 已知风险与遗留问题 | `prd/10_风险登记.md`、`prd/12_审计清单.md` |
 
-## 当前状态（2026-10-18）
+## 当前状态（2026-10-20）
 
-- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源四源（腾讯/新浪/东财/akshare）容错，东财当前处于风控冷却
+- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**本地已提交待推送部署**（领先 origin/main 15 个提交）
 - **策略**：trend / dip / defense + 三个 YAML 策略（trend_breakout_v1 / dip_reversal_v1 / balanced_alpha_v1）+ 八因子评分 + 三层漏斗
-- **当日新增（E 线·代码一致性守护）**：修复三源「代码与实际股票不匹配」事故（腾讯 `startswith('6')` 把 ETF 510300 错判 .SZ、北交所 920819 全部错判市场）——全项目代码转换收敛到 `utils/code_utils.py`；新增 CodeGuard 服务（盘前 9:00-9:15 静态校验 + 集合竞价 9:15-9:25 缓存连续性校验，错码自动修复）；新增 `POST /api/system/code-guard/check`、`GET /api/system/code-guard/report` 两端点；新增测试 61 个（全量 108/108 通过）。详见 `prd/01 §7.5`
-- **待办**：① `/api/market` 行情数据异常（全涨 11%+，自校验已报警）根因待查 ② `/api/evaluation/runs` 500 错误 ③ 服务器代码与本地代码待 diff ④ 回测池扩容 100 只/12 个月 ⑤ 东财 clist 的 fs 覆盖率扩展（ETF/北交所）待实测启用
+- **当日新增（F 线·数据源重组）**：修复两条断裂链路——stock_list（原仅 akshare 未安装 → 退化为 5 只兜底；新浪 `get_all_stocks` 实测 5574 只，含科创 617/北交所 351/创业板 936）、daily（原仅 akshare 实现 → signals 恒空；腾讯 fqkline + 新浪 getKLineData 双第一线）；ETF 监控改按目标代码直查实时路。详见 `prd/02 §3.8`
+- **当日调研（未接入）**：同花顺/通达信免费接口实测——TDX（pytdx）5/15/30/60 分钟K 完整可用，可补 gates 分钟断链（P1 建议）；THS 涨停池/日K/分时可用（P2 建议）。详见 `prd/02 §3.9`
+- **待办**：① M1 清偿部署债：推送 15 个提交 + ECS 部署验收（交易时段验证 `/api/market` 覆盖数、`/api/signals` 非空、`/api/etf` 实时价）② TDX 作 minute 第一线接入（P1，待确认）③ THS 涨停池作 daily 第三线 + 特色数据（P2，待确认）④ `/api/evaluation/runs` 500 错误 ⑤ 回测池扩容 100 只/12 个月
 
 ## 双轨说明（重要）
 
