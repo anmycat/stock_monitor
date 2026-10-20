@@ -397,9 +397,11 @@ class TestCheckAndPush(unittest.TestCase):
     def test_push_with_stub_notifier(self):
         m = _make_monitor()
         m.source_manager = _StubSourceManager()
-        # 宽窗口（回看48小时）确保fixture内容都在窗口内
+        # 宽窗口（回看7天）确保fixture内容都在窗口内
+        # 2026-10-20 修：原48h窗口随fixture（10-18）老化而失效（windowed=0→digest None，
+        # 与D26"测试时间炸弹"同类）；fixture 是静态桩，放宽到7天不影响断言语义
         m._cache.store['news:last_push_at'] = \
-            (datetime.now() - timedelta(hours=48)).isoformat()
+            (datetime.now() - timedelta(days=7)).isoformat()
 
         sent = []
 

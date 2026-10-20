@@ -3,31 +3,41 @@
 """
 K线形态验证数据准备：全市场A股日K（通达信TCP）+ 股票池（新浪列表）+ 指数基准。
 
-坑（2026-10-20 实测，117.34.114.x 网关）：get_security_bars 的 market 参数与标准约定相反——
-沪市股票要用 market=1、深市股票要用 market=0；用错返回 None 或乱码（datetime 非20xx）。
-因此每只票双市场尝试 + 严格校验（datetime格式/价格>0/日期单调），乱码一律拒收。
+坑（2026-10-20 实测，117.34.114.x 网关；订正记录）：TDX 协议标准就是 0=深/1=沪
+（与生产代码 TdxSource.MARKET_TO_TDX 一致，探活码 600000 用 1）——本脚本初版曾把
+映射写反（沪市误传 0），该网关对错误 market 不报错，返 None 或乱码（datetime 非20xx）。
+故保留双市场尝试 + 严格校验（datetime格式/价格>0/日期单调），乱码一律拒收。
 
 口径：
   - 股票池：新浪 hs_a 全市场列表，剔除北交所(920/4/8开头)与 ST/*ST
   - 日K：通达信 get_security_bars(category=9 日线)，不复权，成交量单位=手
   - 指数：上证000001 / 沪深300 / 深证成指399001 / 创业板指399006
-  - 每只票取最近200根日K（约2025-12 ~ 2026-10-20），覆盖形态回看+3个月验证窗口
-输出：research/raw/pattern_pool_klines.json + research/raw/fetch_pattern_pool.log
+  - 每只票取最近 N 根日K（--bars，默认200≈2025-12~2026-10-20；500≈2024-09~2026-10-20 覆盖牛熊两regime）
+输出：research/raw/pattern_pool_klines[_2y].json + 同名 .log
 """
-import json, os, re, sys, time
+import json, os, re, sys, time, argparse
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(BASE, ".."))  # stock_monitor 根
 import requests
 from quant_engine.data.sources.tdx import TdxSource
 
-BARS = 200
-OUT = os.path.join(BASE, "raw", "pattern_pool_klines.json")
-LOG = os.path.join(BASE, "raw", "fetch_pattern_pool.log")
-
 SINA_URL = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData"
 H = {"User-Agent": "Mozilla/5.0", "Referer": "https://finance.sina.com.cn"}
 DT_RE = re.compile(r"^20\d\d-\d\d-\d\d")
+
+
+def parse_args():
+    ap = argparse.ArgumentParser(description="全市场A股日K取数（通达信TCP）")
+    ap.add_argument("--bars", type=int, default=200, help="每只票取数根数（默认200）")
+    ap.add_argument("--out", default="pattern_pool_klines.json", help="输出文件名（raw/ 下）")
+    return ap.parse_args()
+
+
+ARGS = parse_args()
+BARS = ARGS.bars
+OUT = os.path.join(BASE, "raw", ARGS.out)
+LOG = OUT.replace(".json", ".log")
 
 
 def log(msg):
@@ -65,7 +75,7 @@ def fetch_universe():
             continue
         if "ST" in name:
             continue
-        # 该网关 market 参数反转：沪市票→1，深市票→0（仍会双市场校验兜底）
+        # TDX 协议标准映射：沪市票→1，深市票→0（双市场校验兜底防乱码）
         pool.append({"code": sym[2:], "name": name, "mkt_hint": 1 if sym[:2] == "sh" else 0})
     return pool
 
@@ -131,7 +141,7 @@ def main():
         if (i + 1) % 500 == 0:
             log(f"  进度 {i+1}/{len(pool)}  成功{len(stocks)} 失败{len(failed)} 耗时{time.time()-t0:.0f}s")
 
-    # 指数基准（同反转映射：沪市指数→1，深市指数→0）
+    # 指数基准（TDX 标准映射：沪市指数→1，深市指数→0）
     index = {}
     for name, mkt, code in (("上证指数", 1, "000001"), ("沪深300", 1, "000300"),
                             ("深证成指", 0, "399001"), ("创业板指", 0, "399006")):
@@ -145,7 +155,7 @@ def main():
             log(f"指数 {name} 失败: {e}")
 
     meta = {"fetched_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "通达信TCP 117.34.114.x:7709 get_security_bars(category=9)；股票池=新浪hs_a；market参数经实测反转(沪1深0)",
+            "source": "通达信TCP 117.34.114.x:7709 get_security_bars(category=9)；股票池=新浪hs_a；TDX协议标准market映射(沪1深0)，双市场尝试+逐根校验防乱码",
             "universe_raw": len(pool), "stocks_ok": len(stocks), "failed": len(failed),
             "bars_per_stock": BARS, "adjust": "不复权", "vol_unit": "手",
             "failed_codes_sample": failed[:80]}
