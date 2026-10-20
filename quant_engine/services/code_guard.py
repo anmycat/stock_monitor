@@ -148,6 +148,13 @@ class CodeGuard:
         查询码用静态规则推断的市场构造（本地后缀可能本身就是错的，
         不能信任）；返回的 code 以腾讯行首市场为权威。
 
+        交易时间门控说明（2026-10-20 用户决策固化）：本方法**直连**
+        TencentSource，不经 datacenter.get_all_realtime_quotes 的
+        is_trading_time 门控——CodeGuard 是数据校验链路（盘前/竞价
+        各一次的低频拉取），不是监控运算；"只在交易时间取数运算"
+        的约定适用于 burst/信号/大盘分析，新闻推送与数据校验按其
+        自身窗口定义（见 PRD 01 §7.5 / 07 §3.2）。
+
         Returns:
             {标准代码: {'market': 'SH', 'name': '平安银行', 'price': 11.5}}
         """

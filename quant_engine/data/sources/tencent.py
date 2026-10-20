@@ -5,13 +5,16 @@ import pandas as pd
 from typing import List, Dict, Optional
 from loguru import logger
 
-from ...utils.code_utils import to_tencent_code, MARKET_SH, MARKET_SZ, MARKET_BJ
+from ...utils.code_utils import (to_tencent_code, normalize_code,
+                                 MARKET_SH, MARKET_SZ, MARKET_BJ)
 
 
 class TencentSource:
     """腾讯财经数据源 - qt.gtimg.cn"""
 
     BASE_URL = "https://qt.gtimg.cn/q="
+    # 日线 K 线（fqkline，前复权；2026-10-20 实测，单只 ~0.4s）
+    DAILY_URL = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
 
     USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -105,6 +108,57 @@ class TencentSource:
             return pd.DataFrame()
         except Exception as e:
             logger.error(f"Tencent get realtime quote error: {e}")
+            return pd.DataFrame()
+
+    @staticmethod
+    def get_daily_data(code: str, days: int = 120) -> pd.DataFrame:
+        """获取日线数据（fqkline 前复权，2026-10-20 新增）
+
+        修复日线链路断裂：原 _PRIORITY['daily'] 实际只有 akshare
+        一条路且未安装，signals 全空（见 PRD 02 §3.8）。
+        实测要点：
+        - 返回结构 data[{qt_code}]['qfqday']，数组顺序
+          [day, open, close, high, low, volume]
+        - 北交所 key 为 'day' 而非 'qfqday'，需兼容
+        - volume 单位为手，统一 ×100 转股（与新浪日线一致）
+        返回列：date/open/high/low/close/volume
+        """
+        try:
+            qt_code = TencentSource._convert_code(code)
+            params = {
+                'param': f"{qt_code},day,,,{min(int(days), 1024)},qfq",
+            }
+            response = requests.get(
+                TencentSource.DAILY_URL, params=params,
+                headers=TencentSource._get_headers(), timeout=15)
+            if response.status_code != 200:
+                logger.warning(
+                    f"Tencent daily {code} HTTP {response.status_code}")
+                return pd.DataFrame()
+            data = response.json().get('data') or {}
+            node = data.get(qt_code) or {}
+            # 北交所回退 'day' 键
+            bars = node.get('qfqday') or node.get('day') or []
+            if not bars:
+                return pd.DataFrame()
+            records = []
+            for bar in bars:
+                if len(bar) < 6:
+                    continue
+                records.append({
+                    'date': str(bar[0] or ''),
+                    'open': float(bar[1] or 0),
+                    'close': float(bar[2] or 0),
+                    'high': float(bar[3] or 0),
+                    'low': float(bar[4] or 0),
+                    # 手 → 股（与新浪日线单位一致）
+                    'volume': float(bar[5] or 0) * 100,
+                })
+            df = pd.DataFrame(records)
+            df = df[df['close'] > 0].sort_values('date').reset_index(drop=True)
+            return df
+        except Exception as e:
+            logger.error(f"Tencent get daily data error [{code}]: {e}")
             return pd.DataFrame()
 
     @staticmethod

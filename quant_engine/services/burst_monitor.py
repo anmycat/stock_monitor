@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Dict
 from loguru import logger
 from ..data.datacenter import DataCenter
+from ..utils.calendar import is_trading_time
 import pandas as pd
 
 
@@ -26,8 +27,17 @@ class BurstMonitor:
         self.active_pool: List[str] = []
 
     def refresh_active_pool(self) -> List[str]:
-        """刷新活跃股票池 - 成交额前N名的活跃股"""
+        """刷新活跃股票池 - 成交额前N名的活跃股
+
+        交易时间门控（2026-10-20 按用户决策显式化）：遵守原项目约定
+        "只在交易时间内取数据运算"（新闻推送除外）——非交易时段
+        datacenter.get_all_realtime_quotes 恒返空，此处直接跳过
+        避免无效请求与日志噪音，保持上一池待盘中首轮自动补刷。
+        """
         try:
+            if not is_trading_time():
+                logger.debug("Non-trading time, skip active pool refresh")
+                return self.active_pool or []
             df = self.datacenter.get_all_realtime_quotes()
             if df.empty:
                 return self.active_pool or []
