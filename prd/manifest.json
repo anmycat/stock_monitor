@@ -1,13 +1,13 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.2",
+  "version": "3.3",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
   "content_tracks": {
     "track_a_product": "产品实现线：quant_engine v5.0.0（FastAPI+Redis+Celery），ECS 8.134.89.55:8000，PRD v3.0 符合度 100%",
-    "track_b_research": "调研方法论线：research/rules/methodology_rules.json v1.6（2026-10-21 用户确认落库：R06 avoidance / R12 默认开启 / Kelly v1.6），半年窗口 2026-04-13~10-13（122 交易日/27 只/614 笔信号/3151 基准样本）+ 3M 两窗口复验（v1 288 笔 / v2 196 笔定稿口径）",
+    "track_b_research": "调研方法论线：research/rules/methodology_rules.json v1.6（2026-10-21 用户确认落库：R06 avoidance / R12 默认开启 / Kelly v1.6），半年窗口 2026-04-13~10-13（122 交易日/27 只/614 笔信号/3151 基准样本）+ 3M 三窗口复验（v1 288 笔 / v2 196 笔 / v3 195 笔定稿口径，D33）",
     "reconciliation": "两轨差异并列呈现不调和（00 §0）；验证结论只对调研口径成立，不可外推为产品盘中信号收益承诺（01 §1）"
   },
   "documents": [
@@ -103,7 +103,7 @@
     }
   ],
   "key_facts": {
-    "validation_window": "2026-04-13 ~ 2026-10-13（122 个交易日，27 只股票）；3M 复验 2026-07-16~10-13（58 交易日）；**第二窗口 2026-07-21~10-20（60 交易日，D30）**",
+    "validation_window": "2026-04-13 ~ 2026-10-13（122 个交易日，27 只股票）；3M 复验 2026-07-16~10-13（58 交易日）；**第二窗口 2026-07-21~10-20（60 交易日，D30）；**第三窗口 2026-07-22~10-21（60 交易日，D33）****",
     "samples": {
       "rule_signals": 614,
       "baseline_days": 3151,
@@ -113,7 +113,7 @@
       "rule_signals_3m_v2": 196,
       "baseline_days_3m_v2": 1531
     },
-    "baseline_avg_pnl": "+1.67%/笔（胜率 48.4%，6M）；3M-v1 +1.87%（51.4%）；**3M-v2 +1.02%（48.5%）**",
+    "baseline_avg_pnl": "+1.67%/笔（胜率 48.4%，6M）；3M-v1 +1.87%（51.4%）；**3M-v2 +1.02%（48.5%）；**3M-v3 +0.85%（47.4%）****",
     "adopted_config": "v1.5（2026-10-16 迭代）：R12（pre10>25% 弱过滤，v1.5 恢复默认）+ R13 急跌禁低吸变体（指数 bias20≤-2% 禁 R05）为默认过滤；R06 倒T 已移出买入信号池（avoidance）；3M-v1 复验：无过滤 +0.20% → v1.4 采纳 +0.34% → v1.5 定稿（剔 R06）+0.88%（累计 ×2.0）；**3M-v2 复验（D30）：无过滤 +0.14% → v1.4 采纳 +0.45% → v1.5 定稿 196 笔/44.4%/+0.74%/+145.63%——两窗口复现，8/9 月逐字段相同**",
     "strongest_rule": "R02 涨停低开 +3.53%（n=44，超额 +1.86pp，6M 口径历史记录）；**D30 起'最强规则'声明已撤销**——3M-v2 转负（19 笔 47.4% / −0.12%），v1 的 +1.90% 由 07-16~07-20 五笔暴利单（+47.93%）驱动，两窗口重叠 19 笔分毫不差（−2.32%），降级为'高方差尖兵'，Kelly v1.6 置 0（docs/22 §三）",
     "most_robust_chip_rule": "C01 低位突破确认 +2.79%（n=376，超额 +1.12pp）",
@@ -169,7 +169,7 @@
     "feature_2026_10_18_etf_holdings": "D24（12 §3.11）：代码 4 文件（fund_holdings.py 新建 / etf_holdings_monitor.py 新建 / worker.py 接入 / routes.py+dependencies.py 3 端点）+ 测试 17/17 + 既有 3/3 回归 + 全量 py_compile 与导入冒烟；文档 9 文件同步（01 §7.3 / 02 §3.6 / 03 §4.3 / 07 四处 / 08 §10 / 10 G22-G24 / 14 §7 / README / manifest）；本地补装 fastapi 0.109.0 + uvicorn 0.27.0 进 coding/.venv（该 venv 与 requirements.txt 不符，缺 fastapi/uvicorn）；设计裁定：权重主判剔除份额缩放、退出=退出前100大非清仓、净值跳变>50% 仅 warning 不停告警、无备用源失败当日跳过",
     "feature_2026_10_18_morning_news": "D25（12 §3.12）：代码 2 新 5 改（news_sources.py 6源适配器 / news_monitor.py 去重+分类+文案 / worker.py 9:15 任务 / routes.py+dependencies.py 3 端点 / config.py NEWS_* 配置组）+ 测试 27/27 + 回归 20/20 + 全量 compileall 与导入冒烟（40 路由）；数据源实测 8 候选：3 可用 + RSS 适配器 + 2 凭据门控，不可用清单写入 02 §3.7；设计裁定：去重三层/泛词剔除/多板块上限3/时间窗取上次推送/限量文案/三源全失败不推送/凭据源不进主流程；文档 9 文件同步（01 §7.4 N1-N7 / 02 §3.7 / 03 §4.4 / 07 四处 / 08 §11 / 10 G25-G27 / 12 §3.12 / 14 §8 / README / manifest）"
   },
-  "executable_config": "research/rules/methodology_rules.json **v1.6**（2026-10-21 用户确认落库：R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly v1.6 参数 + 三窗口验证记录 _6m_validation/_3m_validation_v2）；v1.5 裁定（R06 avoidance/Kelly 3M-v1 口径/R12 默认开启）与 v1.6 裁定（Kelly 按 3M-v2 再下修）中间态记录见 prd/14 §4/§5.9、prd/12 §3.17",
+  "executable_config": "research/rules/methodology_rules.json **v1.6**（2026-10-21 用户确认落库：R01-R13 交易规则 + 资金四分类 + C01-C05 筹码规则 + Kelly v1.6 参数 + 三窗口验证记录 _6m_validation/_3m_validation_v2；v3 窗口观测与 v1.7 建议（R04→2.36%/混合→1.69%，待用户确认）登记于 prd/14 §5.10、rules JSON 不动）；v1.5 裁定（R06 avoidance/Kelly 3M-v1 口径/R12 默认开启）与 v1.6 裁定（Kelly 按 3M-v2 再下修）中间态记录见 prd/14 §4/§5.9、prd/12 §3.17",
   "iteration_landed_2026_10_16": "v1.5 A 线已迭代进 prd 文档：05 §3/§4（采纳配置 v1.5）、06 §3.1/§7.5/§8、04 §8、01 §4.1、10（G18-G21）、00 §0、07 §15（B 线状态表）、02 §5（B5 断言缺口）；rules JSON 仍为 v1.4，B 线工程项 9 项均待执行；C 线 ETF持仓监控 2026-10-18 已实现待部署验收（14 §7）；D 线早间新闻推送 2026-10-18 已实现待部署验收（14 §8）",
   "disclaimer": "个人研究工具，全部输出不构成投资建议。市场有风险，投资需谨慎。",
   "ths_tdx_research_2026_10_20": "ths_tdx_research_2026_10_20: 同花顺/通达信免费行情接口调研（用户指示，优先免费）。本地真实API实测：THS 日K/分时/涨停池/快讯/F10 可用（Referer 必带、限频严、无北交所、实时快照触风控）；TDX(pytdx1.72) TCP7709 协议——30台TCP全通但仅117.34.114.x集群协议可用（本机2/20可靠，服务器池探活是刚需），日/周/月K+5/15/30/60分钟K完整（5分钟48根/天）、1分钟K不支持、指数须get_index_bars、xdxr除权88条、批量快照≤5只、无北交所、列表分页无效。交叉验证：TDX与THS收盘价一致(9.76)。结论：P1 TDX补minute断链(gates恰需5分钟K)、P2 THS作daily第三线+涨停池特色数据；两家均不作stock_list与北交所来源。PRD 02 §3.9 登记，版本v2.6；未改任何代码与优先级",
@@ -196,5 +196,23 @@
     "cleanup": "routes.py 死赋值 1 处 + 本轮触及文件 6 处未用导入",
     "verification": "实时 5575 只 sanitize dropped=0（仅 N 文峰新股豁免）；API 冒烟 4 端点 200（evaluation/runs 200 = B4 端点级生效）；全量 unittest 172/172 + 导入冒烟",
     "backlog": "P3 cosmetic 存量 11 项（7 F841 + 4 F541）；P2 akshare_source 2 处 F401（未触及文件）；C2/P1-2 拉全市场再过滤仍待执行"
+  },
+  "d33_post_iteration_3m_recheck_2026_10_22": {
+    "round": "D33 迭代后 3 个月实盘复验与调整（2026-10-22，五阶段第五阶段）",
+    "regression": "同一静态数据重跑 v2 脚本：非 R06 信号 225 笔逐字段零差异；总数 284→295 增量全归因 rules v1.6 落库（R06 short_then_long→avoidance 致引擎落入常规买入分支 59 笔 −0.53%→70 笔 +0.52%），非数据/代码回归；docs/22 定稿口径（196 笔/44.4%/+0.74%/+145.63%）两种语义下均复现",
+    "adjustments": [
+      "① 脚本-规则一致性：v2/v3 验证脚本跳过列表加入 avoidance（v1.6 落库遗漏的消费方）；v2 四个历史产出按时点原貌保留（git 存档），脚本加注记",
+      "② 数据延伸至 10-21：fetch_tail_1021.py 双源（TDX 主源×100=股 + 腾讯不复权独立校验）三重校验（锚点/双源/turn 回代<1%）；vol 单位逐票锚点标定（688498 腾讯=股）；旧 index_daily.json vol 单位实为股（旧注记勘误）",
+      "③ Kelly v1.7 建议待用户确认：R04 2.84→2.36%、混合 1.92→1.69%（三窗口 2.92→2.84→2.36 / 3.70→1.92→1.69 单调下衰减，取保守者原则）；rules JSON 保持 v1.6 不动"
+    ],
+    "third_window": "窗口 2026-07-22~10-21（60 交易日）：定稿口径 195 笔/44.1%/+0.68%/+131.72%（三窗口 201→196→195 稳定）；v1.5 迭代配置 174 笔/44.3%/+0.86%；8/9 月月度数字三窗口逐字段相同（79 笔 59.5% +2.57% / 96 笔 27.1% −1.99%）；R02 19 笔 −0.12%/−2.32% 与 docs/22 重叠 19 笔归因分毫不差；基准 47.4%/+0.85% 仍高于全部规则口径",
+    "production_cross_check": "cross_check_production_1022.py：M2' get_all_stocks 新浪主路 5575 只，27/27 研究票全覆盖；生产报价 vs 研究 10-21 收盘 27/27 一致（±0.011 元）；B5 sanitize 全市场 dropped=0（仅 1 只新股豁免）——D31/D32 工程改动零破坏得证",
+    "pending_user_decisions": [
+      "Kelly v1.7 升版（R04→2.36%/混合→1.69%）——用户确认后落 rules JSON（12 §6 / 14 §5.10 登记中间态）",
+      "复查清单'连续两月均盈亏 ≤0 则降仓位'条款已触发（9 月 −1.99%/10 月 −4.64%）——登记待裁定，未自动降仓",
+      "R06 新口径（avoidance 后常规买入计量 +0.52% n=70）持续观察，avoidance 裁定不变"
+    ],
+    "artifacts": "research/docs/23_迭代后3M复验_2026-10-22.md + scripts/fetch_tail_1021.py + scripts/validate_3m_recent_v3.py + scripts/cross_check_production_1022.py（+.log）+ data/validation_3m_v3.json + 3 个 CSV；raw 三文件延伸至 10-21",
+    "docs_synced": "prd/06 v2.3（Kelly 表 3M-v3 列 + §7.5 第三窗口对照 + v1.7 注记）；prd/05 v2.3（各规则行 3M-v3 观测）；prd/14 v1.8（§5.10）；prd/12 v2.8（§3.20 + §6 复查清单）；prd/README v3.0；manifest v3.3"
   }
 }
