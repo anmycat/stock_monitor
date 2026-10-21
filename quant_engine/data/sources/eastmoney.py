@@ -1,5 +1,6 @@
 """东方财富数据源"""
 import re
+import time
 import requests
 import pandas as pd
 from typing import List, Dict, Optional
@@ -51,10 +52,28 @@ class EastMoneySource:
         return by_prefix
 
     @staticmethod
+    def _get_json(url: str, params: dict, tries: int = 3):
+        """带重试的 GET+JSON 解析（代理下 push2 偶发 RemoteDisconnected，
+        实测重试 1-2 次即恢复；M2' 备路依赖本方法稳定性）"""
+        last_err = None
+        for i in range(tries):
+            try:
+                response = requests.get(
+                    url, params=params,
+                    headers=EastMoneySource.HEADERS, timeout=15)
+                if response.status_code == 200:
+                    return response.json()
+                last_err = f"HTTP {response.status_code}"
+            except Exception as e:  # noqa: BLE001 - 重试循环内统一记录
+                last_err = e
+                time.sleep(0.5 * (i + 1))
+        logger.warning(f"EM request failed after {tries} tries: {last_err}")
+        return None
+
+    @staticmethod
     def get_all_stocks() -> pd.DataFrame:
         """获取所有A股实时行情"""
         try:
-            url = "https://push2.eastmoney.com/api/qt/clist/get"
             params = {
                 "pn": "1",
                 "pz": "5000",
@@ -66,28 +85,26 @@ class EastMoneySource:
                 "fs": EastMoneySource.CLIST_FS,
                 "fields": "f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f13,f14,f15,f16,f17,f18",
             }
-            response = requests.get(url, params=params, headers=EastMoneySource.HEADERS, timeout=15)
-            if response.status_code == 200:
-                data = response.json()
-                if 'data' in data and data['data'] is not None:
-                    items = data['data'].get('diff', [])
-                    records = []
-                    for item in items:
-                        f12 = item.get('f12', '')
-                        market = EastMoneySource._market_from_em(f12, item.get('f13'))
-                        if not market:
-                            logger.warning(f"EM clist: unrecognized code {f12!r}, skipped")
-                            continue
-                        records.append({
-                            'code': f"{f12}.{market}",
-                            'name': item.get('f14', ''),
-                            'price': item.get('f2', 0),
-                            'change_pct': item.get('f3', 0),
-                            'volume': item.get('f5', 0),
-                            'amount': item.get('f6', 0),
-                        })
-                    df = pd.DataFrame(records)
-                    return df
+            data = EastMoneySource._get_json(
+                "https://push2.eastmoney.com/api/qt/clist/get", params)
+            if data and 'data' in data and data['data'] is not None:
+                items = data['data'].get('diff', [])
+                records = []
+                for item in items:
+                    f12 = item.get('f12', '')
+                    market = EastMoneySource._market_from_em(f12, item.get('f13'))
+                    if not market:
+                        logger.warning(f"EM clist: unrecognized code {f12!r}, skipped")
+                        continue
+                    records.append({
+                        'code': f"{f12}.{market}",
+                        'name': item.get('f14', ''),
+                        'price': item.get('f2', 0),
+                        'change_pct': item.get('f3', 0),
+                        'volume': item.get('f5', 0),
+                        'amount': item.get('f6', 0),
+                    })
+                return pd.DataFrame(records)
             return pd.DataFrame()
         except Exception as e:
             logger.error(f"EastMoney get all stocks error: {e}")
