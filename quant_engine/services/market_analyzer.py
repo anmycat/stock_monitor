@@ -1,5 +1,5 @@
 import pandas as pd
-from typing import Dict, List
+from typing import Dict
 from loguru import logger
 from ..models.market import MarketState, MarketType
 from ..data.datacenter import DataCenter

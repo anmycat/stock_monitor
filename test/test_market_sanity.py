@@ -30,10 +30,14 @@ class ChangePctLimitTests(unittest.TestCase):
         self.assertEqual(change_pct_limit("600000.SH"), 10.5)   # 沪主板
         self.assertEqual(change_pct_limit("000001.SZ"), 10.5)   # 深主板
         self.assertEqual(change_pct_limit("001979.SZ"), 10.5)   # 深主板新段
-        self.assertEqual(change_pct_limit("688981.SH"), 20.0)   # 科创
-        self.assertEqual(change_pct_limit("300750.SZ"), 20.0)   # 创业板
-        self.assertEqual(change_pct_limit("920819.BJ"), 30.0)   # 北交所
-        self.assertEqual(change_pct_limit("830799.BJ"), 30.0)   # 北交所老段
+        self.assertEqual(change_pct_limit("605118.SH"), 10.5)   # 沪主板 605 段
+        self.assertEqual(change_pct_limit("688981.SH"), 20.5)   # 科创
+        self.assertEqual(change_pct_limit("689008.SH"), 20.5)   # 科创 CDR 段
+        self.assertEqual(change_pct_limit("300750.SZ"), 20.5)   # 创业板 300 段
+        self.assertEqual(change_pct_limit("301102.SZ"), 20.5)   # 创业板 301 段（D32 实测补）
+        self.assertEqual(change_pct_limit("302132.SZ"), 20.5)   # 创业板 302 段（已启用）
+        self.assertEqual(change_pct_limit("920819.BJ"), 30.5)   # 北交所
+        self.assertEqual(change_pct_limit("830799.BJ"), 30.5)   # 北交所老段
 
 
 class SanitizeQuotesTests(unittest.TestCase):
@@ -55,12 +59,27 @@ class SanitizeQuotesTests(unittest.TestCase):
         df = _df([
             {"code": "688111.SH", "price": 10.0, "change_pct": 20.0},   # 科创一字板合法
             {"code": "300059.SZ", "price": 10.0, "change_pct": -20.0},  # 创业地板合法
-            {"code": "688222.SH", "price": 10.0, "change_pct": 20.5},   # 科创超限剔除
+            {"code": "688222.SH", "price": 10.0, "change_pct": 21.0},   # 科创超限剔除
             {"code": "600000.SH", "price": 10.0, "change_pct": 10.5},   # 主板容差界合法
             {"code": "600001.SH", "price": 10.0, "change_pct": 10.6},   # 主板超限剔除
         ])
         clean, stats = sanitize_quotes(df)
         self.assertEqual(set(clean["code"]), {"688111.SH", "300059.SZ", "600000.SH"})
+
+    def test_crema_301_segment_not_dropped(self):
+        """D32 回归（实测抓出）：创业板 301 段曾漏覆盖被误按主板 10.5% 剔除——
+        301159 三维天地 +20.00%、301313 凡拓数创 +11.54% 均应保留"""
+        df = _df([
+            {"code": "301159.SZ", "name": "三维天地", "price": 38.76, "change_pct": 20.00},
+            {"code": "301313.SZ", "name": "凡拓数创", "price": 52.20, "change_pct": 11.54},
+            {"code": "301486.SZ", "name": "致尚科技", "price": 209.72, "change_pct": 17.12},
+            {"code": "300296.SZ", "name": "利亚德", "price": 5.63, "change_pct": 20.04},  # 涨停四舍五入
+            {"code": "301999.SZ", "name": "脏数据", "price": 10.0, "change_pct": 45.0},   # 真超限照剔
+        ])
+        clean, stats = sanitize_quotes(df)
+        self.assertEqual(set(clean["code"]),
+                         {"301159.SZ", "301313.SZ", "301486.SZ", "300296.SZ"})
+        self.assertEqual(stats["reasons"]["over_limit"], 1)
 
     def test_empty_and_missing_column(self):
         clean, stats = sanitize_quotes(pd.DataFrame())

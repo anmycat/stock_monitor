@@ -66,9 +66,6 @@ class Settings(BaseSettings):
             return []
         return [s.strip() for s in self.NEWS_RSS_FEEDS.split(',') if s.strip()]
 
-    class Config:
-        env_file = ".env"
-
 
 @lru_cache()
 def get_settings() -> Settings:

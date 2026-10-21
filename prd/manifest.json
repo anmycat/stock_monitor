@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.1",
-  "date": "2026-10-21",
+  "version": "3.2",
+  "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -188,5 +188,13 @@
     "tests_total": "全量 unittest 166/166（11 个 unittest 文件；test_eastmoney/test_datacenter 为网络/时段依赖手动冒烟脚本不计入）",
     "docs_synced": "07 §15 / 08 §13 F-A1 / 09 §1·§6-2·§7.1 / 12 §3.18 / 13 §10.3 / 14 §3·§10 / README / manifest 状态同步",
     "remaining": "B2/B3/B6-B9（ECS 操作）/M4/P1-1/P1-2/TDX-1 待执行；M2' ECS 部署后交易时段复核 /api/market ≥5000 稳定"
+  },
+  "d32_post_iteration_code_audit_2026_10_22": {
+    "round": "D32 迭代后代码审计（2026-10-21/22）",
+    "static_scan": "ruff F/E9 全仓 80 项（67 F401 + 7 F841 + 4 F541 + 1 F811 + 1 W605 误报）；本轮触及文件清零",
+    "real_bugs_fixed": "① change_pct_limit 未覆盖创业板 301 段（实测 4 只误剔）+ 20/30 段无容差（300296 +20.04% 触界）→ 补 301/302/689 段 + 统一 0.5 容差（10.5/20.5/30.5），实时复测 dropped=0 ② config.py 双 class Config 重复定义（F811）③ validate_market_data 不消费 suspect 标志 → suspect=True 记校验失败（B5 闭环）",
+    "cleanup": "routes.py 死赋值 1 处 + 本轮触及文件 6 处未用导入",
+    "verification": "实时 5575 只 sanitize dropped=0（仅 N 文峰新股豁免）；API 冒烟 4 端点 200（evaluation/runs 200 = B4 端点级生效）；全量 unittest 172/172 + 导入冒烟",
+    "backlog": "P3 cosmetic 存量 11 项（7 F841 + 4 F541）；P2 akshare_source 2 处 F401（未触及文件）；C2/P1-2 拉全市场再过滤仍待执行"
   }
 }

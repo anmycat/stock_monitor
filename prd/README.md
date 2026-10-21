@@ -1,6 +1,6 @@
 # 股票机器人 · 方案文档集（prd/）
 
-> 版本：v2.8 · 2026-10-21 · 数据源重组（F 线）+ TDX minute + 四份调研消化 + K线形态验证结合评估（D28）+ PRD 内容审计（D29）+ 3M 第二窗口验真（D30）+ rules JSON 升 v1.6（用户确认执行）+ **工程迭代 B4/B5/M2' 落地（D31）**版 · 规则库 `methodology_rules.json` **v1.6**（R06 avoidance / R12 默认开启 / Kelly v1.6 参数，2026-10-21 落库）
+> 版本：v2.9 · 2026-10-22 · 数据源重组（F 线）+ TDX minute + 四份调研消化 + K线形态验证结合评估（D28）+ PRD 内容审计（D29）+ 3M 第二窗口验真（D30）+ rules JSON 升 v1.6（用户确认执行）+ 工程迭代 B4/B5/M2' 落地（D31）+ **迭代后代码审计（D32：3 项真问题修复，全量 172 例）**版 · 规则库 `methodology_rules.json` **v1.6**（R06 avoidance / R12 默认开启 / Kelly v1.6 参数，2026-10-21 落库）
 > 本文档集是"前期调研 + PRD + 项目过程报告"的最终整理形态，**按功能模块组织，文件名即功能模块**。
 
 ---
@@ -78,7 +78,7 @@
 - 代码与本文档集同在仓库根下平级：`quant_engine/`（项目代码）+ `test/`（测试）+ `UX/`（前端交互）+ `deploy/`（部署脚本）+ `research/`（调研线资产：20 份调研文档 00-19 + rules + 数据/脚本）；本文档集 00-11 的每个功能模块都有对应代码位置（00 §8 有完整对照表）
 - `research/rules/methodology_rules.json` v1.4 是调研线唯一可执行配置源（**v1.5 参数裁定已入 prd 文档但尚未写入 JSON**——升版动作见 14 §4 止损周门禁）；产品线的可执行配置是 `quant_engine/strategies/*.yaml` + `config.py`
 - 部署：`deploy/deploy_onekey.sh`（一键上传，LOCAL_DIR=仓库根）+ `deploy/deploy.sh`（服务器 provisioning，注意 G14 脱敏占位符）
-- 测试：`coding/.venv/bin/python -m unittest discover -s test -p "test_*.py"`——2026-10-21 全量 **166/166**（D31 新增 B4 兼容 3 + B5 卫生 15 + M2' 池 8 + clist 解析 3，另 test_eastmoney/test_datacenter 为网络依赖手动冒烟脚本不计入）；fixture 均为真实 API 响应；sys.path 指向仓库根，任意 cwd 可跑
+- 测试：`coding/.venv/bin/python -m unittest discover -s test -p "test_*.py"`——2026-10-22 全量 **172/172**（D31 新增 B4 兼容 3 + B5 卫生 16 + M2' 池 8 + clist 解析 3，D32 新增 data_validator 5，另 test_eastmoney/test_datacenter 为网络依赖手动冒烟脚本不计入）；fixture 均为真实 API 响应；sys.path 指向仓库根，任意 cwd 可跑
 - **TDX 分钟线**（2026-10-20）：`quant_engine/data/sources/tdx.py`（pytdx 懒加载，未安装自动降级不断链）；`_PRIORITY['minute']=['tdx','akshare']`；口径见 02 §3.9
 - **ETF 持仓监控**（2026-10-18）：`quant_engine/services/etf_holdings_monitor.py` + `data/sources/fund_holdings.py`（天天基金 jjcc 接口）；worker 盘后每日一次检查，Redis 键见 03 §4.3；需求/口径/验收见 01 §7.3 / 02 §3.6 / 08 §10
 
