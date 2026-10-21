@@ -1,7 +1,7 @@
 import pandas as pd
 from typing import List, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..strategies.dispatcher import StrategyDispatcher
 from ..models.market import MarketState, MarketType
 from ..services.position import PositionManager
@@ -10,7 +10,7 @@ from .metrics import calculate_metrics
 
 
 class BacktestEngine:
-    def __init__(self, datacenter: DataCenter, initial_capital: float = 100000,
+    def __init__(self, datacenter: MarketDataRepository, initial_capital: float = 100000,
                  commission_rate: float = 0.0003, stop_loss: float = 0.05,
                  take_profit: float = 0.15):
         self.datacenter = datacenter

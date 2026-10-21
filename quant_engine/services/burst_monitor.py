@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from typing import List, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..utils.calendar import is_trading_time
 import pandas as pd
 
@@ -11,7 +11,7 @@ import pandas as pd
 class BurstMonitor:
     """起爆资金监控 - 检测瞬间涨速和成交额异动"""
 
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         # 核心策略参数（参考main66.py）
         self.target_count = 300       # 监控成交额前300名的活跃股

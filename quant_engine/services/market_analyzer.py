@@ -2,13 +2,13 @@ import pandas as pd
 from typing import Dict
 from loguru import logger
 from ..models.market import MarketState, MarketType
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..utils.indicators import calculate_indicators
 from ..models.hmm_detector import get_regime_detector
 
 
 class MarketAnalyzer:
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.hmm = get_regime_detector()
 

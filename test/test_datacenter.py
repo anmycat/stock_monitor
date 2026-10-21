@@ -2,10 +2,10 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from quant_engine.data.datacenter import DataCenter
+from quant_engine.data.repositories import MarketDataRepository
 
-print("Testing DataCenter...")
-dc = DataCenter()
+print("Testing MarketDataRepository...")
+dc = MarketDataRepository()
 
 print("Getting all realtime quotes...")
 df = dc.get_all_realtime_quotes()

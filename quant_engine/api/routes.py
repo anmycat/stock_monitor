@@ -1085,7 +1085,7 @@ def get_hotspots(top_n: int = Query(50, ge=1, le=50)):
 async def health_check():
     """系统健康检查端点(无需认证)"""
     from datetime import datetime
-    from ..data.datacenter import get_market_phase
+    from ..utils.calendar import get_market_phase
     
     health = {
         "status": "healthy",

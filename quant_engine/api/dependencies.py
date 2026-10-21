@@ -1,4 +1,4 @@
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..services.signal_generator import SignalGenerator
 from ..services.etf_monitor import ETFMonitor
 from ..services.etf_holdings_monitor import ETFHoldingsMonitor
@@ -12,7 +12,7 @@ from ..backtest.engine import BacktestEngine
 from ..strategies.registry import StrategyRegistry
 from ..services.hotspot import HotspotService
 
-datacenter = DataCenter()
+datacenter = MarketDataRepository()
 signal_generator = SignalGenerator(datacenter)
 backtest_engine = BacktestEngine(datacenter)
 etf_monitor = ETFMonitor(datacenter)

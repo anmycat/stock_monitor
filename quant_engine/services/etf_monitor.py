@@ -2,7 +2,7 @@
 import time
 from typing import List, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 
 
 # 热门ETF监控清单（行情监控与持仓监控共用，新增/删除需同步两侧文档）
@@ -25,7 +25,7 @@ HOT_ETFS = [
 
 
 class ETFMonitor:
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.target_etfs = HOT_ETFS
         self._cache = {}

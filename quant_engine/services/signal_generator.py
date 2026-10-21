@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..strategies.registry import StrategyRegistry
 from ..models.market import MarketState
 from ..models.signal import Signal, SignalAction
@@ -14,7 +14,7 @@ from .notifiers.manager import NotificationManager
 
 
 class SignalGenerator:
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.registry = StrategyRegistry(datacenter)
         self.dispatcher = self.registry.dispatcher  # 兼容旧代码直接引用

@@ -3,13 +3,13 @@ from datetime import datetime
 from typing import List, Dict
 from loguru import logger
 from ..data.cache import RedisCache
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 
 
 class PostEvaluation:
     """T+N后验评估"""
 
-    def __init__(self, cache: RedisCache, datacenter: DataCenter):
+    def __init__(self, cache: RedisCache, datacenter: MarketDataRepository):
         self.cache = cache
         self.datacenter = datacenter
 

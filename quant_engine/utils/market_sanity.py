@@ -2,8 +2,8 @@
 
 背景（13 报告 §4.3 + 14 §3 B5）：东财冷却期实时行情 change_pct 脏数据曾导致
 "/api/market 100 只全涨 11.35%、文案 >100%"——计算出口无数据卫生断言。
-本模块是出口断言的单一事实源，被 DataCenter.get_market_overview 与
-MarketAnalyzer._calculate_breadth 共用。
+本模块是出口断言的单一事实源，被 MarketDataRepository.get_market_overview
+（P1 重构后，原 DataCenter）与 MarketAnalyzer._calculate_breadth 共用。
 
 设计决策（与验收标准"夹紧"的差异说明）：超限行**剔除**而非夹紧——
 脏值（如 change_pct=1135）夹紧成边界合法值（10.5）仍会参与统计并扭曲
@@ -109,6 +109,22 @@ def sanitize_quotes(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
         "drop_ratio": round(dropped / total, 4) if total else 0.0,
         "reasons": reasons,
     }
+
+
+def validate_dataframe(df: pd.DataFrame, name: str) -> bool:
+    """入库/出库前的基础校验：空值与空值计数告警（P1 从 DataCenter 迁入）
+
+    只做"空则否 + 有空值记 warning"的轻校验，与 sanitize_quotes 的
+    物理上限净化分工：本函数管结构性缺失，sanitize_quotes 管脏值。
+    空 DataFrame 返回 False；有空值不阻断（记 warning 后仍返回 True）。
+    """
+    if df is None or df.empty:
+        logger.warning(f"[market_sanity] {name}: 数据为空")
+        return False
+    if df.isnull().any().any():
+        null_count = int(df.isnull().sum().sum())
+        logger.warning(f"[market_sanity] {name}: 存在 {null_count} 个空值")
+    return True
 
 
 # 剔除率超过该值视为数据源系统性损坏（而非零星脏行），触发 suspect 回退

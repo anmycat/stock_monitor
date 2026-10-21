@@ -1,18 +1,32 @@
-import pandas as pd
-from typing import List, Optional, Dict
+"""行情数据仓储层（P1 重构，2026-10-22，prd/15 §2.2）
+
+由 DataCenter 拆分而来，保留其取数编排 + 缓存门面职责：
+公开方法签名、缓存 key/TTL、线程锁保护、B5 卫生断言全部逐一对齐
+（调用方零行为变化）。数据校验已移至 utils/market_sanity.validate_dataframe
+（B5 单一事实源）；源注册与容错仍在 data/source.py + source_manager.py。
+"""
 import threading
 import time
+from typing import List, Optional, Dict
+
+import pandas as pd
 from loguru import logger
-from .cache import RedisCache
-from .source import CompositeSource
-from ..config import get_settings
-from ..utils.calendar import is_trading_time, get_market_phase
+
+from ..cache import RedisCache
+from ..source import CompositeSource
+from ...config import get_settings
+from ...utils.calendar import is_trading_time, get_market_phase
+from ...utils.market_sanity import (
+    validate_dataframe,
+    sanitize_quotes,
+    is_overview_sane,
+    DROP_RATIO_SUSPECT,
+)
 
 
-__all__ = ['DataCenter', 'is_trading_time', 'get_market_phase']
+class MarketDataRepository:
+    """行情数据仓储：多源取数 + Redis/进程内双层缓存 + 市场概览（B5 断言）"""
 
-
-class DataCenter:
     def __init__(self):
         settings = get_settings()
         self.cache = RedisCache(
@@ -23,7 +37,7 @@ class DataCenter:
             ssl=settings.REDIS_SSL
         )
         self.source = CompositeSource()
-        self.source.datacenter = self  # 设置引用
+        self.source.datacenter = self  # 设置引用（CompositeSource 缓存写入用）
         self.cache.connect()
         self._validation_errors = []
         # 线程锁保护共享缓存
@@ -31,24 +45,15 @@ class DataCenter:
         self._all_quotes_cache = None
         self._all_quotes_cache_time = 0
 
-    def _validate_dataframe(self, df: pd.DataFrame, name: str) -> bool:
-        if df is None or df.empty:
-            logger.warning(f"[DataCenter] {name}: 数据为空")
-            return False
-        if df.isnull().any().any():
-            null_count = df.isnull().sum().sum()
-            logger.warning(f"[DataCenter] {name}: 存在 {null_count} 个空值")
-        return True
-
     def get_stock_list(self) -> pd.DataFrame:
         cache_key = "stock_list"
         cached = self.cache.get(cache_key)
         if cached is not None:
             df = pd.DataFrame(cached)
-            if self._validate_dataframe(df, "stock_list"):
+            if validate_dataframe(df, "stock_list"):
                 return df
         df = self.source.get_stock_list()
-        if self._validate_dataframe(df, "stock_list"):
+        if validate_dataframe(df, "stock_list"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=86400)
         return df
 
@@ -57,11 +62,11 @@ class DataCenter:
         cached = self.cache.get(cache_key)
         if cached is not None:
             df = pd.DataFrame(cached)
-            if self._validate_dataframe(df, f"daily:{code}"):
+            if validate_dataframe(df, f"daily:{code}"):
                 return df
         df = self.source.get_daily_data(code, days)
         if df is not None and not df.empty:
-            if self._validate_dataframe(df, f"daily:{code}"):
+            if validate_dataframe(df, f"daily:{code}"):
                 self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
         return df
 
@@ -70,11 +75,11 @@ class DataCenter:
         cached = self.cache.get(cache_key)
         if cached is not None:
             df = pd.DataFrame(cached)
-            if self._validate_dataframe(df, f"minute:{code}"):
+            if validate_dataframe(df, f"minute:{code}"):
                 return df
         df = self.source.get_minute_data(code, period)
         if df is not None and not df.empty:
-            if self._validate_dataframe(df, f"minute:{code}"):
+            if validate_dataframe(df, f"minute:{code}"):
                 self.cache.set(cache_key, df.to_dict(orient='records'), ttl=300)
         return df
 
@@ -107,13 +112,13 @@ class DataCenter:
                 logger.debug("Non-trading time, using cached data")
                 return pd.DataFrame(cached)
             return pd.DataFrame()
-        
+
         current_time = time.time()
         # 使用线程锁保护共享缓存访问
         with self._cache_lock:
             if self._all_quotes_cache is not None and current_time - self._all_quotes_cache_time < 30:
                 return self._all_quotes_cache
-        
+
         cache_key = "all_realtime_quotes"
         cached = self.cache.get(cache_key)
         if cached is not None:
@@ -123,7 +128,7 @@ class DataCenter:
                     self._all_quotes_cache = df
                     self._all_quotes_cache_time = current_time
                 return df
-        
+
         df = self.source.get_all_realtime_quotes()
         if df is not None and not df.empty:
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=30)
@@ -164,7 +169,6 @@ class DataCenter:
 
         # B5 数据卫生断言（2026-10-21）：剔除 change_pct 超物理上限 / price<=0 / 非有限行；
         # 剔除率 >20% 视为数据源系统性损坏 → 记 error 并出厂 suspect 空结果（不缓存脏值）
-        from ..utils.market_sanity import sanitize_quotes, is_overview_sane, DROP_RATIO_SUSPECT
         df, sanity = sanitize_quotes(df)
         if df.empty or sanity['drop_ratio'] > DROP_RATIO_SUSPECT:
             logger.error(f"[B5] market overview source data suspect: {sanity} — refusing to publish dirty stats")

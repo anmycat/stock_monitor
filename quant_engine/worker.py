@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict
 from loguru import logger
-from .data.datacenter import DataCenter
+from .data.repositories import MarketDataRepository
 from .services.signal_generator import SignalGenerator
 from .services.market_analyzer import MarketAnalyzer
 from .services.market_alert import MarketAlert
@@ -243,7 +243,7 @@ def _save_post_evaluation(post_eval, signals, market):
 
 def main():
     logger.info("Worker started")
-    datacenter = DataCenter()
+    datacenter = MarketDataRepository()
     generator = SignalGenerator(datacenter)
     analyzer = MarketAnalyzer(datacenter)
     alert_detector = MarketAlert(datacenter)
