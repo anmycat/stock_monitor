@@ -1,7 +1,7 @@
 """Agent策略问股 - 意图识别 + 技能路由（借鉴 DSA Agent）"""
 import re
 import time
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, Tuple
 from loguru import logger
 
 

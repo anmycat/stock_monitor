@@ -1,6 +1,5 @@
 import pandas as pd
 from typing import Optional, List
-from loguru import logger
 from ..models.signal import Signal, SignalAction, SignalLevel
 from ..models.market import MarketState
 

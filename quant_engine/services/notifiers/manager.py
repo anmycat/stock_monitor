@@ -143,5 +143,5 @@ class NotificationManager:
 
 
 # 导入这些类以便在manager中使用
-from ...models.signal import Signal, SignalAction
+from ...models.signal import SignalAction
 from ...models.market import MarketType

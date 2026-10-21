@@ -37,10 +37,8 @@ from loguru import logger
 from ..data.datacenter import DataCenter
 from ..data.sources.tencent import TencentSource
 from ..utils.code_utils import (normalize_code, is_valid_code, code_key,
-                                split_code, market_by_symbol,
-                                MARKET_SH, MARKET_SZ, MARKET_BJ)
+                                split_code, market_by_symbol)
 from .etf_monitor import HOT_ETFS
-from .etf_holdings_monitor import ETFHoldingsMonitor
 
 # 严重度
 SEV_ERROR = 'error'      # 🔴 错码/查无/缓存串号——必须人工或自动修复

@@ -2,7 +2,6 @@ from .position import PositionManager
 from .risk import RiskManager
 from .market_analyzer import MarketAnalyzer
 from .signal_generator import SignalGenerator
-from .etf_monitor import ETFMonitor
 from .cooldown import CooldownManager
 from .notifiers.manager import DingTalkNotifier
 from .ai_summary import AISummary
@@ -16,7 +15,6 @@ __all__ = [
     "RiskManager",
     "MarketAnalyzer",
     "SignalGenerator",
-    "ETFCooldownManager",
     "CooldownManager",
     "DingTalkNotifier",
     "AISummary",

@@ -1,6 +1,5 @@
 """飞书通知器"""
 import httpx
-from loguru import logger
 from .base import BaseNotifier
 
 

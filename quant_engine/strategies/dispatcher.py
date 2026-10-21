@@ -105,9 +105,6 @@ class StrategyDispatcher:
             logger.debug(f"YAML strategy filter: {reasons}")
             return None
 
-        # 计算多因子分数
-        factors = self.factor_scorer.calculate_factors(df, indicators)
-
         # 确定信号级别
         levels = strategy.get('levels', {})
         if score >= levels.get('S', 85):

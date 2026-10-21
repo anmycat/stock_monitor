@@ -1,7 +1,6 @@
 """YAML策略执行器 - 执行YAML定义的策略逻辑"""
 import pandas as pd
-import numpy as np
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from loguru import logger
 
 

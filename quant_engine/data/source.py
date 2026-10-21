@@ -7,7 +7,6 @@ from .sources.eastmoney import EastMoneySource
 from .sources.tencent import TencentSource
 from .sources.sina import SinaSource
 from .sources.tdx import TdxSource
-from .akshare_source import AKShareSource
 
 
 # 数据源优先级配置（2026-10-20 按用户决策调整：东财出口 IP 经常被风控，
@@ -20,12 +19,13 @@ from .akshare_source import AKShareSource
 #   stock_list 新浪 hs_a 全市场（实测 5574 只含北交所）→ 东财备路
 #   daily     腾讯 fqkline（前复权）→ 新浪 getKLineData → 东财备路
 #   minute    通达信 pytdx（TCP 7709，实测 5/15/30/60 分钟K 完整，
-#             2026-10-20 落地补 gates 分钟断链）→ akshare（未安装，兜底占位）
+#             2026-10-20 落地补 gates 分钟断链；akshare 兜底 2026-10-22 切除，
+#             依赖未安装恒返 None，见 prd/15 §P0）
 _PRIORITY = {
     'stock_list': ['sina', 'eastmoney'],
     'realtime': ['tencent', 'sina', 'eastmoney'],
     'daily': ['tencent', 'sina', 'eastmoney'],
-    'minute': ['tdx', 'akshare'],
+    'minute': ['tdx'],
 }
 
 
@@ -37,7 +37,6 @@ class CompositeSource:
         source_manager.register_source('eastmoney')
         source_manager.register_source('tencent')
         source_manager.register_source('sina')
-        source_manager.register_source('akshare')
         source_manager.register_source('tdx')
 
         # 初始化数据源
@@ -45,7 +44,6 @@ class CompositeSource:
             'eastmoney': EastMoneySource(),
             'tencent': TencentSource(),
             'sina': SinaSource(),
-            'akshare': AKShareSource(),
             'tdx': TdxSource(),
         }
         self.datacenter = datacenter

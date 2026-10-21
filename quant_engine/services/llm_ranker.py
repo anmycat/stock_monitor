@@ -2,7 +2,7 @@
 import json
 from typing import List, Dict, Optional
 from loguru import logger
-from .ai_summary import AISummary, ModelConfig
+from .ai_summary import AISummary
 
 
 class LLMRanker:

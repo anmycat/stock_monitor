@@ -238,7 +238,6 @@ class SourceManager:
 
     def _load_stale_snapshot(self, method_name: str, args: tuple):
         """加载过期快照（标记 stale/fallback）"""
-        import pandas as pd
         key = self._snapshot_key(method_name, args)
         entry = self._snapshot_cache.get(key)
         if entry is None:

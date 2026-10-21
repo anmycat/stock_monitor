@@ -11,7 +11,7 @@
 import pandas as pd
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from loguru import logger
 from ..models.signal import Signal
 

@@ -19,7 +19,7 @@ from typing import List, Dict, Optional
 import pandas as pd
 from loguru import logger
 
-from ...utils.code_utils import split_code, MARKET_SH, MARKET_SZ, MARKET_BJ
+from ...utils.code_utils import split_code, MARKET_SH, MARKET_SZ
 
 
 # 候选服务器池（2026-10-20 实测：117.34.114.x 集群协议级可用，置顶优先；

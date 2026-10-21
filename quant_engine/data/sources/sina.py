@@ -6,8 +6,7 @@ import pandas as pd
 from typing import List, Dict, Optional
 from loguru import logger
 
-from ...utils.code_utils import (to_sina_code, normalize_code, split_code,
-                                 MARKET_SH, MARKET_SZ, MARKET_BJ)
+from ...utils.code_utils import (to_sina_code, normalize_code, MARKET_SH, MARKET_SZ, MARKET_BJ)
 
 
 class SinaSource:

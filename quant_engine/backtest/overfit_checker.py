@@ -1,8 +1,7 @@
 """抗过拟合检查器 - 增强回测评估的可靠性"""
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Tuple
-from loguru import logger
+from typing import List, Dict
 from ..utils.helpers import calculate_max_drawdown
 
 
@@ -144,7 +143,6 @@ class OverfitChecker:
         
         # 计算稳定性
         std = np.std(win_rates)
-        mean = np.mean(win_rates)
         
         if std > 0.2:
             return {
@@ -273,7 +271,7 @@ class OverfitChecker:
             return {
                 'status': 'pass',
                 'score': 80,
-                'message': f'交易分布较均匀',
+                'message': '交易分布较均匀',
             }
 
     def _calculate_overfit_score(self, checks: Dict) -> float:

@@ -10,7 +10,6 @@ from .services.ai_summary import AISummary
 from .services.burst_monitor import BurstMonitor
 from .services.notifiers.manager import NotificationManager
 from .utils.calendar import is_trading_day
-from .config import get_settings
 from .backtest.post_evaluation import PostEvaluation
 
 
@@ -244,7 +243,6 @@ def _save_post_evaluation(post_eval, signals, market):
 
 def main():
     logger.info("Worker started")
-    settings = get_settings()
     datacenter = DataCenter()
     generator = SignalGenerator(datacenter)
     analyzer = MarketAnalyzer(datacenter)

@@ -1,5 +1,5 @@
 """API认证模块 - Token验证"""
-from fastapi import HTTPException, Security, status, WebSocket, Query
+from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 from typing import Optional
 from ..config import get_settings

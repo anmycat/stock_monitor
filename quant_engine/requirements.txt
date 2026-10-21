@@ -14,7 +14,6 @@ exchange-calendars>=4.13.0
 pypinyin>=0.50.0
 requests>=2.31.0
 PyYAML>=6.0.1
-akshare>=1.13.20
 paramiko>=3.4.0
 hmmlearn>=0.3.0
 pytdx>=1.72  # 通达信分钟线（TCP 7709，PRD 02 §3.9）

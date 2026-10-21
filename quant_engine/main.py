@@ -121,7 +121,7 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     settings = get_settings()
-    logger.info(f"Starting quant engine v5.0.0")
+    logger.info("Starting quant engine v5.0.0")
     logger.info(
         f"API: {settings.API_HOST}:{settings.API_PORT} "
         f"reload={settings.API_RELOAD} auth={'enabled' if settings.API_AUTH_TOKEN else 'disabled'}"

@@ -1,7 +1,7 @@
 """HMM市场状态检测器 — 替代简单枚举，5种精细状态识别"""
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Optional
+from typing import Tuple, Optional
 from loguru import logger
 
 try:

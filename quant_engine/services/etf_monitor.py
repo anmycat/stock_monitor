@@ -1,6 +1,5 @@
 """ETF监控模块 - 腾讯第一的实时行情路（2026-10-20 起）"""
 import time
-import pandas as pd
 from typing import List, Dict
 from loguru import logger
 from ..data.datacenter import DataCenter
