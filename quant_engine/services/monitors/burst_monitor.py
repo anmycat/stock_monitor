@@ -3,8 +3,8 @@ import time
 from datetime import datetime
 from typing import List, Dict
 from loguru import logger
-from ..data.repositories import MarketDataRepository
-from ..utils.calendar import is_trading_time
+from ...data.repositories import MarketDataRepository
+from ...utils.calendar import is_trading_time
 import pandas as pd
 
 

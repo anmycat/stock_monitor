@@ -16,7 +16,7 @@ from typing import List, Dict, Optional, Any
 from loguru import logger
 from .dependencies import signal_generator, datacenter, etf_monitor, sector_monitor, market_alert, hot_money_monitor
 from .auth import verify_websocket_token
-from ..services.market_analyzer import MarketAnalyzer
+from ..services.market.market_analyzer import MarketAnalyzer
 
 ws_router = APIRouter()
 
@@ -688,7 +688,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                         if not isinstance(session_id, str) or not re.match(r'^[A-Za-z0-9_-]{1,64}$', session_id):
                             raise ValueError('无效session_id')
                         try:
-                            from ..services.agent_router import route_message
+                            from ..services.ai.agent_router import route_message
                             result = await route_message(user_msg, session_id, datacenter)
                             await manager.send_message(json.dumps(result, default=str), websocket)
                         except Exception as e:

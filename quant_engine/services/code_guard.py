@@ -38,7 +38,7 @@ from ..data.repositories import MarketDataRepository
 from ..data.sources.tencent import TencentSource
 from ..utils.code_utils import (normalize_code, is_valid_code, code_key,
                                 split_code, market_by_symbol)
-from .etf_monitor import HOT_ETFS
+from .monitors.etf_monitor import HOT_ETFS
 
 # 严重度
 SEV_ERROR = 'error'      # 🔴 错码/查无/缓存串号——必须人工或自动修复

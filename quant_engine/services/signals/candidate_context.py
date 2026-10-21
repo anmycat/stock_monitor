@@ -1,7 +1,7 @@
 """候选级上下文 - 为Top候选抓取新闻/公告/资金流"""
 from typing import List, Dict
 from loguru import logger
-from .news_service import NewsService
+from ..monitors.news_service import NewsService
 
 
 class CandidateContext:

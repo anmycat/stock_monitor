@@ -1,6 +1,6 @@
 from typing import List, Dict
-from ..models.signal import Signal
-from ..utils.helpers import calculate_max_drawdown
+from ...models.signal import Signal
+from ...utils.helpers import calculate_max_drawdown
 
 
 class RiskManager:

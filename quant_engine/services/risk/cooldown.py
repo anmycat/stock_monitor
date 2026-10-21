@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from loguru import logger
-from ..data.cache import RedisCache
+from ...data.cache import RedisCache
 
 
 class CooldownManager:

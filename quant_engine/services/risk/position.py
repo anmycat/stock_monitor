@@ -1,6 +1,6 @@
 from typing import List, Dict
-from ..models.market import MarketState
-from ..models.signal import Signal
+from ...models.market import MarketState
+from ...models.signal import Signal
 
 
 class PositionManager:

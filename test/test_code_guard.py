@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 
 from quant_engine.services.code_guard import CodeGuard, SEV_ERROR, SEV_WARNING
-from quant_engine.services.etf_monitor import HOT_ETFS
+from quant_engine.services.monitors.etf_monitor import HOT_ETFS
 
 
 class FakeCache:

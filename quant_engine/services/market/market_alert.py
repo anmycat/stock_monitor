@@ -3,8 +3,8 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Dict
 from loguru import logger
-from ..data.repositories import MarketDataRepository
-from ..models.market import MarketState
+from ...data.repositories import MarketDataRepository
+from ...models.market import MarketState
 
 
 class MarketAlert:

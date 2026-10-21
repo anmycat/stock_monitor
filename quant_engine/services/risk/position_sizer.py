@@ -12,7 +12,7 @@
 from typing import Dict
 from dataclasses import dataclass
 from loguru import logger
-from ..models.market import MarketState, MarketType
+from ...models.market import MarketState, MarketType
 
 
 @dataclass

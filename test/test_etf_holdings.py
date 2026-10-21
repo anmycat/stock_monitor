@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quant_engine.data.sources.fund_holdings import EastMoneyFundHoldingsSource
-from quant_engine.services.etf_holdings_monitor import ETFHoldingsMonitor
+from quant_engine.services.monitors.etf_holdings_monitor import ETFHoldingsMonitor
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 

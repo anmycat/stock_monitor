@@ -52,7 +52,7 @@ class ThreeLayerFunnel:
 
         # L2.5: LLM排序层（可选，不可用时透传）
         try:
-            from ..services.llm_ranker import LLMRanker
+            from ..services.ai.llm_ranker import LLMRanker
             ranker = LLMRanker()
             scored_candidates = ranker.rank(scored_candidates, max_candidates=10)
             logger.info(f"L2.5 LLM ranking: {len(scored_candidates)} candidates")
@@ -64,7 +64,7 @@ class ThreeLayerFunnel:
 
         # 候选股上下文增强（新闻/舆情）
         try:
-            from ..services.candidate_context import CandidateContext
+            from ..services.signals.candidate_context import CandidateContext
             ctx = CandidateContext()
             final_candidates = ctx.enrich_candidates(final_candidates, max_candidates=5)
         except Exception as e:

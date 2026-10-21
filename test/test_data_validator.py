@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from quant_engine.services.data_validator import DataValidator
+from quant_engine.services.market.data_validator import DataValidator
 
 
 class _FakeCache:

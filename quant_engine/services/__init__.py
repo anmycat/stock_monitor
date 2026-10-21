@@ -1,14 +1,20 @@
-from .position import PositionManager
-from .risk import RiskManager
-from .market_analyzer import MarketAnalyzer
-from .signal_generator import SignalGenerator
-from .cooldown import CooldownManager
-from .notifiers.manager import DingTalkNotifier
-from .ai_summary import AISummary
+"""服务层聚合导出（P2 重构：30 模块按职责分 6 子包，prd/15 §2.3）
+
+子包：monitors（监控族）/ market（市场分析族）/ risk（风控族）/
+signals（信号族）/ notifications（通知族）/ ai（AI 族）。
+本文件保持历史 import 路径（from ..services import X）可用。
+"""
+from .risk.position import PositionManager
+from .risk.risk import RiskManager
+from .market.market_analyzer import MarketAnalyzer
+from .signals.signal_generator import SignalGenerator
+from .risk.cooldown import CooldownManager
+from .notifications.manager import DingTalkNotifier
+from .ai.ai_summary import AISummary
 from .portfolio import PortfolioManager
-from .candidate_context import CandidateContext
-from .hot_money_monitor import HotMoneyMonitor
-from .burst_monitor import BurstMonitor
+from .signals.candidate_context import CandidateContext
+from .monitors.hot_money_monitor import HotMoneyMonitor
+from .monitors.burst_monitor import BurstMonitor
 
 __all__ = [
     "PositionManager",

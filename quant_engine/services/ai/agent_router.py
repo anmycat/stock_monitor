@@ -112,7 +112,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
 
 async def _handle_analyze_stock(query: str, datacenter) -> Dict:
     """处理个股分析"""
-    from ..utils.stock_resolver import resolver
+    from ...utils.stock_resolver import resolver
     # 尝试解析股票代码
     results = resolver.resolve(query, 1)
     if not results and datacenter:
@@ -128,12 +128,12 @@ async def _handle_analyze_stock(query: str, datacenter) -> Dict:
     code = results[0]['code']
     name = results[0].get('name', query)
 
-    from ..services.signal_generator import SignalGenerator
+    from ..signals.signal_generator import SignalGenerator
     gen = SignalGenerator(datacenter)
     signal = gen.scan_stock(code, name)
 
-    from ..services.ai_summary import AISummary
-    from ..utils.indicators import calculate_indicators
+    from .ai_summary import AISummary
+    from ...utils.indicators import calculate_indicators
     df = datacenter.get_daily_data(code, 120)
     indicators = calculate_indicators(df) if df is not None and not df.empty else {}
     ai = AISummary()
@@ -156,7 +156,7 @@ async def _handle_analyze_stock(query: str, datacenter) -> Dict:
 
 async def _handle_hotspots(datacenter) -> Dict:
     """处理热点查询"""
-    from .hotspot import HotspotService
+    from ..monitors.hotspot import HotspotService
     hs = HotspotService(datacenter)
     hotspots = hs.get_hotspots(5)
     lines = ['🔥 今日热点板块：']
@@ -168,7 +168,7 @@ async def _handle_hotspots(datacenter) -> Dict:
 
 async def _handle_list_strategies(datacenter) -> Dict:
     """处理策略列表"""
-    from ..strategies.registry import StrategyRegistry
+    from ...strategies.registry import StrategyRegistry
     reg = StrategyRegistry(datacenter)
     strategies = reg.get_available_strategies()
     lines = ['📋 可用策略列表：']
@@ -179,7 +179,7 @@ async def _handle_list_strategies(datacenter) -> Dict:
 
 async def _handle_market_overview(datacenter) -> Dict:
     """处理市场概览"""
-    from .market_analyzer import MarketAnalyzer
+    from ..market.market_analyzer import MarketAnalyzer
     analyzer = MarketAnalyzer(datacenter)
     market = analyzer.analyze_market()
     type_desc = {'BULL': '牛市', 'BULL_WEAK': '弱牛', 'SIDEWAYS': '震荡', 'BEAR': '熊市'}
@@ -193,7 +193,7 @@ async def _handle_market_overview(datacenter) -> Dict:
 
 async def _handle_scan_signals(datacenter) -> Dict:
     """处理信号扫描"""
-    from .signal_generator import SignalGenerator
+    from ..signals.signal_generator import SignalGenerator
     gen = SignalGenerator(datacenter)
     signals = gen.scan_all(max_signals=3)
     if not signals:
@@ -206,7 +206,7 @@ async def _handle_scan_signals(datacenter) -> Dict:
 
 async def _handle_evaluate(datacenter) -> Dict:
     """处理后验评估"""
-    from ..backtest.post_evaluation import PostEvaluation
+    from ...backtest.post_evaluation import PostEvaluation
     pe = PostEvaluation(datacenter.cache, datacenter)
     batch = pe.evaluate_batch(limit=5)
     if 'error' in batch:

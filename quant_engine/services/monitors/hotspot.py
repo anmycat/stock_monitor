@@ -3,7 +3,7 @@ import time
 from typing import List, Dict, Optional
 from loguru import logger
 from .sector_monitor import SectorMonitor
-from ..data.repositories import MarketDataRepository
+from ...data.repositories import MarketDataRepository
 
 
 class Hotspot:
