@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.3",
+  "version": "3.4",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -214,5 +214,32 @@
     ],
     "artifacts": "research/docs/23_迭代后3M复验_2026-10-22.md + scripts/fetch_tail_1021.py + scripts/validate_3m_recent_v3.py + scripts/cross_check_production_1022.py（+.log）+ data/validation_3m_v3.json + 3 个 CSV；raw 三文件延伸至 10-21",
     "docs_synced": "prd/06 v2.3（Kelly 表 3M-v3 列 + §7.5 第三窗口对照 + v1.7 注记）；prd/05 v2.3（各规则行 3M-v3 观测）；prd/14 v1.8（§5.10）；prd/12 v2.8（§3.20 + §6 复查清单）；prd/README v3.0；manifest v3.3"
+  },
+  "d34_architecture_refactor_design_2026_10_22": {
+    "round": "D34 架构级重构设计（2026-10-22，用户选定架构级重写口径）",
+    "audit_findings": {
+      "scale": "85 文件/16146 行；测试 14 文件/2611 行/172 例全绿",
+      "p0": "DataCenter 上帝对象：191 行 10 方法四职责混合（取数编排/缓存/校验/市场概览），15 模块直接依赖",
+      "p1": [
+        "routes.py 1122 行/36 端点/20 域/37 函数单文件上帝路由",
+        "services 30 模块扁平：signal_generator 6 包内依赖为枢纽，code_guard→etf_monitor 跨界"
+      ],
+      "p2": [
+        "correlation_manager.py 384 行零调用（get_correlation_manager 无消费方）",
+        "akshare 遗留链半死：akshare_source 被 source.py 注册+hot_money_monitor 使用但 akshare 未安装"
+      ],
+      "assets": "模块级零循环依赖（Tarjan SCC 实测）；data 包内结构干净；notifiers 家族良好；DI 集中于 api/dependencies.py"
+    },
+    "quality_debt": "F/E9 73 项（61 F401+6 F841+4 F541）；BLE001 盲 except 172 处；风格现代化 ~1205 项；延迟导入 17 处",
+    "target_architecture": "五层宪法 L0 api→L1 services(6 子包)→L2 strategies/backtest→L3 data(repositories 新)+models→L4 utils；data 层 DataCenter 拆 repositories/market_data.py；services 分 monitors/market/risk/signals/notifications/ai 六族（hotspot 移 monitors）；api 拆 12 域 router；backtest 去 services 依赖改参数注入；子包间依赖成 DAG 机器可检",
+    "migration": "绞杀者式阶段原子迁移（内部 monolith 无外部消费者，不留长期垫片，git 即回滚）：P0 清基（死代码+F/E9）→P1 data 层→P2 services 分族→P3 api 拆分→P4 backtest 净化→P5 收尾（BLE001 分级+风格现代化+research 脚本同步+文档）",
+    "per_phase_acceptance": "导入冒烟+172 测试+API 冒烟 4 端点+架构审计零环零违规+ruff F/E9 不增+独立 commit",
+    "pending_user_decisions": [
+      "设计文档评审（阶段划分/命名/hotspot 归属/直接迁移不留垫片）",
+      "P5 风格现代化范围（1205 项全做 vs 仅 F/E9+BLE001）",
+      "部署节奏（每阶段 vs P2/P3 后统一）"
+    ],
+    "artifacts": "prd/15_架构重构设计.md v1.0",
+    "docs_synced": "prd/README v3.1（注册 15）；manifest v3.4"
   }
 }
