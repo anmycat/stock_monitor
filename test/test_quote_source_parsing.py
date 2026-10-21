@@ -150,6 +150,50 @@ class TestEastMoneyParsing(unittest.TestCase):
         self.assertEqual(f('510300', None), 'SH')  # f13 缺失兜底
         self.assertIsNone(f('abc', 1))
 
+    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    def test_clist_get_all_stocks_parsing(self, mock_get):
+        """get_all_stocks（clist 全市场列表，M2' 备路依赖）fixture 解析回归"""
+        with open(os.path.join(FIXTURES, 'quote_em_clist.json'),
+                  encoding='utf-8') as f:
+            payload = json.loads(f.read())
+        resp = MagicMock(status_code=200)
+        resp.json.return_value = payload
+        mock_get.return_value = resp
+
+        df = EastMoneySource.get_all_stocks()
+        self.assertEqual(len(df), 6)
+        self.assertEqual(set(df['code']), {
+            '510300.SH', '000001.SZ', '920819.BJ', '688981.SH',
+            '300750.SZ', '600000.SH'})
+        self.assertAlmostEqual(df.iloc[0]['price'], 4.236, places=3)
+        self.assertAlmostEqual(df.iloc[0]['change_pct'], -0.14, places=2)
+        # 请求参数带重试封装后不变（fs/pz 关键项）
+        _, kwargs = mock_get.call_args
+        self.assertEqual(kwargs['params']['pz'], '5000')
+        self.assertEqual(kwargs['params']['fs'], EastMoneySource.CLIST_FS)
+
+    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    def test_clist_retry_then_success(self, mock_get):
+        """_get_json 重试：前两次 RemoteDisconnected，第三次成功"""
+        with open(os.path.join(FIXTURES, 'quote_em_clist.json'),
+                  encoding='utf-8') as f:
+            payload = json.loads(f.read())
+        ok = MagicMock(status_code=200)
+        ok.json.return_value = payload
+        mock_get.side_effect = [ConnectionError('boom'), ConnectionError('boom2'), ok]
+
+        df = EastMoneySource.get_all_stocks()
+        self.assertEqual(len(df), 6)
+        self.assertEqual(mock_get.call_count, 3)
+
+    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    def test_clist_all_retries_fail_returns_empty(self, mock_get):
+        """重试耗尽不抛异常，返回空 df（上层自然降级）"""
+        mock_get.side_effect = ConnectionError('down')
+        df = EastMoneySource.get_all_stocks()
+        self.assertTrue(df.empty)
+        self.assertEqual(mock_get.call_count, 3)
+
 
 if __name__ == '__main__':
     unittest.main()

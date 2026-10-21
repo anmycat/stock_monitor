@@ -15,7 +15,8 @@ from .akshare_source import AKShareSource
 #
 # 依据：research/docs/17_ECS性能与架构调研_2026-10-20.md §3.1——东财降级后，腾讯/新浪
 # 双线覆盖：
-#   realtime  腾讯批量（qt.gtimg）→ 新浪批量（hq.sinajs）→ 东财备路
+#   realtime  腾讯批量（qt.gtimg，M2' 起代码池动态化：新浪列表主路/东财 clist 备路/
+#              静态号段 emergency-only，实测 5575 只全覆盖）→ 新浪批量（hq.sinajs）→ 东财备路
 #   stock_list 新浪 hs_a 全市场（实测 5574 只含北交所）→ 东财备路
 #   daily     腾讯 fqkline（前复权）→ 新浪 getKLineData → 东财备路
 #   minute    通达信 pytdx（TCP 7709，实测 5/15/30/60 分钟K 完整，

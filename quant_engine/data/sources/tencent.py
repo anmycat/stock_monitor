@@ -2,7 +2,7 @@
 import requests
 import random
 import pandas as pd
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from loguru import logger
 
 from ...utils.code_utils import (to_tencent_code, normalize_code,
@@ -163,46 +163,93 @@ class TencentSource:
 
     @staticmethod
     def get_all_stocks() -> pd.DataFrame:
-        """获取所有股票行情（批量）"""
+        """获取全市场实时行情（M2' 2026-10-21：动态代码池 + 腾讯分批报价）
+
+        废弃 _get_main_stock_codes 硬编码号段主路（~406 只，缺科创/ETF/
+        北交所/深市后段，且 min(len(codes),500) 截断——见 12 §3.14 C1）。
+        三层代码池（_resolve_code_pool）：
+          主路  新浪 hs_a 全市场列表（stock_list 第一线，实测 5575 只）
+          备路  东财 clist 全市场列表（docs/17 P0-1 指定；代理/ECS 风控
+                不稳定，故列备路——即 2026-10-20 东财降级的理由）
+          兜底  静态号段（emergency-only，warning 留痕）
+        报价统一复用 get_realtime_quote（qt.gtimg 分批，BATCH_SIZE=200，
+        实测 200 只/0.17s，5575 只约 7s）。
+        """
         try:
-            # 获取主要股票代码列表
-            codes = TencentSource._get_main_stock_codes()
-            batch_size = 50
-            all_quotes = []
-
-            for i in range(0, min(len(codes), 500), batch_size):
-                batch = codes[i:i + batch_size]
-                qt_codes = [TencentSource._convert_code(c) for c in batch]
-                url = TencentSource.BASE_URL + ','.join(qt_codes)
-                try:
-                    response = requests.get(url, headers=TencentSource._get_headers(), timeout=15)
-                    response.encoding = 'gbk'
-                    if response.status_code == 200:
-                        content = response.text
-                        for line in content.strip().split('\n'):
-                            if '=' not in line:
-                                continue
-                            var_name, _, payload = line.partition('=')
-                            prefix = var_name.strip().replace('v_', '').strip()
-                            market = prefix[:2] if prefix[:2] in TencentSource._MARKET_PREFIX_MAP else None
-                            data = payload.strip(';').strip('"')
-                            quote = TencentSource._parse_quote(data, market=market)
-                            if quote:
-                                all_quotes.append(quote)
-                except Exception:
-                    continue
-
-            if all_quotes:
-                df = pd.DataFrame(all_quotes)
-                return df
-            return pd.DataFrame()
+            codes, tier = TencentSource._resolve_code_pool()
+            if not codes:
+                logger.error("Tencent get_all_stocks: no code pool available")
+                return pd.DataFrame()
+            frames = []
+            for i in range(0, len(codes), TencentSource.BATCH_SIZE):
+                batch = codes[i:i + TencentSource.BATCH_SIZE]
+                df = TencentSource.get_realtime_quote(batch)
+                if not df.empty:
+                    frames.append(df)
+            if not frames:
+                return pd.DataFrame()
+            out = pd.concat(frames, ignore_index=True)
+            # 去重（池源理论无重复，防御性保留）
+            out = out.drop_duplicates(subset=['code'], keep='first')
+            logger.info(
+                f"Tencent pool[{tier}] {len(codes)} codes -> {len(out)} quotes")
+            return out
         except Exception as e:
             logger.error(f"Tencent get all stocks error: {e}")
             return pd.DataFrame()
 
+    # ---- M2' 代码池常量（2026-10-21）----
+    # 动态池最小规模：低于此值视为源损坏（如东财代理截断曾返 100 行），
+    # 不采信、继续降级——防止小池结果被上层 execute_with_fallback 当
+    # 非空接受而阻断新浪/东财直连全量路径（覆盖数随应答源波动，C1 病灶）
+    MIN_POOL_CODES = 1000
+    # 运行时可上限（约 30 批，封顶耗时）
+    MAX_POOL_CODES = 6000
+    # qt.gtimg 单请求代码数（实测 200 只/批 0.17s，50 只/批 0.20s）
+    BATCH_SIZE = 200
+
+    @staticmethod
+    def _resolve_code_pool() -> Tuple[List[str], str]:
+        """三层代码池解析，返回 (codes, tier)"""
+        # 主路：新浪 hs_a 全市场列表（延迟导入避免模块级环依赖）
+        try:
+            from .sina import SinaSource
+            df = SinaSource.get_stock_list()
+            pool = ([str(c) for c in df['code'].tolist() if c]
+                    if df is not None and not df.empty and 'code' in df.columns
+                    else [])
+        except Exception as e:
+            logger.warning(f"Tencent pool[sina_list] failed: {e}")
+            pool = []
+        if len(pool) >= TencentSource.MIN_POOL_CODES:
+            return pool[:TencentSource.MAX_POOL_CODES], 'sina_list'
+        # 备路：东财 clist 全市场列表
+        try:
+            from .eastmoney import EastMoneySource
+            df = EastMoneySource.get_all_stocks()
+            pool = ([str(c) for c in df['code'].tolist() if c]
+                    if df is not None and not df.empty and 'code' in df.columns
+                    else [])
+        except Exception as e:
+            logger.warning(f"Tencent pool[eastmoney_clist] failed: {e}")
+            pool = []
+        if len(pool) >= TencentSource.MIN_POOL_CODES:
+            return pool[:TencentSource.MAX_POOL_CODES], 'eastmoney_clist'
+        # 兜底：静态号段（emergency-only）
+        logger.warning(
+            "Tencent code pool: dynamic sources unavailable "
+            f"(sina<{TencentSource.MIN_POOL_CODES}), "
+            "falling back to static segments (emergency-only)")
+        return TencentSource._get_main_stock_codes(), 'static_emergency'
+
     @staticmethod
     def _get_main_stock_codes() -> List[str]:
-        """获取主要股票代码"""
+        """静态兜底号段（emergency-only，M2' 起不再作主路）
+
+        仅覆盖沪市主板三段 + 深市主板两段 + 创业板一段；缺科创 688/
+        ETF 5xx/北交所 8xx-92xx/深市后段。正常路径由 _resolve_code_pool
+        动态池接管；本方法仅在动态源全部不可达时应急。
+        """
         codes = []
         # 上海主板
         for i in range(600000, 600200):

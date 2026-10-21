@@ -95,6 +95,7 @@ class MarketOverviewResponse(BaseModel):
     down: int
     flat: int
     avg_change: float
+    suspect: bool = False  # B5（2026-10-21）：True=数据卫生断言未过、拒绝出厂脏统计（13 §4.4 事故防线）
 
 
 class ETFResponse(BaseModel):
@@ -991,11 +992,15 @@ class PostEvalResponse(BaseModel):
     run_id: str
     run_date: str
     total_signals: int
-    win_count: int
-    win_rate: float
-    avg_pnl: float
-    avg_max_profit: float
-    avg_max_drawdown: float
+    win_count: int = 0
+    win_rate: float = 0.0
+    avg_pnl: float = 0.0
+    avg_max_profit: float = 0.0
+    avg_max_drawdown: float = 0.0
+    # 注（B4，2026-10-21）：get_run_list 仅返回 run_id/run_date/total_signals/market_state 四键，
+    # 统计字段由 evaluate_run 单点现算（不落列表缓存）；五个统计字段给默认值保证旧 run/未评估
+    # run 不触发 pydantic ValidationError（修复前 /api/evaluation/runs 对任何非空 runs:list 必 500）。
+    # 真实统计请调 /api/evaluation/{run_id}。
 
 
 @router.get("/evaluation/runs", response_model=List[PostEvalResponse], dependencies=[Depends(verify_api_key)])

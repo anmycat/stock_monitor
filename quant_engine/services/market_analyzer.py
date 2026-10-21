@@ -38,9 +38,17 @@ class MarketAnalyzer:
             quotes = self.datacenter.get_realtime_quote(stocks['code'].tolist())
             if quotes.empty:
                 return 0.5
+            # B5 数据卫生断言（2026-10-21）：剔除超物理涨跌幅/非正价脏行后再算比例，
+            # 结果夹紧 [0,1]（与 utils/market_sanity 同一事实源）
+            from ..utils.market_sanity import sanitize_quotes
+            quotes, _stats = sanitize_quotes(quotes)
+            if quotes.empty:
+                logger.warning("[B5] breadth: all quotes dropped by sanity filter, fallback 0.5")
+                return 0.5
             up = len(quotes[quotes['change_pct'] > 0])
             total = len(quotes)
-            return up / total if total > 0 else 0.5
+            breadth = up / total if total > 0 else 0.5
+            return min(1.0, max(0.0, breadth))
         except Exception as e:
             logger.error(f"Calculate breadth error: {e}")
             return 0.5

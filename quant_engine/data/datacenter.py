@@ -144,7 +144,7 @@ class DataCenter:
     def get_market_overview(self) -> Dict:
         cache_key = "market_overview"
         cached = self.cache.get(cache_key)
-        
+
         # 非交易时间直接返回缓存数据，不更新
         phase = get_market_phase()
         if phase in ["MORNING_CLOSED", "AFTER_HOURS", "WEEKEND", "PRE_MARKET"]:
@@ -152,29 +152,37 @@ class DataCenter:
                 return cached
             # 如果缓存为空，获取一次数据
             pass
-        
+
         # 交易时间内且缓存有效，直接返回
         if cached is not None:
             return cached
-        
+
         # 获取所有行情数据
         df = self.get_all_realtime_quotes()
         if df.empty:
             logger.warning("No realtime quotes available for market overview")
-            return {'total': 0, 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0}
-        
-        if 'change_pct' not in df.columns:
-            logger.warning("change_pct column missing from quotes")
-            return {'total': len(df), 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0}
-        
-        df['change_pct'] = pd.to_numeric(df['change_pct'], errors='coerce').fillna(0)
+            return {'total': 0, 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0, 'suspect': True}
+
+        # B5 数据卫生断言（2026-10-21）：剔除 change_pct 超物理上限 / price<=0 / 非有限行；
+        # 剔除率 >20% 视为数据源系统性损坏 → 记 error 并出厂 suspect 空结果（不缓存脏值）
+        from ..utils.market_sanity import sanitize_quotes, is_overview_sane, DROP_RATIO_SUSPECT
+        df, sanity = sanitize_quotes(df)
+        if df.empty or sanity['drop_ratio'] > DROP_RATIO_SUSPECT:
+            logger.error(f"[B5] market overview source data suspect: {sanity} — refusing to publish dirty stats")
+            return {'total': 0, 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0, 'suspect': True}
+
         overview = {
             'total': int(len(df)),
             'up': int(len(df[df['change_pct'] > 0])),
             'down': int(len(df[df['change_pct'] < 0])),
             'flat': int(len(df[df['change_pct'] == 0])),
             'avg_change': round(float(df['change_pct'].mean()), 2),
+            'suspect': False,
         }
+        # 出口断言不过 → 同样不出厂（理论不可达，防御性保留）
+        if not is_overview_sane({k: v for k, v in overview.items() if k != 'suspect'}):
+            logger.error(f"[B5] market overview failed exit assertion: {overview}")
+            return {'total': 0, 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0, 'suspect': True}
         # 交易时间内缓存60秒，非交易时间缓存到下一个交易周期
         if phase in ["MORNING_SESSION", "AFTERNOON_SESSION"]:
             self.cache.set(cache_key, overview, ttl=60)
