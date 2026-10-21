@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.5",
+  "version": "3.6",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -252,5 +252,13 @@
     "test_frozen_update": "test_tdx_minute_source.py 的 test_priority_and_registration 原断言 minute=['tdx','akshare']（akshare 占位），改为 ['tdx'] + akshare 零残留断言——P0 预期内测试口径更新，非回归",
     "validation": "ruff F/E9=0；导入冒烟 OK；全量 14 测试文件（172 例）全绿；架构审计零环（SCC 不变）",
     "docs_synced": "prd/00 v2.x（数据通道/依赖/架构图风控层/文件清单去 akshare+CorrelationManager 标注）、01 §（CorrelationManager 未接线标注）、06 §（产品线叠加句）、07 §14.1（模块地图标注切除）、11（数据层文件清单）、02 §3.8（minute 行+akshare 切除说明）、README v3.2（TDX minute 行）、manifest v3.5"
+  },
+  "d36_refactor_p1_2026_10_22": {
+    "round": "D36 架构重构 P1 data 层（2026-10-22，prd/15 §3.2 阶段二）",
+    "split": "DataCenter(191行/10方法/四职责混合) → data/repositories/market_data.py MarketDataRepository（取数编排+缓存门面职责，公开方法签名/缓存key/TTL/线程锁/B5断言逐一对齐）；_validate_dataframe → utils/market_sanity.validate_dataframe（B5 单一事实源）；datacenter.py 删除（mv 废纸篓）",
+    "importers_switched": "15 个消费方（api.dependencies/beat/worker/services×11/backtest×2）import+类名切换用法零改动；routes.py 延迟导入 get_market_phase 改直连 utils.calendar；data/__init__.py re-export 更新；test_quant_engine_audit/test_datacenter 同步",
+    "bug_found_in_transit": "market_data.py 初版相对导入层级错误（.cache 应为 ..cache，repositories 包内无 cache）——导入冒烟即时捕获修复",
+    "validation": "ruff F/E9=0；导入冒烟 OK；全量 14 测试文件（172 例）全绿；API 冒烟 4 端点 200；架构审计零环（P4 目标 backtest→services 2 边不变）",
+    "docs_synced": "prd/00 §3.1 架构图（MarketDataRepository 分层缓存）、02 §4.2（缓存分层）、03 §4.2（stock_list TTL 实证注记）、01 §（数据中台能力行）、15 §2.2（定稿表述）、research/scripts/audit_verify_d29.py 路径同步、manifest v3.6"
   }
 }

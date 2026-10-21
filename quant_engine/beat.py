@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 from loguru import logger
-from .data.datacenter import DataCenter
+from .data.repositories import MarketDataRepository
 from .services.market_analyzer import MarketAnalyzer
 from .services.notifiers.manager import NotificationManager
 from .utils.calendar import is_trading_day
@@ -35,7 +35,7 @@ def get_sleep_seconds() -> int:
 
 def main():
     logger.info("Beat scheduler started")
-    datacenter = DataCenter()
+    datacenter = MarketDataRepository()
     analyzer = MarketAnalyzer(datacenter)
     notifier = NotificationManager()
     last_market_type = None

@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quant_engine.backtest.engine import BacktestEngine
-from quant_engine.data.datacenter import DataCenter
+from quant_engine.data.repositories import MarketDataRepository
 from quant_engine.data.source_manager import SourceManager
 
 
@@ -48,16 +48,16 @@ class DataCenterAuditTests(unittest.TestCase):
                 {"code": "600000.SH", "name": "Pufa", "price": 8.1, "change_pct": -0.4, "volume": 2000},
             ]
         )
-        dc = DataCenter.__new__(DataCenter)
+        dc = MarketDataRepository.__new__(MarketDataRepository)
         dc.cache = FakeCache()
         dc.source = FakeSource(frame)
         dc._cache_lock = None
         dc._all_quotes_cache = None
         dc._all_quotes_cache_time = 0
-        dc.get_cached_quote = DataCenter.get_cached_quote.__get__(dc, DataCenter)
-        dc.set_cached_quote = DataCenter.set_cached_quote.__get__(dc, DataCenter)
+        dc.get_cached_quote = MarketDataRepository.get_cached_quote.__get__(dc, MarketDataRepository)
+        dc.set_cached_quote = MarketDataRepository.set_cached_quote.__get__(dc, MarketDataRepository)
 
-        result = DataCenter.get_realtime_quote(dc, ["000001.SZ", "600000.SH"])
+        result = MarketDataRepository.get_realtime_quote(dc, ["000001.SZ", "600000.SH"])
 
         self.assertEqual(len(result), 2)
         self.assertEqual(dc.cache.get("quote:000001.SZ")["code"], "000001.SZ")

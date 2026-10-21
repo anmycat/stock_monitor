@@ -60,10 +60,10 @@ if pri:
     for cap in ["realtime", "stock_list", "daily", "minute", "etf"]:
         mm = re.search(cap + r'"\s*:\s*\[([^\]]*)\]', block)
         check(f"_PRIORITY[{cap}]", mm.group(1).strip() if mm else None, None,
-              "02 §3.8: realtime=[tencent,sina,eastmoney] stock_list=[sina,eastmoney] daily=[tencent,sina,eastmoney] minute=[tdx,akshare]")
+              "02 §3.8: realtime=[tencent,sina,eastmoney] stock_list=[sina,eastmoney] daily=[tencent,sina,eastmoney] minute=[tdx]（P0 后口径）")
 
 # 6. stock_list 缓存 TTL（02 §4.2 称 86400s；03 §4.2 称 300s）
-dc_py = read(os.path.join(QE, "data/datacenter.py"))
+dc_py = read(os.path.join(QE, "data/repositories/market_data.py"))  # P1 重构路径（原 datacenter.py）
 for key in ["stock_list", "all_realtime_quotes", "quote", "daily", "minute"]:
     mm = re.search(rf'"{key}"\s*:\s*(\d+)', dc_py)
     check(f"datacenter TTL {key}", mm.group(1) if mm else None, None,

@@ -3,14 +3,14 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..models.market import MarketState
 
 
 class MarketAlert:
     """大盘异动检测模块 - 类似同花顺异动监控"""
 
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.last_alert_time = {}
         self.alert_cooldown = 300

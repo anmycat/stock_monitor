@@ -3,7 +3,7 @@ import time
 from typing import List, Dict, Optional
 from loguru import logger
 from .sector_monitor import SectorMonitor
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 
 
 class Hotspot:
@@ -36,7 +36,7 @@ class HotspotService:
     热度评分 = 板块涨幅归一化 * 0.4 + 上涨比例归一化 * 0.3 + 龙头强度 * 0.3
     """
 
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.sector_monitor = SectorMonitor(datacenter)
         self._cache: Optional[List[Dict]] = None

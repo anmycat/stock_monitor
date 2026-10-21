@@ -10,7 +10,7 @@
 import time
 from typing import Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 
 # 降级提示只打一次，避免盘中 120s 循环刷屏
 _WARNED = False
@@ -19,7 +19,7 @@ _WARNED = False
 class HotMoneyMonitor:
     """游资监控 - 涨停/跌停/炸板池活跃度（降级模式，见模块 docstring）"""
 
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self._cache: Dict = {}
         self._cache_time = 0.0

@@ -1,10 +1,10 @@
 from typing import List, Dict
 from loguru import logger
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 
 
 class SectorMonitor:
-    def __init__(self, datacenter: DataCenter):
+    def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.sectors = {
             '银行': ['600036.SH','601166.SH','600000.SH','601398.SH','601288.SH','601939.SH','601328.SH','601818.SH','600015.SH','601988.SH','601998.SH','601009.SH','601229.SH','600919.SH','601838.SH','002142.SZ'],

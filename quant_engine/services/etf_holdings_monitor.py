@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..data.sources.fund_holdings import EastMoneyFundHoldingsSource
 from .etf_monitor import HOT_ETFS
 
@@ -40,7 +40,7 @@ class ETFHoldingsMonitor:
     TTL_CHANGES = 120 * 86400
     TTL_CHECK_DATE = 2 * 86400
 
-    def __init__(self, datacenter: Optional[DataCenter] = None):
+    def __init__(self, datacenter: Optional[MarketDataRepository] = None):
         self.datacenter = datacenter
         self.source = EastMoneyFundHoldingsSource()
         self.target_etfs = HOT_ETFS

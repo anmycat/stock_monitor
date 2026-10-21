@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from ..data.datacenter import DataCenter
+from ..data.repositories import MarketDataRepository
 from ..data.sources.tencent import TencentSource
 from ..utils.code_utils import (normalize_code, is_valid_code, code_key,
                                 split_code, market_by_symbol)
@@ -64,7 +64,7 @@ class CodeGuard:
     PRICE_GAP_THRESHOLD = 0.11     # 竞价价 vs 缓存昨收跳空阈值（涨跌停10%+缓冲）
     NAME_IGNORE_PREFIXES = ('ST', '*ST', 'N', 'C', 'XD', 'XR', 'DR')  # 名称归一化时剥离
 
-    def __init__(self, datacenter: Optional[DataCenter] = None):
+    def __init__(self, datacenter: Optional[MarketDataRepository] = None):
         self.datacenter = datacenter
         self.tencent = TencentSource()
 
