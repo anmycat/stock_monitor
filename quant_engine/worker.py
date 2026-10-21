@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 from typing import Dict
 from loguru import logger
 from .data.repositories import MarketDataRepository
-from .services.signal_generator import SignalGenerator
-from .services.market_analyzer import MarketAnalyzer
-from .services.market_alert import MarketAlert
-from .services.ai_summary import AISummary
-from .services.burst_monitor import BurstMonitor
-from .services.notifiers.manager import NotificationManager
+from .services.signals.signal_generator import SignalGenerator
+from .services.market.market_analyzer import MarketAnalyzer
+from .services.market.market_alert import MarketAlert
+from .services.ai.ai_summary import AISummary
+from .services.monitors.burst_monitor import BurstMonitor
+from .services.notifications.manager import NotificationManager
 from .utils.calendar import is_trading_day
 from .backtest.post_evaluation import PostEvaluation
 
@@ -95,7 +95,7 @@ def push_summary_to_web(summary_type: str, title: str, summary_data: Dict):
 def get_sector_data(datacenter):
     """获取板块数据（统一入口，使用单例）"""
     try:
-        from .services.sector_monitor import SectorMonitor
+        from .services.monitors.sector_monitor import SectorMonitor
         monitor = SectorMonitor(datacenter)
         return monitor.get_sector_data()
     except Exception as e:
@@ -110,7 +110,7 @@ def check_etf_holdings(datacenter, notifier):
     Redis键 etf_holdings:check_date 保证每日只跑一次。
     """
     try:
-        from .services.etf_holdings_monitor import ETFHoldingsMonitor
+        from .services.monitors.etf_holdings_monitor import ETFHoldingsMonitor
         today = datetime.now().strftime('%Y-%m-%d')
         if datacenter.cache.get('etf_holdings:check_date') == today:
             return
@@ -192,7 +192,7 @@ def check_morning_news(datacenter, notifier):
     去重后按板块分组推送；无新增不推送。
     """
     try:
-        from .services.news_monitor import MorningNewsMonitor
+        from .services.monitors.news_monitor import MorningNewsMonitor
         now = datetime.now()
         t = now.hour * 60 + now.minute
         if not (9 * 60 + 14 <= t <= 9 * 60 + 35):

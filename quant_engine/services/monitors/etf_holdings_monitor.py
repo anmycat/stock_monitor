@@ -15,8 +15,8 @@ from typing import Dict, List, Optional
 
 from loguru import logger
 
-from ..data.repositories import MarketDataRepository
-from ..data.sources.fund_holdings import EastMoneyFundHoldingsSource
+from ...data.repositories import MarketDataRepository
+from ...data.sources.fund_holdings import EastMoneyFundHoldingsSource
 from .etf_monitor import HOT_ETFS
 
 

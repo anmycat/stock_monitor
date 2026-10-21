@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.6",
+  "version": "3.7",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -260,5 +260,13 @@
     "bug_found_in_transit": "market_data.py 初版相对导入层级错误（.cache 应为 ..cache，repositories 包内无 cache）——导入冒烟即时捕获修复",
     "validation": "ruff F/E9=0；导入冒烟 OK；全量 14 测试文件（172 例）全绿；API 冒烟 4 端点 200；架构审计零环（P4 目标 backtest→services 2 边不变）",
     "docs_synced": "prd/00 §3.1 架构图（MarketDataRepository 分层缓存）、02 §4.2（缓存分层）、03 §4.2（stock_list TTL 实证注记）、01 §（数据中台能力行）、15 §2.2（定稿表述）、research/scripts/audit_verify_d29.py 路径同步、manifest v3.6"
+  },
+  "d37_refactor_p2_2026_10_22": {
+    "round": "D37 架构重构 P2 services 分族（2026-10-22，prd/15 §3.2 阶段三）",
+    "structure": "30 模块 → 6 子包：monitors(etf/etf_holdings/sector/hot_money/burst/news_monitor/news_service/hotspot)/market(market_analyzer/market_alert/data_validator)/risk(risk/position/position_sizer/stop_loss_manager/cooldown)/signals(signal_generator/signal_tracker/candidate_context)/notifications(原 notifiers 5 文件)/ai(ai_summary/llm_ranker/agent_router)；code_guard/portfolio 留顶层；git mv 保历史",
+    "constitution": "机器可检 DAG 通过：叶族(monitors/market/risk/notifications)零子包依赖；跨族边仅 signals→{monitors,market,risk,notifications}(7 边) + code_guard→monitors(1 边) + ai 零跨族边——与设计 §2.3 完全一致",
+    "rewrite": "三层重写：A) 19 个下沉模块 quant_engine 级深度修正(..→...)；B) 4 个文件包内兄弟映射(signal_generator 6 边/agent_router 5 边/candidate_context/code_guard)；C) 11 个外部文件(含 backtest/engine 漏网补修)+ 6 个测试文件；services/__init__.py 聚合器保 11 个历史导出名不变",
+    "validation": "ruff F/E9=0；导入冒烟 6 子包+聚合器全通；全量 14 测试文件(172 例)全绿；API 冒烟 4 端点 200；架构审计零环+宪法通过(backtest→services 2 边为 P4 目标)",
+    "docs_synced": "prd/00 §3.1 架构图服务层、07 §14.1 模块地图、11 服务层清单、15 §2.3 定稿、manifest v3.7"
   }
 }

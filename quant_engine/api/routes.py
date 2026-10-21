@@ -10,9 +10,9 @@ from .dependencies import (
     code_guard
 )
 from .auth import verify_api_key
-from ..services.ai_summary import AISummary
-from ..services.market_analyzer import MarketAnalyzer
-from ..services.data_validator import DataValidator
+from ..services.ai.ai_summary import AISummary
+from ..services.market.market_analyzer import MarketAnalyzer
+from ..services.market.data_validator import DataValidator
 from ..services.portfolio import PortfolioManager
 from ..backtest.post_evaluation import PostEvaluation
 from ..utils.stock_resolver import resolver
@@ -872,8 +872,8 @@ def screen_stocks(strategy_id: str, max_output: int = Query(10, ge=1, le=50)):
 def get_kelly_info():
     """获取Kelly公式配置及各策略Kelly参数"""
     try:
-        from ..services.position_sizer import get_position_sizer
-        from ..services.signal_tracker import get_signal_tracker
+        from ..services.risk.position_sizer import get_position_sizer
+        from ..services.signals.signal_tracker import get_signal_tracker
         
         sizer = get_position_sizer()
         tracker = get_signal_tracker()

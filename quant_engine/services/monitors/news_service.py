@@ -2,7 +2,7 @@
 import httpx
 from typing import List, Dict
 from loguru import logger
-from ..config import get_settings
+from ...config import get_settings
 
 
 class NewsItem:

@@ -189,7 +189,7 @@ class TestConsumersReorg(unittest.TestCase):
 
     def test_etf_monitor_no_akshare_dependency(self):
         import inspect
-        from quant_engine.services import etf_monitor
+        from quant_engine.services.monitors import etf_monitor
         src = inspect.getsource(etf_monitor)
         # 不得 import akshare 源、不得持有 self.akshare 实例
         self.assertNotIn('from ..data.akshare_source', src)
@@ -197,7 +197,7 @@ class TestConsumersReorg(unittest.TestCase):
 
     def test_etf_monitor_uses_realtime_quote(self):
         """ETF 状态按 target_codes 直查实时路（不再拉全市场过滤）"""
-        from quant_engine.services.etf_monitor import ETFMonitor
+        from quant_engine.services.monitors.etf_monitor import ETFMonitor
         dc = MagicMock()
         dc.get_realtime_quote.return_value = pd.DataFrame([
             {'code': '510300.SH', 'name': '沪深300ETF', 'price': 4.23,
@@ -214,11 +214,11 @@ class TestConsumersReorg(unittest.TestCase):
 
     def test_burst_skips_refresh_outside_trading_hours(self):
         """非交易时间不调源（用户决策：只在交易时间取数，新闻除外）"""
-        from quant_engine.services.burst_monitor import BurstMonitor
+        from quant_engine.services.monitors.burst_monitor import BurstMonitor
         dc = MagicMock()
         monitor = BurstMonitor(dc)
         monitor.active_pool = ['600000.SH']
-        with patch('quant_engine.services.burst_monitor.is_trading_time',
+        with patch('quant_engine.services.monitors.burst_monitor.is_trading_time',
                    return_value=False):
             pool = monitor.refresh_active_pool()
         dc.get_all_realtime_quotes.assert_not_called()
@@ -226,14 +226,14 @@ class TestConsumersReorg(unittest.TestCase):
 
     def test_burst_refreshes_during_trading_hours(self):
         """交易时间正常刷新"""
-        from quant_engine.services.burst_monitor import BurstMonitor
+        from quant_engine.services.monitors.burst_monitor import BurstMonitor
         dc = MagicMock()
         dc.get_all_realtime_quotes.return_value = pd.DataFrame([
             {'code': '600000.SH', 'name': '浦发银行', 'price': 9.8,
              'change_pct': 1.0, 'volume': 1000.0},
         ])
         monitor = BurstMonitor(dc)
-        with patch('quant_engine.services.burst_monitor.is_trading_time',
+        with patch('quant_engine.services.monitors.burst_monitor.is_trading_time',
                    return_value=True):
             pool = monitor.refresh_active_pool()
         dc.get_all_realtime_quotes.assert_called_once()

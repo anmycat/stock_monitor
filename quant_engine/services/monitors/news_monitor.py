@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from ..data.sources.news_sources import NewsItem, NewsSourceManager
+from ...data.sources.news_sources import NewsItem, NewsSourceManager
 
 # 板块关键词字典：板块 -> 关键词列表
 # 匹配文本 = 标题 + 摘要 + 源标签 + 关联股票名
@@ -209,7 +209,7 @@ class MorningNewsMonitor:
         self._cache = getattr(datacenter, 'cache', None)
         try:
             if settings is None:
-                from ..config import get_settings
+                from ...config import get_settings
                 settings = get_settings()
         except Exception as e:  # noqa: BLE001
             logger.warning(f"News monitor settings load failed: {e}")

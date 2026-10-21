@@ -1,10 +1,10 @@
 import pandas as pd
 from typing import Dict
 from loguru import logger
-from ..models.market import MarketState, MarketType
-from ..data.repositories import MarketDataRepository
-from ..utils.indicators import calculate_indicators
-from ..models.hmm_detector import get_regime_detector
+from ...models.market import MarketState, MarketType
+from ...data.repositories import MarketDataRepository
+from ...utils.indicators import calculate_indicators
+from ...models.hmm_detector import get_regime_detector
 
 
 class MarketAnalyzer:
@@ -40,7 +40,7 @@ class MarketAnalyzer:
                 return 0.5
             # B5 数据卫生断言（2026-10-21）：剔除超物理涨跌幅/非正价脏行后再算比例，
             # 结果夹紧 [0,1]（与 utils/market_sanity 同一事实源）
-            from ..utils.market_sanity import sanitize_quotes
+            from ...utils.market_sanity import sanitize_quotes
             quotes, _stats = sanitize_quotes(quotes)
             if quotes.empty:
                 logger.warning("[B5] breadth: all quotes dropped by sanity filter, fallback 0.5")

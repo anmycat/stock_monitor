@@ -4,8 +4,8 @@ from loguru import logger
 from ..data.repositories import MarketDataRepository
 from ..strategies.dispatcher import StrategyDispatcher
 from ..models.market import MarketState, MarketType
-from ..services.position import PositionManager
-from ..services.risk import RiskManager
+from ..services.risk.position import PositionManager
+from ..services.risk.risk import RiskManager
 from .metrics import calculate_metrics
 
 

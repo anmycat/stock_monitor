@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 from typing import Dict, List, Tuple
 from loguru import logger
-from ..data.cache import RedisCache
+from ...data.cache import RedisCache
 
 
 class DataValidator:

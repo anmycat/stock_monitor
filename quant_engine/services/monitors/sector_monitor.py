@@ -1,6 +1,6 @@
 from typing import List, Dict
 from loguru import logger
-from ..data.repositories import MarketDataRepository
+from ...data.repositories import MarketDataRepository
 
 
 class SectorMonitor:

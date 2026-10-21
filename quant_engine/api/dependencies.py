@@ -1,16 +1,16 @@
 from ..data.repositories import MarketDataRepository
-from ..services.signal_generator import SignalGenerator
-from ..services.etf_monitor import ETFMonitor
-from ..services.etf_holdings_monitor import ETFHoldingsMonitor
-from ..services.news_monitor import MorningNewsMonitor
+from ..services.signals.signal_generator import SignalGenerator
+from ..services.monitors.etf_monitor import ETFMonitor
+from ..services.monitors.etf_holdings_monitor import ETFHoldingsMonitor
+from ..services.monitors.news_monitor import MorningNewsMonitor
 from ..services.code_guard import CodeGuard
-from ..services.cooldown import CooldownManager
-from ..services.sector_monitor import SectorMonitor
-from ..services.market_alert import MarketAlert
-from ..services.hot_money_monitor import HotMoneyMonitor
+from ..services.risk.cooldown import CooldownManager
+from ..services.monitors.sector_monitor import SectorMonitor
+from ..services.market.market_alert import MarketAlert
+from ..services.monitors.hot_money_monitor import HotMoneyMonitor
 from ..backtest.engine import BacktestEngine
 from ..strategies.registry import StrategyRegistry
-from ..services.hotspot import HotspotService
+from ..services.monitors.hotspot import HotspotService
 
 datacenter = MarketDataRepository()
 signal_generator = SignalGenerator(datacenter)
