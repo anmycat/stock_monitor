@@ -19,6 +19,15 @@
   （完整5日持有的信号截至 10-12；10-14~10-19 信号持有 1~4 日）。
 输出：data/validation_3m_v2.json + data/signals_3m_v2.csv + data/chip_samples_3m_v2.csv
       + data/plan_v15_signals_3m_v2.csv
+
+【2026-10-22 注记】rules v1.6 落库后本脚本已更新：R06 direction=avoidance 按
+"移出买入信号池"裁定跳过信号生成（见下方 # 2. 规则信号处）。data/validation_3m_v2.json
+等 4 个产出文件为 2026-10-21 07:20 在 rules v1.4 语义下（R06 以 short_then_long
+配对在池）的产出，是 docs/22 的全部数字来源，按"正文保持产出时点原貌"约定
+未重新生成；彼时定稿口径（剔 R06）由 analyze_3m_v2.py 后处理得出（196 笔/
+44.4%/+0.74%/+145.63%）。用当前脚本重跑本窗口，V7 组合将直接等于该定稿口径
+（2026-10-22 实测确认）。窗口滚动后的现行验证见 validate_3m_recent_v3.py
+（2026-07-22~10-21，第三窗口）。
 """
 import json, csv, os, sys
 
@@ -53,11 +62,15 @@ def main():
     print(f"验证窗口：{VAL_START} ~ {VAL_END}（{len(in_win_days)}个交易日）")
 
     # 2. 规则信号（R01-R06，叠加R07/R08全局过滤）
+    # v1.6 落库（2026-10-21）：R06 direction=avoidance（"移出买入信号池"），
+    # 与 filter/discipline/risk/regime 一同跳过信号生成；R06 的历史计量口径
+    # （short_then_long 配对）证据见 rules JSON v1.6 note 与 docs/22。
     banned = bt.apply_global_filters(all_rows)
     banned_ext = bt.apply_global_filters(all_ext)
     signals = []
     for rid, rule in bt.RULES["trade_rules"].items():
-        if rid.startswith("_") or rule.get("direction") in ("filter", "discipline", "risk", "regime"):
+        if rid.startswith("_") or rule.get("direction") in (
+                "filter", "discipline", "risk", "regime", "avoidance"):
             continue
         for pool, ban in ((all_rows, banned), (all_ext, banned_ext)):
             for t in bt.run_rule(rule, pool):
