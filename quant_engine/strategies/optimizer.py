@@ -8,7 +8,6 @@
 """
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
-from loguru import logger
 from ..models.market import MarketState, MarketType
 
 

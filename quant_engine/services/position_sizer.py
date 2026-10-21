@@ -9,8 +9,8 @@
 - 组合级Kelly调整: 根据持仓数量和相关性控制总风险
 - Kelly信心指数: 0-100, 量化策略在该标的上的历史优势
 """
-from typing import Dict, Optional, List
-from dataclasses import dataclass, field
+from typing import Dict
+from dataclasses import dataclass
 from loguru import logger
 from ..models.market import MarketState, MarketType
 

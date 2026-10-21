@@ -1,10 +1,10 @@
 import time
 import pandas as pd
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from datetime import datetime
+from typing import List, Dict
 from loguru import logger
 from ..data.datacenter import DataCenter
-from ..models.market import MarketState, MarketType
+from ..models.market import MarketState
 
 
 class MarketAlert:

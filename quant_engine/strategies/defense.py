@@ -1,5 +1,4 @@
 from typing import List, Dict
-from loguru import logger
 from ..models.market import MarketState, MarketType
 
 

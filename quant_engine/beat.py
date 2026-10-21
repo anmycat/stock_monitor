@@ -4,9 +4,7 @@ from loguru import logger
 from .data.datacenter import DataCenter
 from .services.market_analyzer import MarketAnalyzer
 from .services.notifiers.manager import NotificationManager
-from .models.market import MarketType
 from .utils.calendar import is_trading_day
-from .config import get_settings
 
 
 def is_trading_session() -> bool:
@@ -37,7 +35,6 @@ def get_sleep_seconds() -> int:
 
 def main():
     logger.info("Beat scheduler started")
-    settings = get_settings()
     datacenter = DataCenter()
     analyzer = MarketAnalyzer(datacenter)
     notifier = NotificationManager()
@@ -45,8 +42,6 @@ def main():
 
     while True:
         try:
-            now = datetime.now()
-
             # 市场状态监控
             if is_trading_session():
                 market = analyzer.analyze_market()

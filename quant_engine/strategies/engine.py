@@ -1,6 +1,5 @@
 import pandas as pd
 from typing import Dict
-from loguru import logger
 from .filters import AntiSignalFilter
 from .gates import GateModel
 from ..models.market import MarketState

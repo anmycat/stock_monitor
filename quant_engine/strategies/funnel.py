@@ -1,6 +1,6 @@
 """三层漏斗选股引擎 - 从全市场筛选候选股票"""
 import pandas as pd
-from typing import List, Dict, Optional
+from typing import List, Dict
 from loguru import logger
 from .yaml_loader import get_yaml_loader
 from .yaml_executor import YamlStrategyExecutor
@@ -155,7 +155,6 @@ class ThreeLayerFunnel:
         for candidate in candidates:
             try:
                 df = candidate['df']
-                indicators = candidate.get('indicators', {})
                 factors = candidate.get('factors', {})
                 score = candidate.get('score', 0)
 

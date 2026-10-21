@@ -1,6 +1,5 @@
 import pandas as pd
 from typing import List, Tuple
-from loguru import logger
 
 
 class AntiSignalFilter:

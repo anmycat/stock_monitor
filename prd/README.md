@@ -80,7 +80,7 @@
 - `research/rules/methodology_rules.json` v1.4 是调研线唯一可执行配置源（**v1.5 参数裁定已入 prd 文档但尚未写入 JSON**——升版动作见 14 §4 止损周门禁）；产品线的可执行配置是 `quant_engine/strategies/*.yaml` + `config.py`
 - 部署：`deploy/deploy_onekey.sh`（一键上传，LOCAL_DIR=仓库根）+ `deploy/deploy.sh`（服务器 provisioning，注意 G14 脱敏占位符）
 - 测试：`coding/.venv/bin/python -m unittest discover -s test -p "test_*.py"`——2026-10-22 全量 **172/172**（D31 新增 B4 兼容 3 + B5 卫生 16 + M2' 池 8 + clist 解析 3，D32 新增 data_validator 5，另 test_eastmoney/test_datacenter 为网络依赖手动冒烟脚本不计入）；fixture 均为真实 API 响应；sys.path 指向仓库根，任意 cwd 可跑
-- **TDX 分钟线**（2026-10-20）：`quant_engine/data/sources/tdx.py`（pytdx 懒加载，未安装自动降级不断链）；`_PRIORITY['minute']=['tdx','akshare']`；口径见 02 §3.9
+- **TDX 分钟线**（2026-10-20）：`quant_engine/data/sources/tdx.py`（pytdx 懒加载，未安装自动降级不断链）；`_PRIORITY['minute']=['tdx']`（akshare 遗留链 2026-10-22 切除，15 §P0）；口径见 02 §3.9
 - **ETF 持仓监控**（2026-10-18）：`quant_engine/services/etf_holdings_monitor.py` + `data/sources/fund_holdings.py`（天天基金 jjcc 接口）；worker 盘后每日一次检查，Redis 键见 03 §4.3；需求/口径/验收见 01 §7.3 / 02 §3.6 / 08 §10
 
 ---

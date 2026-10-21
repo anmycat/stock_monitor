@@ -1,5 +1,4 @@
 """股票代码解析器 - 支持代码/名称/拼音搜索"""
-import re
 from typing import List, Dict, Optional
 from loguru import logger
 

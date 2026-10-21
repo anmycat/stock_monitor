@@ -1,7 +1,6 @@
 """新闻舆情分析服务"""
 import httpx
-from typing import List, Dict, Optional
-from datetime import datetime
+from typing import List, Dict
 from loguru import logger
 from ..config import get_settings
 
@@ -139,7 +138,7 @@ class NewsService:
 
     def _search_eastmoney_keyword(self, keyword: str, count: int = 5) -> List[Dict]:
         """使用东方财富搜索新闻（按关键词）"""
-        url = f"https://search-api-web.eastmoney.com/search/jsonp"
+        url = "https://search-api-web.eastmoney.com/search/jsonp"
         params = {
             "cb": "jQuery",
             "param": f'{{"uid":"","keyword":"{keyword}","type":["cmsArticleWebOld"],"client":"web","clientType":"web","clientVersion":"curr","param":{{"cmsArticleWebOld":{{"searchScope":"default","sort":"default","pageIndex":1,"pageSize":{count},"preTag":"<em>","postTag":"</em>"}}}}}}',

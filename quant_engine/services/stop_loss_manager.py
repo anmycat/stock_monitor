@@ -9,8 +9,6 @@
 """
 from typing import Dict, Optional, List
 from dataclasses import dataclass
-from datetime import datetime
-from loguru import logger
 
 
 @dataclass

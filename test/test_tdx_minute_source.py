@@ -240,11 +240,15 @@ class TdxRegistrationTest(unittest.TestCase):
 
     def test_priority_and_registration(self):
         from quant_engine.data.source import _PRIORITY, CompositeSource
-        # minute 第一线为 tdx，akshare 兜底占位
-        self.assertEqual(_PRIORITY['minute'], ['tdx', 'akshare'])
+        # minute 第一线且唯一线为 tdx（akshare 遗留链已于 P0 切除，见 prd/15）
+        self.assertEqual(_PRIORITY['minute'], ['tdx'])
         cs = CompositeSource()
         self.assertIn('tdx', cs.sources)
         self.assertTrue(hasattr(cs.sources['tdx'], 'get_minute_data'))
+        # akshare 死依赖零残留
+        self.assertNotIn('akshare', cs.sources)
+        for cap in _PRIORITY:
+            self.assertNotIn('akshare', _PRIORITY[cap])
         # 其他主路不含 tdx（实时/列表/日线维持腾讯/新浪）
         for cap in ('realtime', 'stock_list', 'daily'):
             self.assertNotIn('tdx', _PRIORITY[cap])

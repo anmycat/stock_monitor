@@ -20,8 +20,8 @@ import json
 import time
 import concurrent.futures
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass, field
+from typing import List, Dict
+from dataclasses import dataclass
 from loguru import logger
 from ..models.signal import Signal, SignalAction
 from ..models.market import MarketState, MarketType
@@ -407,7 +407,7 @@ class AISummary:
                 elif response.status_code == 429:
                     return ModelResponse(
                         model_name=cfg.name, text="", success=False,
-                        error=f"限流(429)", latency_ms=latency
+                        error="限流(429)", latency_ms=latency
                     )
                 else:
                     return ModelResponse(
