@@ -3,10 +3,10 @@ import re
 import time
 import requests
 import pandas as pd
-from typing import List, Dict, Optional
+from typing import List, Optional
 from loguru import logger
 
-from ...utils.code_utils import to_secid, market_by_symbol, MARKET_BJ
+from ...utils.code_utils import to_secid, market_by_symbol
 
 
 class EastMoneySource:

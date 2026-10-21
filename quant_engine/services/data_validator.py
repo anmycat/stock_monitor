@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Tuple
 from loguru import logger
 from ..data.cache import RedisCache
@@ -49,6 +49,11 @@ class DataValidator:
         missing_fields = [f for f in required_fields if f not in market_data]
         if missing_fields:
             errors.append(f"市场数据缺少字段: {missing_fields}")
+        # B5（2026-10-21）：overview 带 suspect=True 表示数据卫生断言未过、
+        # 出厂的是零结果而非真实统计——必须记校验失败，否则 validation
+        # 成功率对数据源系统性损坏不感知（B5 验收口径"成功率回升"的闭环）
+        if market_data.get('suspect'):
+            errors.append("市场概览数据可疑（sanitize 未过或源损坏），未采信")
         if 'total' in market_data and 'up' in market_data and 'down' in market_data:
             total = market_data['total']
             up = market_data['up']

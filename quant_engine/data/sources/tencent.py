@@ -5,7 +5,7 @@ import pandas as pd
 from typing import List, Dict, Optional, Tuple
 from loguru import logger
 
-from ...utils.code_utils import (to_tencent_code, normalize_code,
+from ...utils.code_utils import (to_tencent_code,
                                  MARKET_SH, MARKET_SZ, MARKET_BJ)
 
 
@@ -238,7 +238,7 @@ class TencentSource:
         # 兜底：静态号段（emergency-only）
         logger.warning(
             "Tencent code pool: dynamic sources unavailable "
-            f"(sina<{TencentSource.MIN_POOL_CODES}), "
+            f"(sina_list/eastmoney_clist both <{TencentSource.MIN_POOL_CODES}), "
             "falling back to static segments (emergency-only)")
         return TencentSource._get_main_stock_codes(), 'static_emergency'
 

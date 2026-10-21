@@ -649,7 +649,7 @@ def get_alert_history(limit: int = Query(20, ge=1, le=50)):
 @router.get("/validation", response_model=ValidationReportResponse, dependencies=[Depends(verify_api_key)])
 def get_validation_report():
     try:
-        market = market_analyzer.analyze_market()
+        market_analyzer.analyze_market()
         market_data = datacenter.get_market_overview()
         is_valid, errors = data_validator.validate_market_data(market_data)
         data_validator.log_validation("market", is_valid, errors)
