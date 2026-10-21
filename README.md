@@ -52,9 +52,9 @@ SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 ssh
 | 调研规则 v1.4 与验证数据 | `research/README.md` → `research/rules/methodology_rules.json` |
 | 已知风险与遗留问题 | `prd/10_风险登记.md`、`prd/12_审计清单.md` |
 
-## 当前状态（2026-10-20 晚）
+## 当前状态（2026-10-21）
 
-- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**本地领先 origin/main 19 个提交待推送部署，ECS 跑旧版（部署债 = 战略第一待办 M1）**
+- **生产**：ECS 8.134.89.55:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**git 侧已结（21 个提交已推送、本地与 origin/main 同步），剩余 ECS 一键部署 + 首日验收（部署债 = 战略第一待办 M1）**
 - **策略**：trend / dip / defense + 三个 YAML 策略（trend_breakout_v1 / dip_reversal_v1 / balanced_alpha_v1）+ 八因子评分 + 三层漏斗
 - **F 线·数据源重组（10-20）**：修复两条断裂链路——stock_list（原仅 akshare 未安装 → 退化为 5 只兜底；新浪 `get_all_stocks` 实测 5574 只，含科创 617/北交所 351/创业板 936）、daily（原仅 akshare 实现 → signals 恒空；腾讯 fqkline + 新浪 getKLineData 双第一线）；ETF 监控改按目标代码直查实时路。详见 `prd/02 §3.8`
 - **TDX minute（10-20）**：通达信 pytdx 分钟线接入（`sources/tdx.py`，`minute` 第一线）——补齐 gates 分钟断链（接入前无任何源实现 `get_minute_data`，gates 恒放行降级）；5/15/30/60 分钟K，服务器池探活 + 掉线重试 + 全失败降级不断链。详见 `prd/02 §3.9`
@@ -62,7 +62,9 @@ SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 ssh
 - **PRD 已修订至最新状态（10-20 晚，D27）**：09/14/07/08/10/12/13/README/manifest 全部显式升版登记；内容审计发现 realtime 市场概览池仍走腾讯硬编码 ~406 只（M2 收尾项，腾讯失败时新浪兜底 5574）
 - **四大K线形态3个月实盘验证（10-20 深夜，docs/20，提交 707f989）**：4,229 只全市场票上四形态 5 日超额全负、三重检验全败（P1 -6.43%/P2 -0.86%/P3 -2.51%/P4 -1.83%），不纳入买入规则库；沉淀验证标准三件套（聚类显著性+条件分解+全市场基准，已入 docs/09 §11）；P3 的"回避信号"假设经牛熊分段复验**否决**（见下条）
 - **结合评估（10-20 深夜，D28）**：L1 方法论（docs/09 §11 三件套）+ L2 取数设施已落地；**P3 牛熊分段复验完成，裁定否决**（docs/21）——3 个月的负Edge全部来自 2026H2 单一深熊 episode（-4.79%，聚类 t=-3.11），2026H1 熊市日反向 +2.17%；单 episode 不论证，rules JSON 不动；二次复验触发条件已登记（第二个独立深熊 episode 且负Edge重现）
-- **待办**：① M1 清偿部署债：推送 21 个提交 + ECS 部署验收（交易时段验证 `/api/market` 覆盖数、`/api/signals` 非空、`/api/etf` 实时价、TDX 117.34.114.x 可达性）② M2 收尾：realtime 池动态化（`/api/market` ≥5000 稳定达成）③ THS daily 第三线（P2，待确认）④ `/api/evaluation/runs` 500 错误 ⑤ 回测池扩容 100 只/12 个月（取数设施已就绪：`fetch_pattern_pool.py --bars/--out`）⑥ P3 二次复验触发条件：第二个独立深熊 episode 且负Edge重现才考虑深熊条件性回避闸门（docs/21 §7.2）
+- **PRD 内容审计（10-21，D29，12 §3.16）**：16 份文档 + manifest + README 全量核对，8 项发现全部修复——cooldown TTL 86400→14400s（4h）、stock_list TTL 300→86400s、Python 文件数 82→87、R12 半年数字误植三处订正、部署债表述 9 处更新（git 已同步）；Kelly/样本数/采纳配置一致性 7/7 通过
+- **3M 第二窗口验真（10-21，D30，报告 research/docs/22）**：数据延伸至 10-20（neodata 同源 + 通达信独立源双校验 + 回归零破坏）后重跑 07-21~10-20 窗口——**v1.5 定稿复现**（196 笔/44.4%/+0.74%/+145.63%，8/9 月与 PRD 声明逐字段相同）；**R02 转负 −0.12%**（v1 的 +1.90% 由 5 笔早期暴利单驱动，重叠窗口 19 笔分毫不差——"最强规则"声明撤销）；R05 转负 −0.18%（尾部截断 7 笔 −19.48%，非尾部仍为正）；**Kelly v1.6 裁定建议（R02/R05→0、R04→2.84%、混合→1.92%）待用户确认**
+- **待办**：① M1 清偿部署债：ECS 一键部署 + 验收（交易时段验证 `/api/market` 覆盖数、`/api/signals` 非空、`/api/etf` 实时价、TDX 117.34.114.x 可达性）② M2 收尾：realtime 池动态化（`/api/market` ≥5000 稳定达成）③ THS daily 第三线（P2，待确认）④ `/api/evaluation/runs` 500 错误 ⑤ 回测池扩容 100 只/12 个月（取数设施已就绪：`fetch_pattern_pool.py --bars/--out`）⑥ P3 二次复验触发条件：第二个独立深熊 episode 且负Edge重现才考虑深熊条件性回避闸门（docs/21 §7.2）⑦ rules JSON v1.6 升版（Kelly 裁定，待用户确认）⑧ 11-01 月度复验（`validate_3m_recent_v2.py` 滚动）
 
 ## 双轨说明（重要）
 
