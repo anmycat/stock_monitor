@@ -10,6 +10,8 @@ from ..services.market.market_alert import MarketAlert
 from ..services.monitors.hot_money_monitor import HotMoneyMonitor
 from ..backtest.engine import BacktestEngine
 from ..strategies.registry import StrategyRegistry
+from ..services.ai.llm_ranker import LLMRanker
+from ..services.signals.candidate_context import CandidateContext
 from ..services.monitors.hotspot import HotspotService
 
 datacenter = MarketDataRepository()
@@ -23,5 +25,8 @@ cooldown_manager = CooldownManager(datacenter.cache)
 sector_monitor = SectorMonitor(datacenter)
 market_alert = MarketAlert(datacenter)
 hot_money_monitor = HotMoneyMonitor(datacenter)
-strategy_registry = StrategyRegistry(datacenter)
+# P4：funnel 增强层由 L0 注入 L1 实例（L2 strategies 不再反向 import L1 services）
+strategy_registry = StrategyRegistry(
+    datacenter, llm_ranker=LLMRanker(), context_enricher=CandidateContext()
+)
 hotspot_service = HotspotService(datacenter)

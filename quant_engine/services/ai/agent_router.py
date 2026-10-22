@@ -78,10 +78,14 @@ def detect_intent(message: str) -> Tuple[str, Dict]:
     return 'free_chat', {'message': message}
 
 
-async def route_message(message: str, session_id: str = "default", datacenter=None) -> Dict:
+async def route_message(message: str, session_id: str = "default", datacenter=None,
+                        signal_generator=None) -> Dict:
     """
     路由消息到对应的处理技能
-    
+
+    Args:
+        signal_generator: 信号扫描能力注入（P4 参数注入，ai 族不再 import signals 族，
+            prd/15 §3.2 P4 清单 #5）；None 时信号类技能降级
     Returns:
         格式化的响应字典
     """
@@ -90,7 +94,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
 
     try:
         if intent == 'analyze_stock':
-            return await _handle_analyze_stock(params['query'], datacenter)
+            return await _handle_analyze_stock(params['query'], datacenter, signal_generator)
         elif intent == 'query_hotspots':
             return await _handle_hotspots(datacenter)
         elif intent == 'list_strategies':
@@ -98,7 +102,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
         elif intent == 'market_overview':
             return await _handle_market_overview(datacenter)
         elif intent == 'scan_signals':
-            return await _handle_scan_signals(datacenter)
+            return await _handle_scan_signals(datacenter, signal_generator)
         elif intent == 'evaluate':
             return await _handle_evaluate(datacenter)
         elif intent == 'free_chat':
@@ -110,7 +114,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
         return {'type': 'chat', 'text': f'处理出错: {str(e)}'}
 
 
-async def _handle_analyze_stock(query: str, datacenter) -> Dict:
+async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -> Dict:
     """处理个股分析"""
     from ...utils.stock_resolver import resolver
     # 尝试解析股票代码
@@ -128,9 +132,10 @@ async def _handle_analyze_stock(query: str, datacenter) -> Dict:
     code = results[0]['code']
     name = results[0].get('name', query)
 
-    from ..signals.signal_generator import SignalGenerator
-    gen = SignalGenerator(datacenter)
-    signal = gen.scan_stock(code, name)
+    # P4 注入：signal_generator 缺失时跳过信号段（原为函数内 import signals 族）
+    signal = None
+    if signal_generator is not None:
+        signal = signal_generator.scan_stock(code, name)
 
     from .ai_summary import AISummary
     from ...utils.indicators import calculate_indicators
@@ -191,11 +196,11 @@ async def _handle_market_overview(datacenter) -> Dict:
     return {'type': 'chat', 'text': text}
 
 
-async def _handle_scan_signals(datacenter) -> Dict:
+async def _handle_scan_signals(datacenter, signal_generator=None) -> Dict:
     """处理信号扫描"""
-    from ..signals.signal_generator import SignalGenerator
-    gen = SignalGenerator(datacenter)
-    signals = gen.scan_all(max_signals=3)
+    if signal_generator is None:
+        return {'type': 'chat', 'text': '信号服务暂不可用'}
+    signals = signal_generator.scan_all(max_signals=3)
     if not signals:
         return {'type': 'chat', 'text': '📭 今日暂无交易信号'}
     lines = ['📈 当前信号：']
