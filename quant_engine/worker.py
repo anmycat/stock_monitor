@@ -1,6 +1,5 @@
 import time
 from datetime import datetime, timedelta
-from typing import Dict
 
 from loguru import logger
 
@@ -72,7 +71,7 @@ def get_sleep_seconds(phase: str) -> int:
     return (target - t) * 60
 
 
-def push_summary_to_web(summary_type: str, title: str, summary_data: Dict):
+def push_summary_to_web(summary_type: str, title: str, summary_data: dict):
     """通过WebSocket推送AI总结到Web页面"""
     try:
         import asyncio
@@ -218,7 +217,7 @@ def check_morning_news(datacenter, notifier):
         logger.error(f"Morning news check error: {e}")
 
 
-def save_summary_to_cache(datacenter, summary_type: str, summary_data: Dict):
+def save_summary_to_cache(datacenter, summary_type: str, summary_data: dict):
     """保存总结到Redis缓存，供 Web页面显示"""
     cache_key = f"ai_summary:{summary_type}"
     datacenter.cache.set(cache_key, summary_data, ttl=86400)  # 缓存24小时

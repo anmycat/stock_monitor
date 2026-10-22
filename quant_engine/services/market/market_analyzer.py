@@ -1,4 +1,3 @@
-from typing import Dict
 
 import pandas as pd
 from loguru import logger
@@ -55,7 +54,7 @@ class MarketAnalyzer:
             logger.error(f"Calculate breadth error: {e}")
             return 0.5
 
-    def _calculate_trend(self, indicators: Dict) -> float:
+    def _calculate_trend(self, indicators: dict) -> float:
         score = 0
         ma5 = indicators.get('ma5', 0)
         ma10 = indicators.get('ma10', 0)

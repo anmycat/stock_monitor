@@ -7,7 +7,6 @@
 - 自动选择最优策略组合
 """
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
 
 from ..models.market import MarketState, MarketType
 
@@ -56,11 +55,11 @@ class StrategyOptimizer:
     
     def __init__(self):
         self.current_weights = self.DEFAULT_WEIGHTS.copy()
-        self.performance_history: Dict[str, List[float]] = {}  # strategy_name -> [returns]
+        self.performance_history: dict[str, list[float]] = {}  # strategy_name -> [returns]
         self.min_weight = 0.05  # 最小权重5%
         self.max_weight = 0.8   # 最大权重80%
     
-    def get_weights_for_market(self, market_state: MarketState) -> Dict[str, float]:
+    def get_weights_for_market(self, market_state: MarketState) -> dict[str, float]:
         """
         根据市场状态获取策略权重
         
@@ -93,7 +92,7 @@ class StrategyOptimizer:
         self.current_weights = adjusted_weights
         return adjusted_weights
     
-    def update_from_performance(self, strategy_returns: Dict[str, float]):
+    def update_from_performance(self, strategy_returns: dict[str, float]):
         """
         根据策略历史表现更新权重
         
@@ -109,7 +108,7 @@ class StrategyOptimizer:
             if len(self.performance_history[strategy]) > 30:
                 self.performance_history[strategy] = self.performance_history[strategy][-30:]
     
-    def _calculate_adjustment(self, market_state: MarketState) -> Dict[str, float]:
+    def _calculate_adjustment(self, market_state: MarketState) -> dict[str, float]:
         """
         根据市场状态计算权重调整
         
@@ -139,7 +138,7 @@ class StrategyOptimizer:
         
         return adjustment
     
-    def get_top_strategies(self, market_state: MarketState, top_n: int = 3) -> List[Tuple[str, float]]:
+    def get_top_strategies(self, market_state: MarketState, top_n: int = 3) -> list[tuple[str, float]]:
         """
         获取最优策略
         
@@ -156,7 +155,7 @@ class StrategyOptimizer:
         weight = weights.get(strategy_name, 0.0)
         return weight >= self.min_weight
     
-    def get_strategy_config(self, market_state: MarketState) -> Dict:
+    def get_strategy_config(self, market_state: MarketState) -> dict:
         """
         获取策略配置建议
         
@@ -174,7 +173,7 @@ class StrategyOptimizer:
             'recommendation': self._generate_recommendation(market_state, weights)
         }
     
-    def _generate_recommendation(self, market_state: MarketState, weights: Dict) -> str:
+    def _generate_recommendation(self, market_state: MarketState, weights: dict) -> str:
         """生成策略建议"""
         if market_state.type == MarketType.BULL:
             return "牛市行情,建议加大趋势策略权重,减少抄底操作"

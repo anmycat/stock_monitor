@@ -1,6 +1,5 @@
 """T+N后验评估 - 保存运行结果，用后续数据验证"""
 from datetime import datetime
-from typing import Dict, List
 
 from loguru import logger
 
@@ -15,7 +14,7 @@ class PostEvaluation:
         self.cache = cache
         self.datacenter = datacenter
 
-    def save_run(self, run_id: str, signals: List[Dict], market_state: Dict) -> bool:
+    def save_run(self, run_id: str, signals: list[dict], market_state: dict) -> bool:
         """保存运行结果"""
         try:
             run_data = {
@@ -39,7 +38,7 @@ class PostEvaluation:
             logger.error(f"Save run error: {e}")
             return False
 
-    def evaluate_run(self, run_id: str) -> Dict:
+    def evaluate_run(self, run_id: str) -> dict:
         """评估运行结果"""
         try:
             run_data = self.cache.get(f"run:{run_id}")
@@ -127,7 +126,7 @@ class PostEvaluation:
             logger.error(f"Evaluate run error: {e}")
             return {'error': str(e)}
 
-    def evaluate_batch(self, limit: int = 10) -> Dict:
+    def evaluate_batch(self, limit: int = 10) -> dict:
         """批量评估"""
         try:
             runs = self.cache.get("runs:list") or []
@@ -164,7 +163,7 @@ class PostEvaluation:
             logger.error(f"Evaluate batch error: {e}")
             return {'error': str(e)}
 
-    def get_run_list(self, limit: int = 20) -> List[Dict]:
+    def get_run_list(self, limit: int = 20) -> list[dict]:
         """获取运行列表"""
         try:
             runs = self.cache.get("runs:list") or []

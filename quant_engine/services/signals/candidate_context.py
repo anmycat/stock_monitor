@@ -1,5 +1,4 @@
 """候选级上下文 - 为Top候选抓取新闻/公告/资金流"""
-from typing import Dict, List
 
 from loguru import logger
 
@@ -12,7 +11,7 @@ class CandidateContext:
     def __init__(self):
         self.news_service = NewsService()
 
-    def enrich_candidates(self, candidates: List[Dict], max_candidates: int = 5) -> List[Dict]:
+    def enrich_candidates(self, candidates: list[dict], max_candidates: int = 5) -> list[dict]:
         """
         为候选股票添加上下文信息
         
@@ -65,7 +64,7 @@ class CandidateContext:
         
         return enriched
 
-    def get_candidate_summary(self, candidate: Dict) -> str:
+    def get_candidate_summary(self, candidate: dict) -> str:
         """获取候选摘要"""
         context = candidate.get('context', {})
         news = context.get('news', [])
@@ -85,7 +84,7 @@ class CandidateContext:
         
         return ' | '.join(summary_parts) if summary_parts else "暂无上下文信息"
 
-    def format_context_for_llm(self, candidates: List[Dict]) -> str:
+    def format_context_for_llm(self, candidates: list[dict]) -> str:
         """格式化上下文供LLM使用"""
         lines = []
         

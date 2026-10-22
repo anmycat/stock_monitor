@@ -1,5 +1,6 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -26,11 +27,11 @@ class SignalGenerator:
         self.cooldown_manager = CooldownManager(datacenter.cache)
         self.notifier = NotificationManager()
         self.position_sizer = get_position_sizer()  # Kelly深度融合
-        self.current_positions: Dict[str, float] = {}
-        self.equity_curve: List[float] = []
-        self.trades: List[Dict] = []
+        self.current_positions: dict[str, float] = {}
+        self.equity_curve: list[float] = []
+        self.trades: list[dict] = []
 
-    def scan_all(self, max_signals: int = 3) -> List[Signal]:
+    def scan_all(self, max_signals: int = 3) -> list[Signal]:
         market = self.market_analyzer.analyze_market()
         logger.info(f"Market state: {market.type.value}, score: {market.score}")
         if market.type.value == 'BEAR':
@@ -82,11 +83,11 @@ class SignalGenerator:
         self._enrich_signals(signals)
         return signals
 
-    def scan_stock(self, code: str, name: str = "") -> Optional[Signal]:
+    def scan_stock(self, code: str, name: str = "") -> Signal | None:
         market = self.market_analyzer.analyze_market()
         return self._analyze_stock(code, name, market)
 
-    def _analyze_stock(self, code: str, name: str, market: MarketState) -> Optional[Signal]:
+    def _analyze_stock(self, code: str, name: str, market: MarketState) -> Signal | None:
         if not self.cooldown_manager.is_cooled_down(code):
             logger.debug(f"Signal cooldown active for {code}")
             return None
@@ -157,7 +158,7 @@ class SignalGenerator:
         capital_info = self.position_manager.get_capital_info()
         self.equity_curve.append(capital_info['current'])
 
-    def _enrich_signals(self, signals: List[Signal]):
+    def _enrich_signals(self, signals: list[Signal]):
         """为 BUY 信号添加候选股上下文（新闻/舆情）"""
         buy_signals = [s for s in signals if s.action == SignalAction.BUY]
         if not buy_signals:

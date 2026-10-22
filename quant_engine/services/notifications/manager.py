@@ -1,5 +1,4 @@
 """通知管理器 - 统一管理所有通知渠道"""
-from typing import List
 
 from loguru import logger
 
@@ -69,7 +68,7 @@ class NotificationManager:
 
     def __init__(self):
         settings = get_settings()
-        self.notifiers: List[BaseNotifier] = []
+        self.notifiers: list[BaseNotifier] = []
 
         # 钉钉
         if settings.DINGTALK_WEBHOOK:

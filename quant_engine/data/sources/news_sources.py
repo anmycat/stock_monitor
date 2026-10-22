@@ -16,6 +16,7 @@
 - 东财旧接口 newsapi.eastmoney.com/kuaixun（404）
 - 36氪/和讯/网易 RSS（返回 HTML 非 XML）
 """
+from __future__ import annotations
 import json
 import re
 import time
@@ -23,7 +24,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -44,11 +45,11 @@ class NewsItem:
     title: str
     content: str = ""           # 摘要/正文
     url: str = ""
-    published_at: Optional[datetime] = None
-    tags: List[str] = field(default_factory=list)      # 源标签（关键词/板块词）
-    stocks: List[str] = field(default_factory=list)    # 关联股票名称
+    published_at: datetime | None = None
+    tags: list[str] = field(default_factory=list)      # 源标签（关键词/板块词）
+    stocks: list[str] = field(default_factory=list)    # 关联股票名称
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             'source': self.source,
             'item_id': self.item_id,
@@ -61,8 +62,8 @@ class NewsItem:
         }
 
 
-def _http_get(url: str, headers: Dict = None, timeout: int = DEFAULT_TIMEOUT,
-              retry: int = DEFAULT_RETRY) -> Optional[str]:
+def _http_get(url: str, headers: dict = None, timeout: int = DEFAULT_TIMEOUT,
+              retry: int = DEFAULT_RETRY) -> str | None:
     """带重试的GET，失败返回None（由调用方降级）"""
     hdr = {'User-Agent': DEFAULT_UA}
     if headers:
@@ -82,8 +83,8 @@ def _http_get(url: str, headers: Dict = None, timeout: int = DEFAULT_TIMEOUT,
     return None
 
 
-def _http_post_json(url: str, payload: Dict, headers: Dict = None,
-                    timeout: int = DEFAULT_TIMEOUT, retry: int = DEFAULT_RETRY) -> Optional[Dict]:
+def _http_post_json(url: str, payload: dict, headers: dict = None,
+                    timeout: int = DEFAULT_TIMEOUT, retry: int = DEFAULT_RETRY) -> dict | None:
     hdr = {'User-Agent': DEFAULT_UA, 'Content-Type': 'application/json'}
     if headers:
         hdr.update(headers)
@@ -114,7 +115,7 @@ def strip_html(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
-def parse_datetime(value) -> Optional[datetime]:
+def parse_datetime(value) -> datetime | None:
     """多格式时间解析：datetime / unix时间戳(秒) / 常见字符串"""
     if value is None or value == '':
         return None
@@ -158,13 +159,13 @@ class EastMoneyNewsSource:
     RANK = 1
     BASE = 'https://np-weblist.eastmoney.com/comm/web/getFastNewsList'
 
-    def __init__(self, columns: List[str] = None, page_size: int = 50):
+    def __init__(self, columns: list[str] = None, page_size: int = 50):
         self.columns = columns or ['101', '102', '103']
         self.page_size = page_size
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         """raw_fetcher: 测试注入 (url, headers) -> str"""
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         for col in self.columns:
             url = (f"{self.BASE}?client=web&biz=web_724&fastColumn={col}"
                    f"&sortEnd=&pageSize={self.page_size}&req_trace=nx{int(time.time()*1000)}")
@@ -205,7 +206,7 @@ class TongHuaShunNewsSource:
     def __init__(self, page_size: int = 50):
         self.page_size = page_size
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         url = self.URL.format(size=self.page_size)
         raw = raw_fetcher(url, {'Referer': 'https://news.10jqka.com.cn/'}) \
             if raw_fetcher else _http_get(url, {'Referer': 'https://news.10jqka.com.cn/'})
@@ -216,7 +217,7 @@ class TongHuaShunNewsSource:
         except json.JSONDecodeError:
             logger.warning(f"{self.NAME}: invalid JSON")
             return []
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         for row in ((data.get('data') or {}).get('list')) or []:
             title = (row.get('title') or '').strip()
             item_id = str(row.get('id') or '')
@@ -261,7 +262,7 @@ class SinaLiveNewsSource:
             return m.group(1).strip(), m.group(2).strip()
         return text[:40].strip(), text
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         url = self.URL.format(size=self.page_size)
         raw = raw_fetcher(url, {}) if raw_fetcher else _http_get(url)
         if not raw:
@@ -273,13 +274,13 @@ class SinaLiveNewsSource:
             return []
         feed = (((data.get('result') or {}).get('data') or {})
                 .get('feed') or {})
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         for row in feed.get('list') or []:
             rich = row.get('rich_text') or ''
             title, content = self._split_title(rich)
             if not title:
                 continue
-            tags: List[str] = []
+            tags: list[str] = []
             tag_raw = row.get('tag')
             if isinstance(tag_raw, str) and tag_raw.startswith('['):
                 try:
@@ -320,11 +321,11 @@ class RssNewsSource:
     def _local(tag: str) -> str:
         return tag.split('}')[-1] if '}' in tag else tag
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         raw = raw_fetcher(self.url, {}) if raw_fetcher else _http_get(self.url)
         if not raw:
             return []
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         try:
             root = ElementTree.fromstring(raw)
         except ElementTree.ParseError as e:
@@ -389,7 +390,7 @@ class XTwitterNewsSource:
         self.query = query or '$SPX OR $DJIA OR $NDX OR #stocks -is:retweet'
         self.max_results = min(max_results, 100)
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         if not self.bearer_token:
             return []
         params = {
@@ -407,7 +408,7 @@ class XTwitterNewsSource:
         except json.JSONDecodeError:
             logger.warning(f"{self.NAME}: invalid JSON")
             return []
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         for row in data.get('data') or []:
             text = (row.get('text') or '').strip()
             if not text:
@@ -443,7 +444,7 @@ class TongDaXinNewsSource:
         self.api_key = api_key
         self.query = query or '今日财经要闻 早间快讯'
 
-    def fetch(self, raw_fetcher=None) -> List[NewsItem]:
+    def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         if not self.endpoint or not self.api_key:
             return []
         payload = {
@@ -477,7 +478,7 @@ class TongDaXinNewsSource:
                 rows = parsed.get('data') or parsed.get('list') or parsed.get('news') or []
         except json.JSONDecodeError:
             rows = None
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         if rows:
             for i, row in enumerate(rows):
                 title = str(row.get('title') or row.get('标题') or '').strip()
@@ -549,9 +550,9 @@ class NewsSourceManager:
         logger.info(f"NewsSourceManager: {len(self.sources)} sources "
                     f"({[s.NAME if hasattr(s, 'NAME') else s.name for s in self.sources]})")
 
-    def fetch_all(self) -> List[NewsItem]:
+    def fetch_all(self) -> list[NewsItem]:
         """抓取所有源，单源异常不影响其他源"""
-        items: List[NewsItem] = []
+        items: list[NewsItem] = []
         for src in self.sources:
             try:
                 items.extend(src.fetch())

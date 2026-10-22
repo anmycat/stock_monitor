@@ -1,4 +1,3 @@
-from typing import Dict
 
 import pandas as pd
 
@@ -14,7 +13,7 @@ class StrategyEngine:
         self.gate_model = GateModel(datacenter)
         self.datacenter = datacenter
 
-    def process(self, df: pd.DataFrame, market: MarketState, code: str = None) -> Dict:
+    def process(self, df: pd.DataFrame, market: MarketState, code: str = None) -> dict:
         indicators = calculate_indicators(df)
         filter_pass, filter_reasons = self.anti_filter.filter(df, indicators)
         if not filter_pass:

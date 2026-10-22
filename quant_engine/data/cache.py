@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import time
 from typing import Any, Optional
@@ -20,8 +21,8 @@ class RedisCache:
         self._max_connections = max_connections
         self._socket_timeout = socket_timeout
         self._connected = False
-        self._pool: Optional[redis.ConnectionPool] = None
-        self.client: Optional[redis.Redis] = None
+        self._pool: redis.ConnectionPool | None = None
+        self.client: redis.Redis | None = None
         self._init_pool()
 
     def _init_pool(self):
@@ -110,7 +111,7 @@ class RedisCache:
             self._connected = False
             return False
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """获取缓存值，失败时返回None"""
         if not self._connected:
             return None

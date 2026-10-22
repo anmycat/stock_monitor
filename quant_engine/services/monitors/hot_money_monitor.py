@@ -8,7 +8,6 @@
 响应结构与前端消费契约不变（行为零变更）。
 """
 import time
-from typing import Dict
 
 from loguru import logger
 
@@ -23,10 +22,10 @@ class HotMoneyMonitor:
 
     def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
-        self._cache: Dict = {}
+        self._cache: dict = {}
         self._cache_time = 0.0
 
-    def get_hot_money_activity(self) -> Dict:
+    def get_hot_money_activity(self) -> dict:
         """获取游资活跃度数据
 
         降级路径：数据源不可用时返回空结构（score=50），
@@ -74,7 +73,7 @@ class HotMoneyMonitor:
 
         return max(0, min(100, score))
 
-    def _empty_activity(self) -> Dict:
+    def _empty_activity(self) -> dict:
         """空的活跃度数据"""
         return {
             'limit_up': {'count': 0, 'stocks': []},
@@ -88,7 +87,7 @@ class HotMoneyMonitor:
             },
         }
 
-    def format_activity_summary(self, activity: Dict) -> str:
+    def format_activity_summary(self, activity: dict) -> str:
         """格式化活跃度摘要"""
         stats = activity.get('stats', {})
         limit_up = activity.get('limit_up', {})

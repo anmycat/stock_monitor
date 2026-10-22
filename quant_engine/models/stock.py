@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
@@ -16,6 +17,6 @@ class StockQuote(BaseModel):
     amount: float
     change_pct: float
     timestamp: datetime
-    turnover_rate: Optional[float] = None
-    pe_ratio: Optional[float] = None
-    pb_ratio: Optional[float] = None
+    turnover_rate: float | None = None
+    pe_ratio: float | None = None
+    pb_ratio: float | None = None

@@ -2,6 +2,7 @@
 WebSocket连接管理器 - 增强版支持服务器主动Push
 优化: 增量更新 + 批量推送 + 消息优先级 + AI预测活跃度
 """
+from __future__ import annotations
 import asyncio
 import base64
 import gzip
@@ -11,7 +12,7 @@ import re
 import uuid
 from datetime import datetime
 from enum import IntEnum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from loguru import logger
@@ -45,17 +46,17 @@ class MessageQueue:
     """优先级消息队列 - 支持批量推送"""
     
     def __init__(self, batch_interval: float = 2.0, max_batch_size: int = 10):
-        self._queue: List[tuple] = []  # heapq: (priority, timestamp, message)
+        self._queue: list[tuple] = []  # heapq: (priority, timestamp, message)
         self._counter = 0
         self.batch_interval = batch_interval  # 批量推送间隔（秒）
         self.max_batch_size = max_batch_size   # 最大批量大小
     
-    def push(self, message: Dict, priority: MessagePriority):
+    def push(self, message: dict, priority: MessagePriority):
         """入队消息"""
         heapq.heappush(self._queue, (int(priority), self._counter, message))
         self._counter += 1
     
-    def pop_batch(self) -> List[Dict]:
+    def pop_batch(self) -> list[dict]:
         """批量出队（按优先级排序）"""
         batch = []
         while self._queue and len(batch) < self.max_batch_size:
@@ -75,8 +76,8 @@ class ConnectionManager:
     """WebSocket连接管理器 - 支持服务器主动Push"""
     
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
-        self.push_task: Optional[asyncio.Task] = None
+        self.active_connections: list[WebSocket] = []
+        self.push_task: asyncio.Task | None = None
         self.market_analyzer = MarketAnalyzer(datacenter)
         self.last_push_time = {}
         
@@ -108,7 +109,7 @@ class ConnectionManager:
         }
         
         # === 增量更新：上次推送的数据缓存 ===
-        self._last_data: Dict[str, Any] = {}
+        self._last_data: dict[str, Any] = {}
         
         # === 批量推送：优先级消息队列 ===
         self.msg_queue = MessageQueue(batch_interval=2.0, max_batch_size=10)
@@ -427,7 +428,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"游资入队失败: {e}")
     
-    async def broadcast_ai_summary(self, summary_data: Dict):
+    async def broadcast_ai_summary(self, summary_data: dict):
         """广播AI总结（最高优先级，立即推送）"""
         self.msg_queue.push({
             'type': 'ai_summary',

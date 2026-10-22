@@ -1,5 +1,4 @@
 """组合风险桶 - 对标幻方CVaR风控：行业集中度+最大回撤+连续亏损熔断"""
-from typing import Dict, List
 
 from loguru import logger
 
@@ -17,7 +16,7 @@ class RiskBucket:
         self._consecutive_losses = {}
         self._frozen = set()  # 熔断冻结池
 
-    def apply_risk_bucket(self, candidates: List[Dict]) -> List[Dict]:
+    def apply_risk_bucket(self, candidates: list[dict]) -> list[dict]:
         """
         应用风险桶扣分
         
@@ -65,7 +64,7 @@ class RiskBucket:
         
         return candidates
 
-    def get_industry_distribution(self, candidates: List[Dict]) -> Dict:
+    def get_industry_distribution(self, candidates: list[dict]) -> dict:
         """获取行业分布"""
         distribution = {}
         for candidate in candidates:
@@ -75,7 +74,7 @@ class RiskBucket:
             distribution[industry].append(candidate.get('code', ''))
         return distribution
 
-    def get_concept_distribution(self, candidates: List[Dict]) -> Dict:
+    def get_concept_distribution(self, candidates: list[dict]) -> dict:
         """获取概念分布"""
         distribution = {}
         for candidate in candidates:
@@ -86,7 +85,7 @@ class RiskBucket:
                 distribution[concept].append(candidate.get('code', ''))
         return distribution
 
-    def check_concentration_risk(self, candidates: List[Dict]) -> Dict:
+    def check_concentration_risk(self, candidates: list[dict]) -> dict:
         """检查集中度风险"""
         industry_dist = self.get_industry_distribution(candidates)
         concept_dist = self.get_concept_distribution(candidates)
@@ -108,7 +107,7 @@ class RiskBucket:
             'is_concentrated': max_industry_count > self.max_same_industry or max_concept_count > self.max_same_concept,
         }
 
-    def check_drawdown_breach(self, strategy_id: str, pnl: float) -> Dict:
+    def check_drawdown_breach(self, strategy_id: str, pnl: float) -> dict:
         """CVaR风格回撤检测 — 对标幻方"单策略最大回撤2%"
         
         Returns:

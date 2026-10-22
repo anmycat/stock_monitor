@@ -2,7 +2,6 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
@@ -28,7 +27,7 @@ def get_portfolio():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/portfolio/positions", response_model=List[PositionResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/portfolio/positions", response_model=list[PositionResponse], dependencies=[Depends(verify_api_key)])
 def get_positions():
     """获取所有持仓"""
     try:

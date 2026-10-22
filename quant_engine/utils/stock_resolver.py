@@ -1,5 +1,6 @@
 """股票代码解析器 - 支持代码/名称/拼音搜索"""
-from typing import Dict, List, Optional
+from __future__ import annotations
+from typing import Optional
 
 from loguru import logger
 
@@ -18,7 +19,7 @@ class StockResolver:
         self._stock_cache = []
         self._pinyin_cache = {}
 
-    def update_cache(self, stocks: List[Dict]):
+    def update_cache(self, stocks: list[dict]):
         """更新股票缓存"""
         self._stock_cache = stocks
         self._pinyin_cache = {}
@@ -28,7 +29,7 @@ class StockResolver:
                 pinyin = ''.join(lazy_pinyin(name))
                 self._pinyin_cache[pinyin] = stock
 
-    def resolve(self, query: str, limit: int = 10) -> List[Dict]:
+    def resolve(self, query: str, limit: int = 10) -> list[dict]:
         """
         解析股票查询
 
@@ -74,7 +75,7 @@ class StockResolver:
 
         return unique_results[:limit]
 
-    def _match_code(self, code: str) -> Optional[Dict]:
+    def _match_code(self, code: str) -> dict | None:
         """精确匹配股票代码"""
         # 处理带后缀的代码
         if '.' in code:
@@ -90,7 +91,7 @@ class StockResolver:
                         return stock
         return None
 
-    def _match_code_prefix(self, prefix: str) -> List[Dict]:
+    def _match_code_prefix(self, prefix: str) -> list[dict]:
         """前缀匹配股票代码"""
         results = []
         for stock in self._stock_cache:
@@ -101,7 +102,7 @@ class StockResolver:
                 results.append(stock)
         return results
 
-    def _match_name(self, name: str) -> List[Dict]:
+    def _match_name(self, name: str) -> list[dict]:
         """名称模糊匹配"""
         results = []
         for stock in self._stock_cache:
@@ -110,7 +111,7 @@ class StockResolver:
                 results.append(stock)
         return results
 
-    def _match_pinyin(self, pinyin: str) -> List[Dict]:
+    def _match_pinyin(self, pinyin: str) -> list[dict]:
         """拼音匹配"""
         results = []
         for py, stock in self._pinyin_cache.items():
@@ -118,7 +119,7 @@ class StockResolver:
                 results.append(stock)
         return results
 
-    def get_stock_info(self, code: str) -> Optional[Dict]:
+    def get_stock_info(self, code: str) -> dict | None:
         """获取股票信息"""
         for stock in self._stock_cache:
             if stock.get('code', '') == code:

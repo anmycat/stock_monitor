@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -6,7 +5,7 @@ import pandas as pd
 from ..utils.helpers import calculate_max_drawdown
 
 
-def calculate_metrics(trades: List[Dict], equity_curve: List[float]) -> Dict:
+def calculate_metrics(trades: list[dict], equity_curve: list[float]) -> dict:
     if not trades:
         return {
             'total_trades': 0,
@@ -43,13 +42,13 @@ def calculate_metrics(trades: List[Dict], equity_curve: List[float]) -> Dict:
 _calculate_max_drawdown = calculate_max_drawdown
 
 
-def _calculate_total_return(equity_curve: List[float]) -> float:
+def _calculate_total_return(equity_curve: list[float]) -> float:
     if not equity_curve or len(equity_curve) < 2:
         return 0
     return (equity_curve[-1] - equity_curve[0]) / equity_curve[0]
 
 
-def _calculate_sharpe(equity_curve: List[float], risk_free_rate: float = 0.03) -> float:
+def _calculate_sharpe(equity_curve: list[float], risk_free_rate: float = 0.03) -> float:
     if not equity_curve or len(equity_curve) < 2:
         return 0
     returns = pd.Series(equity_curve).pct_change().dropna()

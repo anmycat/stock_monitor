@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from ..models.market import MarketState, MarketType
 
@@ -9,7 +8,7 @@ class DefenseStrategy:
         self.consecutive_loss_limit = 3
         self.max_drawdown = 0.10
 
-    def check_market(self, market: MarketState) -> Dict:
+    def check_market(self, market: MarketState) -> dict:
         if market.type == MarketType.BEAR:
             return {
                 'action': 'STOP',
@@ -35,7 +34,7 @@ class DefenseStrategy:
                 'position_factor': 1.0,
             }
 
-    def check_consecutive_losses(self, trades: List[Dict]) -> Dict:
+    def check_consecutive_losses(self, trades: list[dict]) -> dict:
         if not trades:
             return {
                 'action': 'NORMAL',
@@ -67,7 +66,7 @@ class DefenseStrategy:
                 'position_factor': 1.0,
             }
 
-    def check_drawdown(self, equity_curve: List[float]) -> Dict:
+    def check_drawdown(self, equity_curve: list[float]) -> dict:
         if not equity_curve or len(equity_curve) < 2:
             return {
                 'action': 'NORMAL',
@@ -101,7 +100,7 @@ class DefenseStrategy:
                 'position_factor': 1.0,
             }
 
-    def get_position_factor(self, market: MarketState, trades: List[Dict], equity_curve: List[float]) -> float:
+    def get_position_factor(self, market: MarketState, trades: list[dict], equity_curve: list[float]) -> float:
         market_check = self.check_market(market)
         loss_check = self.check_consecutive_losses(trades)
         dd_check = self.check_drawdown(equity_curve)

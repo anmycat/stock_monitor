@@ -1,4 +1,5 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -24,7 +25,7 @@ class StrategyDispatcher:
         self.yaml_loader = get_yaml_loader()
         self.factor_scorer = FactorScorer()
 
-    def dispatch(self, df: pd.DataFrame, market: MarketState, trades: List[Dict] = None, equity_curve: List[float] = None, strategy_id: str = None) -> Optional[Signal]:
+    def dispatch(self, df: pd.DataFrame, market: MarketState, trades: list[dict] = None, equity_curve: list[float] = None, strategy_id: str = None) -> Signal | None:
         """
         策略调度
         
@@ -89,7 +90,7 @@ class StrategyDispatcher:
 
         return signal
 
-    def _dispatch_yaml(self, df: pd.DataFrame, market: MarketState, strategy_id: str, trades: List[Dict], equity_curve: List[float]) -> Optional[Signal]:
+    def _dispatch_yaml(self, df: pd.DataFrame, market: MarketState, strategy_id: str, trades: list[dict], equity_curve: list[float]) -> Signal | None:
         """使用YAML策略调度"""
         strategy = self.yaml_loader.get_strategy(strategy_id)
         if not strategy:
@@ -167,7 +168,7 @@ class StrategyDispatcher:
 
         return signal
 
-    def _calculate_position(self, score: float, market: MarketState, strategy: Dict) -> float:
+    def _calculate_position(self, score: float, market: MarketState, strategy: dict) -> float:
         """计算仓位"""
         base = 0.3
         market_factor = market.factor
@@ -175,11 +176,11 @@ class StrategyDispatcher:
         position = base * market_factor * score_factor
         return max(0.1, min(0.8, position))
 
-    def list_yaml_strategies(self) -> List[Dict]:
+    def list_yaml_strategies(self) -> list[dict]:
         """列出所有YAML策略"""
         return self.yaml_loader.list_strategies()
 
-    def _run_builtin_strategies(self, df: pd.DataFrame, indicators: dict, market: MarketState) -> Optional[Signal]:
+    def _run_builtin_strategies(self, df: pd.DataFrame, indicators: dict, market: MarketState) -> Signal | None:
         """运行内置策略(趋势/低吸)，同时尝试两种策略取最优"""
         candidates = []
         # 不再严格按市场类型单选，而是两种都试，取评分更高的
@@ -201,7 +202,7 @@ class StrategyDispatcher:
         # 返回评分最高的信号
         return max(candidates, key=lambda s: s.score)
 
-    def _apply_factor_scoring(self, signal: Signal, df: pd.DataFrame, indicators: dict) -> Optional[Signal]:
+    def _apply_factor_scoring(self, signal: Signal, df: pd.DataFrame, indicators: dict) -> Signal | None:
         """
         FactorScorer多因子融合校验
         
@@ -242,7 +243,7 @@ class StrategyDispatcher:
         
         return signal
 
-    def _get_top_factors(self, factors: Dict) -> str:
+    def _get_top_factors(self, factors: dict) -> str:
         """获取因子得分最高的2个因子作为摘要"""
         factor_names = {
             'value_score': '估值', 'momentum_score': '动量', 'liquidity_score': '流动性',

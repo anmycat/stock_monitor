@@ -2,7 +2,6 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
@@ -16,7 +15,7 @@ from ..schemas import PostEvalResponse
 
 router = APIRouter(prefix="/api")
 
-@router.get("/evaluation/runs", response_model=List[PostEvalResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/evaluation/runs", response_model=list[PostEvalResponse], dependencies=[Depends(verify_api_key)])
 def get_evaluation_runs(limit: int = Query(20, ge=1, le=50)):
     """获取运行列表"""
     try:

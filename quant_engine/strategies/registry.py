@@ -1,6 +1,7 @@
 """统一策略注册中心 - 整合 Dispatcher + Funnel 双路径"""
+from __future__ import annotations
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -48,12 +49,12 @@ class StrategyRegistry:
                 'description': s.get('description', ''),
             }
 
-    def register(self, strategy_id: str, strategy_type: str, config: Dict):
+    def register(self, strategy_id: str, strategy_type: str, config: dict):
         """手动注册策略"""
         self._strategies[strategy_id] = config
         self._strategies[strategy_id]['type'] = strategy_type
 
-    def get_available_strategies(self) -> List[Dict]:
+    def get_available_strategies(self) -> list[dict]:
         """列出所有可用策略"""
         result = []
         for sid, info in self._strategies.items():
@@ -67,8 +68,8 @@ class StrategyRegistry:
         return result
 
     def scan_stock(self, code: str, name: str, market: MarketState,
-                   trades: List[Dict] = None, equity_curve: List[float] = None,
-                   strategy_id: str = None) -> Optional[Signal]:
+                   trades: list[dict] = None, equity_curve: list[float] = None,
+                   strategy_id: str = None) -> Signal | None:
         """
         单股扫描（走 Dispatcher 路径）
         
@@ -88,7 +89,7 @@ class StrategyRegistry:
         return self.dispatcher.dispatch(df, market, trades, equity_curve, strategy_id)
 
     def screen(self, strategy_id: str, market: MarketState,
-               max_output: int = 10) -> List[Dict]:
+               max_output: int = 10) -> list[dict]:
         """
         全市场漏斗筛选（走 Funnel 路径）
         
@@ -98,7 +99,7 @@ class StrategyRegistry:
         return self.funnel.screen(strategy_id, market, max_output)
 
     def screen_as_signals(self, strategy_id: str, market: MarketState,
-                          max_output: int = 10) -> List[Signal]:
+                          max_output: int = 10) -> list[Signal]:
         """
         全市场漏斗筛选，结果转为 Signal 对象
         
@@ -116,7 +117,7 @@ class StrategyRegistry:
         return signals
 
     def scan_all(self, market: MarketState, max_signals: int = 3,
-                 trades: List[Dict] = None, equity_curve: List[float] = None) -> List[Signal]:
+                 trades: list[dict] = None, equity_curve: list[float] = None) -> list[Signal]:
         """
         遍历所有启用的单股策略扫描信号
         
@@ -126,12 +127,12 @@ class StrategyRegistry:
         logger.warning("StrategyRegistry.scan_all 应由 SignalGenerator.scan_all 调用")
         return []
 
-    def list_strategies(self) -> List[Dict]:
+    def list_strategies(self) -> list[dict]:
         """列出所有策略（兼容旧接口）"""
         return self.get_available_strategies()
 
     @staticmethod
-    def _dict_to_signal(d: Dict) -> Signal:
+    def _dict_to_signal(d: dict) -> Signal:
         """Funnel 返回的 Dict 转 Signal 对象"""
         action_map = {
             'BUY': SignalAction.BUY,

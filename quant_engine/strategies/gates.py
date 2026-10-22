@@ -1,4 +1,3 @@
-from typing import List, Tuple
 
 import pandas as pd
 from loguru import logger
@@ -10,7 +9,7 @@ class GateModel:
         self.fund_flow_threshold = 0.3
         self.datacenter = datacenter
 
-    def check(self, df: pd.DataFrame, indicators: dict, code: str = None) -> Tuple[bool, List[str]]:
+    def check(self, df: pd.DataFrame, indicators: dict, code: str = None) -> tuple[bool, list[str]]:
         reasons = []
         trend_pass, trend_reason = self._check_trend(df, indicators)
         if not trend_pass:
@@ -28,7 +27,7 @@ class GateModel:
         # 严格模式: 任何一个门控不通过即拒绝
         return len(reasons) == 0, reasons
 
-    def _check_trend(self, df: pd.DataFrame, indicators: dict) -> Tuple[bool, str]:
+    def _check_trend(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, str]:
         if len(df) < 20:
             return False, "数据不足"
         ma5 = df['close'].rolling(5).mean().iloc[-1]
@@ -44,7 +43,7 @@ class GateModel:
                 return False, "MA20低于MA60"
         return True, ""
 
-    def _check_fund_flow(self, df: pd.DataFrame, indicators: dict) -> Tuple[bool, str]:
+    def _check_fund_flow(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, str]:
         if 'fund_flow' in indicators:
             flow = indicators['fund_flow']
             if flow < self.fund_flow_threshold:
@@ -57,7 +56,7 @@ class GateModel:
                 return False, "成交量萎缩"
         return True, ""
 
-    def _check_trigger(self, df: pd.DataFrame, indicators: dict) -> Tuple[bool, str]:
+    def _check_trigger(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, str]:
         if len(df) < 5:
             return False, "数据不足"
         last_5 = df.tail(5)
@@ -68,7 +67,7 @@ class GateModel:
             return False, f"RSI超买: {rsi:.1f}"
         return True, ""
 
-    def _check_minute_trigger(self, code: str, indicators: dict) -> Tuple[bool, str]:
+    def _check_minute_trigger(self, code: str, indicators: dict) -> tuple[bool, str]:
         if not self.datacenter:
             return True, "无数据源"
         try:

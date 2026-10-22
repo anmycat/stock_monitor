@@ -1,11 +1,10 @@
 """技术指标计算 - 包含基础指标和高级特征"""
-from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 
-def calculate_indicators(df: pd.DataFrame) -> Dict:
+def calculate_indicators(df: pd.DataFrame) -> dict:
     """计算全部技术指标（基础 + 高级特征）"""
     if len(df) < 20:
         return {}
@@ -50,7 +49,7 @@ def calculate_indicators(df: pd.DataFrame) -> Dict:
     return indicators
 
 
-def _advanced_features(df: pd.DataFrame, close: float) -> Dict:
+def _advanced_features(df: pd.DataFrame, close: float) -> dict:
     """高级K线特征"""
     feat = {}
     n = len(df)

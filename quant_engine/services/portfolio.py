@@ -1,6 +1,7 @@
 """持仓管理器 - 记录持仓、盈亏跟踪"""
+from __future__ import annotations
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -27,7 +28,7 @@ class Position:
         self.pnl = self.quantity * (current_price - self.entry_price)
         self.pnl_pct = (current_price - self.entry_price) / self.entry_price if self.entry_price > 0 else 0
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             'code': self.code,
             'name': self.name,
@@ -47,8 +48,8 @@ class PortfolioManager:
     def __init__(self, cache: RedisCache, initial_capital: float = 100000):
         self.cache = cache
         self.initial_capital = initial_capital
-        self.positions: Dict[str, Position] = {}
-        self.trades: List[Dict] = []
+        self.positions: dict[str, Position] = {}
+        self.trades: list[dict] = []
         self._load_from_cache()
 
     def _load_from_cache(self):
@@ -93,7 +94,7 @@ class PortfolioManager:
         logger.info(f"Added position: {code} {name} {quantity}@{price}")
         return True
 
-    def close_position(self, code: str, price: float, reason: str = "manual") -> Optional[Dict]:
+    def close_position(self, code: str, price: float, reason: str = "manual") -> dict | None:
         """平仓"""
         if code not in self.positions:
             logger.warning(f"No position found for {code}")
@@ -123,28 +124,28 @@ class PortfolioManager:
         logger.info(f"Closed position: {code} PnL: {position.pnl:.2f} ({position.pnl_pct:.2%})")
         return trade
 
-    def update_prices(self, prices: Dict[str, float]):
+    def update_prices(self, prices: dict[str, float]):
         """更新所有持仓价格"""
         for code, position in self.positions.items():
             if code in prices:
                 position.update_price(prices[code])
         self._save_to_cache()
 
-    def get_positions(self) -> List[Dict]:
+    def get_positions(self) -> list[dict]:
         """获取所有持仓"""
         return [pos.to_dict() for pos in self.positions.values()]
 
-    def get_position(self, code: str) -> Optional[Dict]:
+    def get_position(self, code: str) -> dict | None:
         """获取单个持仓"""
         if code in self.positions:
             return self.positions[code].to_dict()
         return None
 
-    def get_trades(self, limit: int = 50) -> List[Dict]:
+    def get_trades(self, limit: int = 50) -> list[dict]:
         """获取交易记录"""
         return self.trades[-limit:]
 
-    def get_portfolio_summary(self) -> Dict:
+    def get_portfolio_summary(self) -> dict:
         """获取持仓摘要"""
         total_value = sum(pos.current_price * pos.quantity for pos in self.positions.values())
         total_pnl = sum(pos.pnl for pos in self.positions.values())
@@ -159,7 +160,7 @@ class PortfolioManager:
             'positions': self.get_positions(),
         }
 
-    def get_performance_stats(self) -> Dict:
+    def get_performance_stats(self) -> dict:
         """获取绩效统计"""
         if not self.trades:
             return {

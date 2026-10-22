@@ -1,6 +1,5 @@
 import time
 from datetime import datetime
-from typing import Dict, List
 
 import pandas as pd
 from loguru import logger
@@ -18,7 +17,7 @@ class MarketAlert:
         self.alert_cooldown = 300
         self.history = []
 
-    def detect_alerts(self, market: MarketState) -> List[Dict]:
+    def detect_alerts(self, market: MarketState) -> list[dict]:
         alerts = []
         alerts.extend(self._check_limit_alerts())
         alerts.extend(self._check_volume_alerts())
@@ -31,7 +30,7 @@ class MarketAlert:
             self.history = self.history[-100:]
         return alerts
 
-    def _check_limit_alerts(self) -> List[Dict]:
+    def _check_limit_alerts(self) -> list[dict]:
         alerts = []
         try:
             stocks = self.datacenter.get_stock_list()
@@ -80,7 +79,7 @@ class MarketAlert:
             logger.error(f"Check limit alerts error: {e}")
         return alerts
 
-    def _check_volume_alerts(self) -> List[Dict]:
+    def _check_volume_alerts(self) -> list[dict]:
         alerts = []
         try:
             stocks = self.datacenter.get_stock_list()
@@ -123,7 +122,7 @@ class MarketAlert:
             logger.error(f"Check volume alerts error: {e}")
         return alerts
 
-    def _check_index_alerts(self, market: MarketState) -> List[Dict]:
+    def _check_index_alerts(self, market: MarketState) -> list[dict]:
         alerts = []
         try:
             cache_key = 'last_market_state'
@@ -165,7 +164,7 @@ class MarketAlert:
             logger.error(f"Check index alerts error: {e}")
         return alerts
 
-    def _check_breadth_alerts(self, market: MarketState) -> List[Dict]:
+    def _check_breadth_alerts(self, market: MarketState) -> list[dict]:
         alerts = []
         try:
             if market.breadth >= 0.8:
@@ -190,7 +189,7 @@ class MarketAlert:
             logger.error(f"Check breadth alerts error: {e}")
         return alerts
 
-    def _check_sector_alerts(self) -> List[Dict]:
+    def _check_sector_alerts(self) -> list[dict]:
         alerts = []
         try:
             from .sector_monitor import SectorMonitor
@@ -219,7 +218,7 @@ class MarketAlert:
             logger.error(f"Check sector alerts error: {e}")
         return alerts
 
-    def _filter_cooldown(self, alerts: List[Dict]) -> List[Dict]:
+    def _filter_cooldown(self, alerts: list[dict]) -> list[dict]:
         filtered = []
         now = time.time()
         for alert in alerts:
@@ -230,8 +229,8 @@ class MarketAlert:
                 self.last_alert_time[alert_type] = now
         return filtered
 
-    def get_history(self, limit: int = 20) -> List[Dict]:
+    def get_history(self, limit: int = 20) -> list[dict]:
         return self.history[-limit:]
 
-    def format_alert_message(self, alert: Dict) -> str:
+    def format_alert_message(self, alert: dict) -> str:
         return f"{alert['icon']} **{alert['title']}**\n\n{alert['detail']}"

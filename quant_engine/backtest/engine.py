@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 import pandas as pd
 from loguru import logger
@@ -23,7 +22,7 @@ class BacktestEngine:
         self.stop_loss = stop_loss
         self.take_profit = take_profit
 
-    def run(self, codes: List[str], start_date: str, end_date: str, initial_capital: float = None) -> Dict:
+    def run(self, codes: list[str], start_date: str, end_date: str, initial_capital: float = None) -> dict:
         starting_capital = self.initial_capital if initial_capital is None else initial_capital
         trades = []
         equity_curve = [starting_capital]

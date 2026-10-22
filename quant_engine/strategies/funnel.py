@@ -1,5 +1,4 @@
 """三层漏斗选股引擎 - 从全市场筛选候选股票"""
-from typing import Dict, List
 
 import pandas as pd
 from loguru import logger
@@ -26,7 +25,7 @@ class ThreeLayerFunnel:
         self.llm_ranker = llm_ranker
         self.context_enricher = context_enricher
 
-    def screen(self, strategy_id: str, market: MarketState, max_output: int = 10) -> List[Dict]:
+    def screen(self, strategy_id: str, market: MarketState, max_output: int = 10) -> list[dict]:
         """
         三层漏斗筛选
         
@@ -81,7 +80,7 @@ class ThreeLayerFunnel:
 
         return final_candidates
 
-    def _l1_hard_filter(self, strategy: Dict, market: MarketState) -> List[Dict]:
+    def _l1_hard_filter(self, strategy: dict, market: MarketState) -> list[dict]:
         """L1: 硬筛 - 快速过滤不符合基本条件的股票"""
         stocks = self.datacenter.get_stock_list()
         candidates = []
@@ -106,7 +105,7 @@ class ThreeLayerFunnel:
 
         return candidates
 
-    def _quick_check(self, df: pd.DataFrame, strategy: Dict, market: MarketState) -> bool:
+    def _quick_check(self, df: pd.DataFrame, strategy: dict, market: MarketState) -> bool:
         """快速检查基本条件"""
         # 数据长度检查
         if len(df) < 20:
@@ -126,7 +125,7 @@ class ThreeLayerFunnel:
 
         return True
 
-    def _l2_score_filter(self, candidates: List[Dict], strategy: Dict, market: MarketState) -> List[Dict]:
+    def _l2_score_filter(self, candidates: list[dict], strategy: dict, market: MarketState) -> list[dict]:
         """L2: 评分排序 - 多因子评分"""
         scored = []
 
@@ -155,7 +154,7 @@ class ThreeLayerFunnel:
         scored.sort(key=lambda x: x['score'], reverse=True)
         return scored
 
-    def _l3_deep_analysis(self, candidates: List[Dict], strategy: Dict, market: MarketState) -> List[Dict]:
+    def _l3_deep_analysis(self, candidates: list[dict], strategy: dict, market: MarketState) -> list[dict]:
         """L3: 深度分析 - 对Top候选做详细分析"""
         results = []
 
@@ -214,7 +213,7 @@ class ThreeLayerFunnel:
 
         return results
 
-    def _calculate_position(self, score: float, market: MarketState, strategy: Dict) -> float:
+    def _calculate_position(self, score: float, market: MarketState, strategy: dict) -> float:
         """计算仓位"""
         # 基础仓位
         base = 0.3
@@ -231,6 +230,6 @@ class ThreeLayerFunnel:
         # 限制仓位范围
         return max(0.1, min(0.8, position))
 
-    def list_strategies(self) -> List[Dict]:
+    def list_strategies(self) -> list[dict]:
         """列出所有可用策略"""
         return self.yaml_loader.list_strategies()

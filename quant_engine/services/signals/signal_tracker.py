@@ -8,9 +8,10 @@
 - 胜率/盈亏比计算
 - 策略表现排名
 """
+from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -23,9 +24,9 @@ class SignalRecord:
     """信号记录"""
     signal: Signal
     created_at: datetime
-    entry_price: Optional[float] = None
-    exit_price: Optional[float] = None
-    current_price: Optional[float] = None
+    entry_price: float | None = None
+    exit_price: float | None = None
+    current_price: float | None = None
     is_closed: bool = False
     profit_pct: float = 0.0
     max_profit: float = 0.0
@@ -38,8 +39,8 @@ class SignalTracker:
     
     def __init__(self, max_history_days: int = 90):
         self.max_history_days = max_history_days
-        self.signal_records: Dict[str, SignalRecord] = {}  # signal_id -> SignalRecord
-        self.history: List[SignalRecord] = []
+        self.signal_records: dict[str, SignalRecord] = {}  # signal_id -> SignalRecord
+        self.history: list[SignalRecord] = []
     
     def record_signal(self, signal: Signal):
         """记录新信号"""
@@ -51,7 +52,7 @@ class SignalTracker:
         self.signal_records[signal.id] = record
         logger.info(f"记录信号: {signal.code} - {signal.action.value}")
     
-    def update_signal_price(self, signal_id: str, current_price: float, high_price: Optional[float] = None):
+    def update_signal_price(self, signal_id: str, current_price: float, high_price: float | None = None):
         """更新信号价格"""
         if signal_id not in self.signal_records:
             logger.warning(f"信号 {signal_id} 未找到")
@@ -91,7 +92,7 @@ class SignalTracker:
         
         logger.info(f"信号平仓: {record.signal.code} - 收益 {record.profit_pct:.2%}")
     
-    def get_signal_metrics(self, days: int = 30) -> Dict:
+    def get_signal_metrics(self, days: int = 30) -> dict:
         """
         获取信号评估指标
         
@@ -157,7 +158,7 @@ class SignalTracker:
             'sharpe_ratio': round(sharpe_ratio, 2)
         }
     
-    def get_strategy_performance(self) -> Dict[str, Dict]:
+    def get_strategy_performance(self) -> dict[str, dict]:
         """获取各策略的表现"""
         strategy_stats = {}
         
@@ -186,7 +187,7 @@ class SignalTracker:
         
         return strategy_stats
     
-    def get_active_signals(self) -> List[SignalRecord]:
+    def get_active_signals(self) -> list[SignalRecord]:
         """获取活跃信号"""
         return list(self.signal_records.values())
     

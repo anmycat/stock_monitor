@@ -10,7 +10,6 @@
 - Kelly信心指数: 0-100, 量化策略在该标的上的历史优势
 """
 from dataclasses import dataclass
-from typing import Dict
 
 from loguru import logger
 
@@ -59,7 +58,7 @@ class PositionSizer:
         self.target_sharpe = 1.5    # 目标夏普比率
         self.max_drawdown_limit = 0.08  # 最大回撤限制8%
     
-    def get_strategy_kelly_params(self, strategy_name: str) -> Dict:
+    def get_strategy_kelly_params(self, strategy_name: str) -> dict:
         """
         从SignalTracker获取策略的真实Kelly参数
         
@@ -129,7 +128,7 @@ class PositionSizer:
         win_rate: float,
         profit_loss_ratio: float,
         num_positions: int = 1
-    ) -> Dict:
+    ) -> dict:
         """
         计算Kelly仓位(支持Fractional Kelly + 组合调整)
         
@@ -432,7 +431,7 @@ class PositionSizer:
         
         return " | ".join(reasons)
     
-    def get_position_limits(self, current_positions: float) -> Dict:
+    def get_position_limits(self, current_positions: float) -> dict:
         """
         获取仓位限制信息
         

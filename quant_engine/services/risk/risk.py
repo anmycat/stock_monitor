@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from ...models.signal import Signal
 from ...utils.helpers import calculate_max_drawdown
@@ -11,7 +10,7 @@ class RiskManager:
         self.max_consecutive_losses = 3
         self.max_position_per_stock = 0.25
 
-    def check_signal(self, signal: Signal, current_positions: Dict[str, float]) -> Dict:
+    def check_signal(self, signal: Signal, current_positions: dict[str, float]) -> dict:
         if signal.position > self.max_position_per_stock:
             return {
                 'approved': False,
@@ -31,7 +30,7 @@ class RiskManager:
             'adjusted_position': signal.position,
         }
 
-    def check_stop_loss(self, entry_price: float, current_price: float) -> Dict:
+    def check_stop_loss(self, entry_price: float, current_price: float) -> dict:
         if entry_price == 0:
             return {'approved': True, 'reason': '入场价格为0', 'pnl_pct': 0}
         pnl_pct = (current_price - entry_price) / entry_price
@@ -47,7 +46,7 @@ class RiskManager:
             'pnl_pct': pnl_pct,
         }
 
-    def check_drawdown(self, equity_curve: List[float]) -> Dict:
+    def check_drawdown(self, equity_curve: list[float]) -> dict:
         if not equity_curve or len(equity_curve) < 2:
             return {'approved': True, 'reason': '无足够数据', 'max_drawdown': 0}
         max_dd = calculate_max_drawdown(equity_curve)
@@ -63,7 +62,7 @@ class RiskManager:
             'max_drawdown': max_dd,
         }
 
-    def check_consecutive_losses(self, trades: List[Dict]) -> Dict:
+    def check_consecutive_losses(self, trades: list[dict]) -> dict:
         if not trades:
             return {'approved': True, 'reason': '无交易记录', 'consecutive_losses': 0}
         consecutive_losses = 0

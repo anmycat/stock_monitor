@@ -2,7 +2,6 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
@@ -17,7 +16,7 @@ from ..schemas import SignalResponse
 
 router = APIRouter(prefix="/api")
 
-@router.get("/signals", response_model=List[SignalResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/signals", response_model=list[SignalResponse], dependencies=[Depends(verify_api_key)])
 def get_signals(max_signals: int = Query(3, ge=1, le=10)):
     try:
         # Redis缓存: 避免全量扫描1.2s

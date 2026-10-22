@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,7 +14,7 @@ class DataValidator:
         self.cache = cache
         self.validation_history = []
 
-    def validate_stock_data(self, df: pd.DataFrame, code: str) -> Tuple[bool, List[str]]:
+    def validate_stock_data(self, df: pd.DataFrame, code: str) -> tuple[bool, list[str]]:
         errors = []
         if df is None or df.empty:
             errors.append(f"{code}: 数据为空")
@@ -45,7 +44,7 @@ class DataValidator:
         is_valid = len(errors) == 0
         return is_valid, errors
 
-    def validate_market_data(self, market_data: Dict) -> Tuple[bool, List[str]]:
+    def validate_market_data(self, market_data: dict) -> tuple[bool, list[str]]:
         errors = []
         required_fields = ['total', 'up', 'down', 'flat', 'avg_change']
         missing_fields = [f for f in required_fields if f not in market_data]
@@ -70,7 +69,7 @@ class DataValidator:
         is_valid = len(errors) == 0
         return is_valid, errors
 
-    def validate_signal(self, signal_dict: Dict) -> Tuple[bool, List[str]]:
+    def validate_signal(self, signal_dict: dict) -> tuple[bool, list[str]]:
         errors = []
         required_fields = ['code', 'name', 'action', 'score', 'position']
         missing_fields = [f for f in required_fields if f not in signal_dict]
@@ -91,7 +90,7 @@ class DataValidator:
         is_valid = len(errors) == 0
         return is_valid, errors
 
-    def validate_calculation(self, calc_name: str, inputs: Dict, output: float, expected_range: Tuple[float, float] = None) -> Tuple[bool, str]:
+    def validate_calculation(self, calc_name: str, inputs: dict, output: float, expected_range: tuple[float, float] = None) -> tuple[bool, str]:
         if expected_range:
             min_val, max_val = expected_range
             if not (min_val <= output <= max_val):
@@ -100,7 +99,7 @@ class DataValidator:
             return False, f"{calc_name} 结果无效: {output}"
         return True, f"{calc_name} 验证通过"
 
-    def log_validation(self, module: str, is_valid: bool, errors: List[str]):
+    def log_validation(self, module: str, is_valid: bool, errors: list[str]):
         record = {
             'module': module,
             'is_valid': is_valid,
@@ -116,7 +115,7 @@ class DataValidator:
         cache_key = f"validation:{module}"
         self.cache.set(cache_key, record, ttl=3600)
 
-    def get_validation_report(self) -> Dict:
+    def get_validation_report(self) -> dict:
         total = len(self.validation_history)
         failed = len([r for r in self.validation_history if not r['is_valid']])
         by_module = {}

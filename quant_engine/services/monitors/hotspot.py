@@ -1,6 +1,7 @@
 """热点发现系统 - 板块热度排名 + 龙头股关联（借鉴 AlphaSift Hotspot）"""
+from __future__ import annotations
 import time
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -11,7 +12,7 @@ from .sector_monitor import SectorMonitor
 class Hotspot:
     """单个热点板块"""
     def __init__(self, name: str, score: float, avg_change: float,
-                 leader_stocks: List[Dict], up_count: int, total: int):
+                 leader_stocks: list[dict], up_count: int, total: int):
         self.name = name
         self.score = score
         self.avg_change = avg_change
@@ -19,7 +20,7 @@ class Hotspot:
         self.up_count = up_count
         self.total = total
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             'name': self.name,
             'score': round(self.score, 1),
@@ -41,11 +42,11 @@ class HotspotService:
     def __init__(self, datacenter: MarketDataRepository):
         self.datacenter = datacenter
         self.sector_monitor = SectorMonitor(datacenter)
-        self._cache: Optional[List[Dict]] = None
+        self._cache: list[dict] | None = None
         self._cache_time: float = 0
         self._cache_ttl: float = 300  # 5分钟缓存
 
-    def get_hotspots(self, top_n: int = 5, force_refresh: bool = False) -> List[Dict]:
+    def get_hotspots(self, top_n: int = 5, force_refresh: bool = False) -> list[dict]:
         """获取热点板块排名"""
         now = time.time()
         if not force_refresh and self._cache and (now - self._cache_time) < self._cache_ttl:
@@ -77,7 +78,7 @@ class HotspotService:
         logger.info(f"Hotspot: {len(self._cache)} sectors identified")
         return self._cache[:top_n]
 
-    def get_hot_sector_codes(self) -> List[str]:
+    def get_hot_sector_codes(self) -> list[str]:
         """获取热点板块内的股票代码列表（用于信号加分）"""
         hotspots = self.get_hotspots(top_n=3)
         codes = set()
@@ -88,7 +89,7 @@ class HotspotService:
                     codes.add(code)
         return list(codes)
 
-    def _calculate_hotspot_score(self, sector: Dict) -> float:
+    def _calculate_hotspot_score(self, sector: dict) -> float:
         """
         计算板块热度分数 (0-100)
         

@@ -1,8 +1,9 @@
 """数据源管理器 - 多数据源轮询、冷却、随机延迟"""
+from __future__ import annotations
 import random
 import time
 from collections.abc import Callable
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -51,20 +52,20 @@ class SourceManager:
     """数据源管理器 - 轮询、冷却、随机延迟"""
 
     def __init__(self):
-        self.sources: Dict[str, SourceStatus] = {}
+        self.sources: dict[str, SourceStatus] = {}
         self.min_delay = 0.5  # 最小延迟（秒）
         self.max_delay = 2.0  # 最大延迟（秒）
         self.cooldown_seconds = 300  # 冷却时间（5分钟）
         self.max_requests_per_minute = 20  # 每分钟最大请求数
         # 快照缓存（最后良好回退）
-        self._snapshot_cache: Dict[str, dict] = {}
+        self._snapshot_cache: dict[str, dict] = {}
         self.max_snapshot_age = 86400  # 快照最大保留24小时
 
     def register_source(self, name: str):
         """注册数据源"""
         self.sources[name] = SourceStatus(name)
 
-    def get_available_source(self, preferred: str = None) -> Optional[str]:
+    def get_available_source(self, preferred: str = None) -> str | None:
         """获取可用的数据源"""
         if preferred and preferred in self.sources:
             source = self.sources[preferred]
@@ -107,7 +108,7 @@ class SourceManager:
         timeout: float = 30.0,
         skip_delay: bool = False,
         **kwargs
-    ) -> Optional[any]:
+    ) -> any | None:
         """执行数据源请求，带重试机制和超时控制
         
         Args:
@@ -165,13 +166,13 @@ class SourceManager:
 
     def execute_with_fallback(
         self,
-        source_priority: List[str],
-        sources_dict: Dict,
+        source_priority: list[str],
+        sources_dict: dict,
         method_name: str,
         *args,
         skip_delay: bool = True,
         **kwargs
-    ) -> Optional[any]:
+    ) -> any | None:
         """按优先级尝试多个数据源，使用 execute_with_retry
         
         Args:
@@ -209,7 +210,7 @@ class SourceManager:
             return stale
         return None
 
-    def get_status_report(self) -> Dict:
+    def get_status_report(self) -> dict:
         """获取数据源状态报告"""
         report = {}
         for name, source in self.sources.items():

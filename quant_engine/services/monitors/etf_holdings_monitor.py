@@ -9,9 +9,10 @@
 ETF总份额申赎会导致全部成分股持股数同比例缩放而权重不变，
 因此告警判定以权重变化为主、持股数变化需伴随权重同向变动，剔除被动缩放噪声。
 """
+from __future__ import annotations
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -40,14 +41,14 @@ class ETFHoldingsMonitor:
     TTL_CHANGES = 120 * 86400
     TTL_CHECK_DATE = 2 * 86400
 
-    def __init__(self, datacenter: Optional[MarketDataRepository] = None):
+    def __init__(self, datacenter: MarketDataRepository | None = None):
         self.datacenter = datacenter
         self.source = EastMoneyFundHoldingsSource()
         self.target_etfs = HOT_ETFS
 
     # ------------------------------------------------------------------ 公共
 
-    def refresh_etf(self, etf_code: str, etf_name: str = "") -> Optional[Dict]:
+    def refresh_etf(self, etf_code: str, etf_name: str = "") -> dict | None:
         """抓取单只ETF持仓，发现新季度则与上一季diff
 
         Returns:
@@ -109,7 +110,7 @@ class ETFHoldingsMonitor:
             logger.info(f"ETF holdings snapshot saved {code} {latest_q} (no previous quarter)")
         return changes
 
-    def check_all(self) -> List[Dict]:
+    def check_all(self) -> list[dict]:
         """遍历全部热门ETF，返回需要推送的变化列表（已过阈值过滤）"""
         push_list = []
         for etf in self.target_etfs:
@@ -128,8 +129,8 @@ class ETFHoldingsMonitor:
 
     @staticmethod
     def diff_quarters(prev_q: str, curr_q: str,
-                      prev_records: List[Dict],
-                      curr_records: List[Dict]) -> Dict:
+                      prev_records: list[dict],
+                      curr_records: list[dict]) -> dict:
         """两季持仓环比diff（全量，阈值过滤在filter_alertable）"""
         prev_map = {r['code']: r for r in prev_records}
         curr_map = {r['code']: r for r in curr_records}
@@ -188,9 +189,9 @@ class ETFHoldingsMonitor:
             'nav_change_pct': round(nav_change, 4) if nav_change is not None else None,
         }
 
-    def filter_alertable(self, changes: Dict) -> Dict:
+    def filter_alertable(self, changes: dict) -> dict:
         """按阈值过滤出值得推送的变化，返回带alert_count的副本"""
-        def keep(item: Dict) -> bool:
+        def keep(item: dict) -> bool:
             d = item['direction']
             if d in ('new', 'exit'):
                 return item['market_value'] >= self.MIN_MARKET_VALUE
@@ -207,7 +208,7 @@ class ETFHoldingsMonitor:
                                     ('new_entries', 'exits', 'increased', 'decreased'))
         return result
 
-    def format_changes_message(self, changes: Dict) -> str:
+    def format_changes_message(self, changes: dict) -> str:
         """生成钉钉/企微等markdown推送文案"""
         lines = [
             f"**{changes['previous_quarter']} → {changes['current_quarter']}**"
@@ -221,7 +222,7 @@ class ETFHoldingsMonitor:
                          f"请结合权重判断")
             lines.append("")
 
-        def fmt(item: Dict) -> str:
+        def fmt(item: dict) -> str:
             parts = [f"{item['name']}({item['code'].split('.')[0]})"]
             if item['direction'] == 'new':
                 parts.append(f"权重{item['weight']:.2f}%")
@@ -258,13 +259,13 @@ class ETFHoldingsMonitor:
 
     # ------------------------------------------------------------------ API辅助
 
-    def get_latest(self, etf_code: str) -> Optional[Dict]:
+    def get_latest(self, etf_code: str) -> dict | None:
         return self._get(self.KEY_LATEST.format(code=etf_code.split('.')[0]))
 
-    def get_changes(self, etf_code: str) -> Optional[Dict]:
+    def get_changes(self, etf_code: str) -> dict | None:
         return self._get(self.KEY_CHANGES.format(code=etf_code.split('.')[0]))
 
-    def get_overview(self) -> List[Dict]:
+    def get_overview(self) -> list[dict]:
         """全部监控ETF的最新持仓摘要（供API）"""
         overview = []
         for etf in self.target_etfs:
@@ -283,19 +284,19 @@ class ETFHoldingsMonitor:
 
     # ------------------------------------------------------------------ 内部
 
-    def _latest_quarter(self, code: str) -> Optional[str]:
+    def _latest_quarter(self, code: str) -> str | None:
         latest = self._get(self.KEY_LATEST.format(code=code))
         return latest.get('quarter') if latest else None
 
     @staticmethod
-    def _sorted_quarters(quarters) -> List[str]:
+    def _sorted_quarters(quarters) -> list[str]:
         def key(q: str):
             year, qn = q.split('Q')
             return (int(year), int(qn))
         return sorted(quarters, key=key)
 
     @staticmethod
-    def _records_of(df, quarter: str) -> List[Dict]:
+    def _records_of(df, quarter: str) -> list[dict]:
         sub = df[df['quarter'] == quarter].sort_values('seq')
         return [
             {
@@ -311,10 +312,10 @@ class ETFHoldingsMonitor:
         ]
 
     @staticmethod
-    def _item(code: str, rec: Dict, prev: Optional[Dict] = None,
-              direction: Optional[str] = None,
-              shares_chg: Optional[float] = None,
-              weight_delta: Optional[float] = None) -> Dict:
+    def _item(code: str, rec: dict, prev: dict | None = None,
+              direction: str | None = None,
+              shares_chg: float | None = None,
+              weight_delta: float | None = None) -> dict:
         return {
             'code': code,
             'name': rec['name'],
@@ -335,7 +336,7 @@ class ETFHoldingsMonitor:
         return (curr - prev) / prev
 
     @staticmethod
-    def _implied_nav(records: List[Dict]) -> float:
+    def _implied_nav(records: list[dict]) -> float:
         """由 持仓市值/权重 反推基金总净值（万元）；权重和为0时返回0"""
         mv_sum = sum(r['market_value'] for r in records)
         w_sum = sum(r['weight'] for r in records)

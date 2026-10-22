@@ -1,4 +1,5 @@
 """API认证模块 - Token验证"""
+from __future__ import annotations
 from typing import Optional
 
 from fastapi import HTTPException, Security, status
@@ -54,7 +55,7 @@ def verify_api_key(api_key: str = Security(api_key_header)) -> None:
     logger.debug("API Key验证成功")
 
 
-def verify_websocket_token(token: Optional[str] = None) -> bool:
+def verify_websocket_token(token: str | None = None) -> bool:
     """
     验证WebSocket连接的Token
     

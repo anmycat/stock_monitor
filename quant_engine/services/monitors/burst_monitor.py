@@ -1,7 +1,6 @@
 """起爆资金监控模块 - 检测瞬间异动（基于main66.py逻辑）"""
 import time
 from datetime import datetime
-from typing import Dict, List
 
 import pandas as pd
 from loguru import logger
@@ -23,12 +22,12 @@ class BurstMonitor:
         self.max_gain = 7.5           # 最高涨幅过滤
         self.min_price = 2.0          # 最低价格过滤（排除低价股）
         # 历史数据（类似main66.py的快照机制）
-        self.last_snapshot: Dict[str, Dict] = {}
-        self.alerted: Dict[str, float] = {}
+        self.last_snapshot: dict[str, dict] = {}
+        self.alerted: dict[str, float] = {}
         self.alert_cooldown = 300     # 5分钟冷却
-        self.active_pool: List[str] = []
+        self.active_pool: list[str] = []
 
-    def refresh_active_pool(self) -> List[str]:
+    def refresh_active_pool(self) -> list[str]:
         """刷新活跃股票池 - 成交额前N名的活跃股
 
         交易时间门控（2026-10-20 按用户决策显式化）：遵守原项目约定
@@ -65,7 +64,7 @@ class BurstMonitor:
             logger.error(f"Refresh active pool error: {e}")
             return self.active_pool or []
 
-    def take_snapshot(self) -> Dict[str, Dict]:
+    def take_snapshot(self) -> dict[str, dict]:
         """获取当前快照（类似main66.py的quotation.stocks()）"""
         try:
             if not self.active_pool:
@@ -92,7 +91,7 @@ class BurstMonitor:
             logger.error(f"Take snapshot error: {e}")
             return self.last_snapshot
 
-    def detect_burst(self) -> List[Dict]:
+    def detect_burst(self) -> list[dict]:
         """检测起爆信号（基于连续快照对比）"""
         current_snapshot = self.take_snapshot()
         bursts = []
@@ -137,7 +136,7 @@ class BurstMonitor:
         self.last_snapshot = current_snapshot
         return bursts
 
-    def format_burst_message(self, burst: Dict) -> str:
+    def format_burst_message(self, burst: dict) -> str:
         """格式化起爆消息"""
         return (
             f"**当前价格**: {burst['price']}\n\n"
@@ -146,6 +145,6 @@ class BurstMonitor:
             f"**成交变化**: {burst.get('amount_change', 0) / 10000:.0f}万"
         )
 
-    def get_active_pool(self) -> List[str]:
+    def get_active_pool(self) -> list[str]:
         """获取活跃股票池"""
         return self.active_pool or self.refresh_active_pool()

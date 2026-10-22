@@ -19,7 +19,6 @@ import concurrent.futures
 import json
 import time
 from dataclasses import dataclass
-from typing import Dict, List
 
 import httpx
 import pandas as pd
@@ -67,7 +66,7 @@ class AISummary:
         settings = get_settings()
 
         # 注册模型
-        self.models: Dict[str, ModelConfig] = {}
+        self.models: dict[str, ModelConfig] = {}
 
         # DeepSeek V4
         ds_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
@@ -98,7 +97,7 @@ class AISummary:
         )
 
         # 缓存
-        self._cache: Dict[str, Dict] = {}
+        self._cache: dict[str, dict] = {}
         self._cache_ttl = 300  # 5分钟
 
         model_names = [f"{m.name}(w={m.weight})" for m in self.models.values()]
@@ -106,12 +105,12 @@ class AISummary:
 
     # === 公开接口 ===
 
-    def generate_summary(self, market: MarketState, signals: List[Signal],
-                         sectors: List[Dict] = None,
+    def generate_summary(self, market: MarketState, signals: list[Signal],
+                         sectors: list[dict] = None,
                          summary_type: str = "general",
-                         alerts: List[Dict] = None,
-                         etf_data: List[Dict] = None,
-                         news: List[Dict] = None) -> Dict:
+                         alerts: list[dict] = None,
+                         etf_data: list[dict] = None,
+                         news: list[dict] = None) -> dict:
         """
         生成AI智能分析总结（多模型融合）
 
@@ -148,7 +147,7 @@ class AISummary:
 
     # === 融合策略1: Ensemble（双模型并行 + 智能合并）===
 
-    def _generate_ensemble(self, market, signals, sectors, summary_type, alerts, etf_data, news=None) -> Dict:
+    def _generate_ensemble(self, market, signals, sectors, summary_type, alerts, etf_data, news=None) -> dict:
         """
         双模型并行生成 → 智能合并
 
@@ -209,8 +208,8 @@ class AISummary:
             merged["model"], merged["tokens"]
         )
 
-    def _merge_responses(self, responses: List[ModelResponse], summary_type: str,
-                         market_info: str) -> Dict:
+    def _merge_responses(self, responses: list[ModelResponse], summary_type: str,
+                         market_info: str) -> dict:
         """
         智能合并多个模型的分析结果
 
@@ -279,7 +278,7 @@ class AISummary:
 
     # === 融合策略2: Cascade（主模型优先 → 降级）===
 
-    def _generate_cascade(self, market, signals, sectors, summary_type, alerts, etf_data, news=None) -> Dict:
+    def _generate_cascade(self, market, signals, sectors, summary_type, alerts, etf_data, news=None) -> dict:
         """
         级联调用：主模型 → 备用模型 → 本地规则
 
@@ -326,7 +325,7 @@ class AISummary:
     # === 底层API调用 ===
 
     def _parallel_call(self, system_prompt: str, user_prompt: str,
-                       max_tokens: int = 1500) -> List[ModelResponse]:
+                       max_tokens: int = 1500) -> list[ModelResponse]:
         """并行调用所有可用模型"""
         results = []
 
@@ -434,7 +433,7 @@ class AISummary:
 
     def _build_result(self, text: str, market_info: str, signal_info: str,
                       sector_info: str, alert_info: str, summary_type: str,
-                      model_name: str, tokens: int) -> Dict:
+                      model_name: str, tokens: int) -> dict:
         return {
             "market": market_info,
             "signals": signal_info,
@@ -602,7 +601,7 @@ class AISummary:
             f"上涨家数占比: {market.breadth:.1%}"
         )
 
-    def _format_signal_info(self, signals: List[Signal]) -> str:
+    def _format_signal_info(self, signals: list[Signal]) -> str:
         if not signals:
             return "今日无交易信号"
         buy_signals = [s for s in signals if s.action == SignalAction.BUY]
@@ -621,7 +620,7 @@ class AISummary:
                 lines.append(f"  - {s.name}({s.code}) 评分:{s.score:.0f}")
         return "\n".join(lines)
 
-    def _format_sector_info(self, sectors: List[Dict]) -> str:
+    def _format_sector_info(self, sectors: list[dict]) -> str:
         if not sectors:
             return "无板块数据"
         hot = [s for s in sectors if s.get('avg_change', 0) > 0][:5]
@@ -637,7 +636,7 @@ class AISummary:
                 lines.append(f"  {s['name']}({s.get('avg_change', 0):+.2f}%)")
         return "\n".join(lines)
 
-    def _format_alert_info(self, alerts: List[Dict]) -> str:
+    def _format_alert_info(self, alerts: list[dict]) -> str:
         if not alerts:
             return "无异动"
         lines = [f"共{len(alerts)}次异动："]
@@ -645,7 +644,7 @@ class AISummary:
             lines.append(f"  - [{a.get('level', 'info')}] {a.get('title', '')}: {a.get('detail', '')}")
         return "\n".join(lines)
 
-    def _format_etf_info(self, etf_data: List[Dict]) -> str:
+    def _format_etf_info(self, etf_data: list[dict]) -> str:
         if not etf_data:
             return ""
         lines = []
@@ -656,7 +655,7 @@ class AISummary:
             lines.append(f"  {name}: {change:+.2f}% ({signal})")
         return "\n".join(lines)
 
-    def _format_news_info(self, news: List[Dict]) -> str:
+    def _format_news_info(self, news: list[dict]) -> str:
         if not news:
             return ""
         lines = [f"近期重要新闻/事件({len(news)}条)："]
@@ -668,7 +667,7 @@ class AISummary:
 
     # === 股票分析（多模型融合）===
 
-    def generate_stock_analysis(self, code: str, name: str, df: pd.DataFrame, indicators: Dict) -> Dict:
+    def generate_stock_analysis(self, code: str, name: str, df: pd.DataFrame, indicators: dict) -> dict:
         """生成单只股票的AI分析报告（cascade模式）"""
         if not self.models:
             return self._generate_local_stock_analysis(code, name, df, indicators)
@@ -801,7 +800,7 @@ class AISummary:
 
     # === 本地降级生成 ===
 
-    def _generate_local(self, market: MarketState, signals: List[Signal], sectors: List[Dict] = None) -> Dict:
+    def _generate_local(self, market: MarketState, signals: list[Signal], sectors: list[dict] = None) -> dict:
         """本地生成总结（所有API不可用时的降级方案）"""
         type_desc = {
             MarketType.BULL: "牛市", MarketType.BULL_WEAK: "弱牛",
