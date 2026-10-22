@@ -12,9 +12,10 @@
 本源正好补齐该断链（接入前无任何源实现该方法，akshare 亦未安装）。
 任何失败都返回空 DataFrame 交降级链处理，绝不向上抛异常。
 """
+from __future__ import annotations
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -65,7 +66,7 @@ class TdxSource:
     # 用锁串行化；连接跨调用复用避免每次探活）
     _lock = threading.Lock()
     _api = None                 # TdxHq_API 实例
-    _server: Optional[str] = None   # 当前可用服务器 "ip:port"
+    _server: str | None = None   # 当前可用服务器 "ip:port"
     _probe_time: float = 0.0    # 上次探活时间戳
     _pytdx_checked = False      # 是否已做过 pytdx 导入检查
     _pytdx_available = False
@@ -164,7 +165,7 @@ class TdxSource:
     # ---------------------------------------------------------------- 数据接口
 
     @staticmethod
-    def _convert_code(code: str) -> Optional[tuple]:
+    def _convert_code(code: str) -> tuple | None:
         """标准代码 → (tdx_market, symbol)；北交所/无法解析返回 None"""
         parts = split_code(code)
         if not parts:
@@ -221,7 +222,7 @@ class TdxSource:
         return pd.DataFrame()
 
     @staticmethod
-    def _to_dataframe(bars: List[Dict]) -> pd.DataFrame:
+    def _to_dataframe(bars: list[dict]) -> pd.DataFrame:
         """TDX bar 列表 → 标准 DataFrame（datetime 'YYYY-MM-DD HH:MM' 字符串）
 
         实测（2026-10-20 真实 pytdx）：get_security_bars 返回为**旧→新升序**

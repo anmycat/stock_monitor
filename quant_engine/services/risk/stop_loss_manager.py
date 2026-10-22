@@ -7,8 +7,9 @@
 - 波动率自适应(ATR倍数)
 - 动态调整止盈止损位
 """
+from __future__ import annotations
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 
 @dataclass
@@ -59,8 +60,8 @@ class StopLossManager:
         entry_price: float,
         current_price: float,
         highest_price: float,
-        atr: Optional[float] = None,
-        volatility: Optional[float] = None
+        atr: float | None = None,
+        volatility: float | None = None
     ) -> StopLossLevel:
         """
         计算止损止盈位
@@ -130,7 +131,7 @@ class StopLossManager:
         entry_price: float,
         current_price: float,
         highest_price: float
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         计算追踪止损位
         
@@ -157,7 +158,7 @@ class StopLossManager:
         entry_price: float,
         current_price: float,
         highest_price: float,
-        atr: Optional[float] = None,
+        atr: float | None = None,
         profit_pct: float = 0.0
     ) -> float:
         """
@@ -186,7 +187,7 @@ class StopLossManager:
         self,
         position: PositionStatus,
         current_price: float
-    ) -> Dict:
+    ) -> dict:
         """
         检查是否触发止损/止盈
         
@@ -247,7 +248,7 @@ class StopLossManager:
         current_price: float,
         highest_price: float,
         lowest_price: float,
-        atr: Optional[float] = None
+        atr: float | None = None
     ) -> PositionStatus:
         """获取持仓状态"""
         stop_levels = self.calculate_stop_levels(
@@ -268,9 +269,9 @@ class StopLossManager:
     
     def batch_check_positions(
         self,
-        positions: List[Dict],
-        current_prices: Dict[str, float]
-    ) -> List[Dict]:
+        positions: list[dict],
+        current_prices: dict[str, float]
+    ) -> list[dict]:
         """
         批量检查持仓止损状态
         
@@ -314,7 +315,7 @@ class StopLossManager:
         
         return triggered_positions
     
-    def get_dynamic_stop_params(self, volatility: float) -> Dict:
+    def get_dynamic_stop_params(self, volatility: float) -> dict:
         """
         根据波动率获取动态止损参数
         

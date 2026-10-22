@@ -1,5 +1,6 @@
 """HMM市场状态检测器 — 替代简单枚举，5种精细状态识别"""
-from typing import Optional, Tuple
+from __future__ import annotations
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -70,7 +71,7 @@ class MarketRegimeDetector:
             logger.warning(f"HMM training failed: {e}")
             return False
     
-    def predict(self, market_data: pd.DataFrame) -> Tuple[int, str, float]:
+    def predict(self, market_data: pd.DataFrame) -> tuple[int, str, float]:
         """预测当前市场状态
         
         Args:
@@ -126,7 +127,7 @@ class MarketRegimeDetector:
 
 
 # 全局单例
-_detector: Optional[MarketRegimeDetector] = None
+_detector: MarketRegimeDetector | None = None
 
 
 def get_regime_detector() -> MarketRegimeDetector:

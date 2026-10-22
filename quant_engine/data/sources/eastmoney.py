@@ -1,7 +1,8 @@
 """东方财富数据源"""
+from __future__ import annotations
 import re
 import time
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -27,7 +28,7 @@ class EastMoneySource:
     CLIST_FS = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23"
 
     @staticmethod
-    def _market_from_em(f12: str, f13=None) -> Optional[str]:
+    def _market_from_em(f12: str, f13=None) -> str | None:
         """由东财字段推断标准市场后缀
 
         优先使用 f13（东财市场字段：1=沪市, 0=深市场组）；但北交所在东财
@@ -112,7 +113,7 @@ class EastMoneySource:
             return pd.DataFrame()
 
     @staticmethod
-    def get_realtime_quote(codes: List[str]) -> pd.DataFrame:
+    def get_realtime_quote(codes: list[str]) -> pd.DataFrame:
         """获取指定股票实时行情"""
         try:
             # 转换代码格式（统一走 code_utils，支持 SH/SZ/BJ）

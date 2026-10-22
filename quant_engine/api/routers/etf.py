@@ -3,7 +3,6 @@
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
 import re
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
@@ -24,7 +23,7 @@ from ..schemas import (
 
 router = APIRouter(prefix="/api")
 
-@router.get("/etf", response_model=List[ETFResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/etf", response_model=list[ETFResponse], dependencies=[Depends(verify_api_key)])
 def get_etf_status():
     try:
         # Redis缓存: 避免fund_etf_spot_em()冷启动18s
@@ -50,7 +49,7 @@ def _normalize_etf_code(code: str) -> str:
     return code.split('.')[0]
 
 
-@router.get("/etf/holdings", response_model=List[ETFHoldingsOverviewItem],
+@router.get("/etf/holdings", response_model=list[ETFHoldingsOverviewItem],
             dependencies=[Depends(verify_api_key)])
 def get_etf_holdings_overview():
     """热门ETF持仓监控总览（最新季度快照明细）"""

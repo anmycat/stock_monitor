@@ -17,7 +17,6 @@ C=第 2-5 日）的新股不设涨跌幅限制（注册制全市场适用，含�
 （仍受 price>0 与非有限值约束）。
 """
 import re
-from typing import Dict, Tuple
 
 import pandas as pd
 from loguru import logger
@@ -48,7 +47,7 @@ def change_pct_limit(code: str) -> float:
     return 10.5
 
 
-def sanitize_quotes(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
+def sanitize_quotes(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """净化实时行情 DataFrame：剔除 change_pct 超限 / price<=0 / 非有限值行
 
     返回 (clean_df, stats)。stats: {total, dropped, drop_ratio, reasons}
@@ -57,7 +56,7 @@ def sanitize_quotes(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
         return pd.DataFrame(), {"total": 0, "dropped": 0, "drop_ratio": 0.0, "reasons": {}}
 
     total = len(df)
-    reasons: Dict[str, int] = {}
+    reasons: dict[str, int] = {}
     mask_keep = pd.Series(True, index=df.index)
 
     if "change_pct" in df.columns:
@@ -130,7 +129,7 @@ def validate_dataframe(df: pd.DataFrame, name: str) -> bool:
 DROP_RATIO_SUSPECT = 0.20
 
 
-def is_overview_sane(overview: Dict) -> bool:
+def is_overview_sane(overview: dict) -> bool:
     """出口断言：结构一致性 + 数值理论界 + 分布矛盾（全部通过才可出厂）
 
     注意：全涨且均涨大（如 100 只全涨 11.35%）结构上自洽（涨停潮理论可能），

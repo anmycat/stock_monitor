@@ -1,7 +1,8 @@
 """新浪财经数据源"""
+from __future__ import annotations
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -50,7 +51,7 @@ class SinaSource:
         return converted if converted else str(code)
 
     @staticmethod
-    def _parse_quote(data: str) -> Optional[Dict]:
+    def _parse_quote(data: str) -> dict | None:
         """解析新浪行情数据"""
         try:
             match = re.search(r'var hq_str_(\w+)="(.+)"', data)
@@ -78,7 +79,7 @@ class SinaSource:
             return None
 
     @staticmethod
-    def get_realtime_quote(codes: List[str]) -> pd.DataFrame:
+    def get_realtime_quote(codes: list[str]) -> pd.DataFrame:
         """获取指定股票实时行情"""
         try:
             sina_codes = [SinaSource._convert_code(c) for c in codes]
@@ -108,7 +109,7 @@ class SinaSource:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _parse_list_item(item: Dict) -> Optional[Dict]:
+    def _parse_list_item(item: dict) -> dict | None:
         """解析 Market_Center 列表项 → 标准行情记录
 
         字段（实测）：symbol=bj920000/sh600000/sz000001, code, name,

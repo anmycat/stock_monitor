@@ -13,11 +13,12 @@
 关键词字典 + 源标签加权；一条新闻可归多个板块（上限3个），未匹配入"综合要闻"。
 分类是关键词匹配不是NLP，存在错分可能——按板块浏览，重要条目前置。
 """
+from __future__ import annotations
 import hashlib
 import re
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from loguru import logger
 
@@ -25,7 +26,7 @@ from ...data.sources.news_sources import NewsItem, NewsSourceManager
 
 # 板块关键词字典：板块 -> 关键词列表
 # 匹配文本 = 标题 + 摘要 + 源标签 + 关联股票名
-SECTOR_KEYWORDS: Dict[str, List[str]] = {
+SECTOR_KEYWORDS: dict[str, list[str]] = {
     '人工智能算力': [
         '人工智能', '算力', '大模型', 'GPT', 'ChatGPT', '智能体', 'AIGC', 'Sora',
         '英伟达', 'NVIDIA', '光模块', 'CPO', '液冷', '数据中心', 'GPU', 'HBM',
@@ -156,7 +157,7 @@ UNMATCHED_SECTOR = '综合要闻'
 _ASCII_KEYWORDS = {kw for kws in SECTOR_KEYWORDS.values() for kw in kws
                    if kw.isascii()}
 # 板块 -> 编译后的匹配器
-_SECTOR_MATCHERS: Dict[str, List[Tuple[str, 're.Pattern']]] = {}
+_SECTOR_MATCHERS: dict[str, list[tuple[str, 're.Pattern']]] = {}
 for _sector, _kws in SECTOR_KEYWORDS.items():
     _compiled = []
     for _kw in _kws:
@@ -224,8 +225,8 @@ class MorningNewsMonitor:
             self.SEEN_TTL_HOURS = getattr(settings, 'NEWS_SEEN_TTL_HOURS', self.SEEN_TTL_HOURS)
         self.source_manager = NewsSourceManager(settings)
         # 无 Redis 时的进程内降级状态
-        self._mem_seen: List[Dict] = []
-        self._mem_last_push: Optional[str] = None
+        self._mem_seen: list[dict] = []
+        self._mem_last_push: str | None = None
 
     # ---------- Redis  helpers（无Redis优雅降级） ----------
 
@@ -255,7 +256,7 @@ class MorningNewsMonitor:
 
     # ---------- 时间窗 ----------
 
-    def _window_start(self) -> Tuple[datetime, bool]:
+    def _window_start(self) -> tuple[datetime, bool]:
         """返回(窗口起点, 是否来自上次推送记录)"""
         last = self._get(self.KEY_LAST_PUSH)
         if last:
@@ -267,24 +268,24 @@ class MorningNewsMonitor:
 
     # ---------- 去重 ----------
 
-    def dedup(self, items: List[NewsItem],
-              persist: bool = True) -> Tuple[List[NewsItem], int]:
+    def dedup(self, items: list[NewsItem],
+              persist: bool = True) -> tuple[list[NewsItem], int]:
         """去重，返回(保留列表, 剔除数)
 
         保留策略：同事件多源报道保留 source_rank 最小（优先级最高）的源。
         persist=False 时不回写指纹列表（API 预览用，不影响9:15推送去重）。
         """
-        seen_records: List[Dict] = list(self._get(self.KEY_SEEN, []) or [])
+        seen_records: list[dict] = list(self._get(self.KEY_SEEN, []) or [])
         seen_hashes = {r.get('h') for r in seen_records if isinstance(r, dict)}
         seen_titles = [r.get('t', '') for r in seen_records if isinstance(r, dict)]
 
-        kept: List[NewsItem] = []
+        kept: list[NewsItem] = []
         dropped = 0
         # 批内按源优先级+时间排序，保证同事件高优先级源先入
         ordered = sorted(items, key=lambda x: (x.source_rank,
                                                -(x.published_at.timestamp()
                                                  if x.published_at else 0)))
-        accepted_titles: List[str] = []
+        accepted_titles: list[str] = []
 
         for item in ordered:
             norm = normalize_title(item.title)
@@ -328,14 +329,14 @@ class MorningNewsMonitor:
     # ---------- 板块分类 ----------
 
     @staticmethod
-    def classify(item: NewsItem, max_sectors: int = 3) -> List[str]:
+    def classify(item: NewsItem, max_sectors: int = 3) -> list[str]:
         """关键词分类，返回板块列表（可能多板块，未匹配返回[]）"""
         text = ' '.join([item.title, item.content,
                          ' '.join(item.tags or []),
                          ' '.join(item.stocks or [])])
         if not text.strip():
             return []
-        matched: List[Tuple[int, int, str]] = []
+        matched: list[tuple[int, int, str]] = []
         for idx, (sector, matchers) in enumerate(_SECTOR_MATCHERS.items()):
             hits = 0
             for kw, pattern in matchers:
@@ -351,9 +352,9 @@ class MorningNewsMonitor:
         matched.sort(key=lambda x: (-x[0], x[1]))
         return [s for _, _, s in matched[:max_sectors]]
 
-    def group_by_sector(self, items: List[NewsItem]) -> Dict[str, List[NewsItem]]:
+    def group_by_sector(self, items: list[NewsItem]) -> dict[str, list[NewsItem]]:
         """按板块分组（未匹配入综合要闻），板块间按条数降序"""
-        groups: Dict[str, List[NewsItem]] = {}
+        groups: dict[str, list[NewsItem]] = {}
         for item in items:
             sectors = self.classify(item) or [UNMATCHED_SECTOR]
             for sector in sectors:
@@ -371,9 +372,9 @@ class MorningNewsMonitor:
 
     # ---------- 摘要与文案 ----------
 
-    def build_digest(self, kept: List[NewsItem], dropped: int,
+    def build_digest(self, kept: list[NewsItem], dropped: int,
                      window_start: datetime, window_end: datetime,
-                     from_last_push: bool) -> Dict:
+                     from_last_push: bool) -> dict:
         groups = self.group_by_sector(kept)
         sector_entries = []
         displayed = 0
@@ -392,7 +393,7 @@ class MorningNewsMonitor:
         hidden_sectors = max(0, len(groups) - len(sector_entries))
         hidden_items = sum(len(lst) for lst in
                            list(groups.values())[len(sector_entries):])
-        source_counts: Dict[str, int] = {}
+        source_counts: dict[str, int] = {}
         for it in kept:
             source_counts[it.source] = source_counts.get(it.source, 0) + 1
         return {
@@ -410,7 +411,7 @@ class MorningNewsMonitor:
         }
 
     @staticmethod
-    def _item_brief(item: NewsItem) -> Dict:
+    def _item_brief(item: NewsItem) -> dict:
         return {
             'time': item.published_at.strftime('%H:%M') if item.published_at else '',
             'source': item.source,
@@ -418,7 +419,7 @@ class MorningNewsMonitor:
             'url': item.url,
         }
 
-    def format_message(self, digest: Dict) -> str:
+    def format_message(self, digest: dict) -> str:
         """钉钉 markdown 文案"""
         start = datetime.fromisoformat(digest['window_start'])
         end = datetime.fromisoformat(digest['window_end'])
@@ -452,7 +453,7 @@ class MorningNewsMonitor:
 
     # ---------- 主流程 ----------
 
-    def _collect_windowed(self) -> Tuple[List[NewsItem], int, datetime, bool, datetime]:
+    def _collect_windowed(self) -> tuple[list[NewsItem], int, datetime, bool, datetime]:
         """抓取+时间窗过滤，返回(窗口内条目, 抓取总数, 窗口起点, 是否上次推送, 窗口终点)"""
         window_start, from_last = self._window_start()
         window_end = datetime.now()
@@ -466,7 +467,7 @@ class MorningNewsMonitor:
             windowed = windowed[:self.MAX_TOTAL]
         return windowed, len(items), window_start, from_last, window_end
 
-    def collect_digest(self) -> Optional[Dict]:
+    def collect_digest(self) -> dict | None:
         """API预览：实时抓取+去重+分类，不写任何推送状态"""
         try:
             windowed, fetched, window_start, from_last, window_end = \
@@ -482,7 +483,7 @@ class MorningNewsMonitor:
             logger.error(f"News digest preview failed: {e}")
             return None
 
-    def check_and_push(self, notifier=None) -> Optional[Dict]:
+    def check_and_push(self, notifier=None) -> dict | None:
         """抓取→去重→分类→推送；无新增返回None"""
         window_start, from_last = self._window_start()
         window_end = datetime.now()

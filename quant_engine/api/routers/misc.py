@@ -3,7 +3,6 @@
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
 import re
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
@@ -66,7 +65,7 @@ def run_backtest(request: BacktestRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/search", response_model=List[StockSearchResult], dependencies=[Depends(verify_api_key)])
+@router.get("/search", response_model=list[StockSearchResult], dependencies=[Depends(verify_api_key)])
 def search_stock(q: str = Query(..., min_length=1, max_length=20), limit: int = Query(10, ge=1, le=50)):
     """搜索股票（支持代码/名称/拼音）"""
     try:
@@ -106,7 +105,7 @@ def get_hot_money():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/strategies", response_model=List[StrategyInfo], dependencies=[Depends(verify_api_key)])
+@router.get("/strategies", response_model=list[StrategyInfo], dependencies=[Depends(verify_api_key)])
 def list_strategies():
     """列出所有可用策略"""
     try:
@@ -119,7 +118,7 @@ def list_strategies():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/screen/{strategy_id}", response_model=List[ScreeningResult], dependencies=[Depends(verify_api_key)])
+@router.get("/screen/{strategy_id}", response_model=list[ScreeningResult], dependencies=[Depends(verify_api_key)])
 def screen_stocks(strategy_id: str, max_output: int = Query(10, ge=1, le=50)):
     """使用指定策略进行选股"""
     if not re.match(r'^[a-zA-Z0-9_-]{1,50}$', strategy_id):
@@ -212,7 +211,7 @@ def get_kelly_info():
 # 持仓管理接口
 
 
-@router.get("/hotspots", response_model=List[HotspotResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/hotspots", response_model=list[HotspotResponse], dependencies=[Depends(verify_api_key)])
 def get_hotspots(top_n: int = Query(50, ge=1, le=50)):
     """获取热点板块排名（热度评分 + 龙头股）"""
     try:

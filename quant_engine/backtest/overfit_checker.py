@@ -1,5 +1,4 @@
 """抗过拟合检查器 - 增强回测评估的可靠性"""
-from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -16,8 +15,8 @@ class OverfitChecker:
         self.max_val_test_gap = 0.12
         self.max_complexity_score = 10
 
-    def full_check(self, trades: List[Dict], equity_curve: List[float], 
-                   strategy_complexity: int = 0) -> Dict:
+    def full_check(self, trades: list[dict], equity_curve: list[float], 
+                   strategy_complexity: int = 0) -> dict:
         """
         全面检查过拟合
         
@@ -48,7 +47,7 @@ class OverfitChecker:
             'recommendation': self._get_recommendation(checks, score),
         }
 
-    def _check_signal_count(self, trades: List[Dict]) -> Dict:
+    def _check_signal_count(self, trades: list[dict]) -> dict:
         """检查信号数量"""
         count = len(trades)
         if count < self.min_signals:
@@ -70,7 +69,7 @@ class OverfitChecker:
                 'message': f'信号数量充足({count})',
             }
 
-    def _check_train_val_split(self, trades: List[Dict]) -> Dict:
+    def _check_train_val_split(self, trades: list[dict]) -> dict:
         """检查训练/验证集分割"""
         if len(trades) < 10:
             return {
@@ -117,7 +116,7 @@ class OverfitChecker:
                 'gap': gap,
             }
 
-    def _check_walk_forward(self, trades: List[Dict]) -> Dict:
+    def _check_walk_forward(self, trades: list[dict]) -> dict:
         """步进验证"""
         if len(trades) < 20:
             return {
@@ -171,7 +170,7 @@ class OverfitChecker:
                 'std': std,
             }
 
-    def _check_complexity(self, complexity: int) -> Dict:
+    def _check_complexity(self, complexity: int) -> dict:
         """检查策略复杂度"""
         if complexity > self.max_complexity_score:
             return {
@@ -192,7 +191,7 @@ class OverfitChecker:
                 'message': f'策略复杂度适中({complexity})',
             }
 
-    def _check_stability(self, equity_curve: List[float]) -> Dict:
+    def _check_stability(self, equity_curve: list[float]) -> dict:
         """检查稳定性"""
         if len(equity_curve) < 2:
             return {
@@ -233,7 +232,7 @@ class OverfitChecker:
                 'return_std': return_std,
             }
 
-    def _check_parameter_sensitivity(self, trades: List[Dict]) -> Dict:
+    def _check_parameter_sensitivity(self, trades: list[dict]) -> dict:
         """参数敏感性检查"""
         # 简化版本：检查交易分布是否均匀
         if len(trades) < 10:
@@ -276,7 +275,7 @@ class OverfitChecker:
                 'message': '交易分布较均匀',
             }
 
-    def _calculate_overfit_score(self, checks: Dict) -> float:
+    def _calculate_overfit_score(self, checks: dict) -> float:
         """计算过拟合综合分数"""
         weights = {
             'signal_count': 0.15,
@@ -298,7 +297,7 @@ class OverfitChecker:
         
         return total_score / total_weight if total_weight > 0 else 0
 
-    def _get_recommendation(self, checks: Dict, score: float) -> str:
+    def _get_recommendation(self, checks: dict, score: float) -> str:
         """获取建议"""
         if score >= 80:
             return "策略过拟合风险低，可以信任"

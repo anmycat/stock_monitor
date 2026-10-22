@@ -1,6 +1,7 @@
 """LLM排序层 - 在L1筛选后加入LLM对候选股的排序推理（借鉴 AlphaSift L2）"""
+from __future__ import annotations
 import json
-from typing import Dict, List, Optional
+from typing import Optional
 
 from loguru import logger
 
@@ -20,7 +21,7 @@ class LLMRanker:
     def __init__(self):
         self._ai_summary = AISummary()
 
-    def rank(self, candidates: List[Dict], max_candidates: int = 10) -> List[Dict]:
+    def rank(self, candidates: list[dict], max_candidates: int = 10) -> list[dict]:
         """
         对候选股进行LLM排序
         
@@ -48,7 +49,7 @@ class LLMRanker:
 
         return top  # 降级：保持原始因子排序
 
-    def _build_rank_prompt(self, candidates: List[Dict]) -> str:
+    def _build_rank_prompt(self, candidates: list[dict]) -> str:
         """构建排序Prompt"""
         lines = [
             "你是一位专业的A股量化分析师。请对以下候选股票进行综合排序分析。",
@@ -86,7 +87,7 @@ class LLMRanker:
 
         return '\n'.join(lines)
 
-    def _call_llm(self, prompt: str) -> Optional[str]:
+    def _call_llm(self, prompt: str) -> str | None:
         """调用LLM（复用AISummary的模型基础设施）"""
         system_prompt = "你是一位专业的A股量化分析师，擅长技术面分析和多因子排序。请严格按JSON格式返回结果。"
 
@@ -101,7 +102,7 @@ class LLMRanker:
             return response.text
         return None
 
-    def _parse_rank_response(self, response_text: str, original: List[Dict]) -> Optional[List[Dict]]:
+    def _parse_rank_response(self, response_text: str, original: list[dict]) -> list[dict] | None:
         """解析LLM排序结果"""
         try:
             # 尝试解析JSON

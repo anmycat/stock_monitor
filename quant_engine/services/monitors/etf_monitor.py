@@ -1,6 +1,5 @@
 """ETF监控模块 - 腾讯第一的实时行情路（2026-10-20 起）"""
 import time
-from typing import Dict, List
 
 from loguru import logger
 
@@ -32,7 +31,7 @@ class ETFMonitor:
         self._cache = {}
         self._cache_time = 0
 
-    def get_etf_status(self) -> List[Dict]:
+    def get_etf_status(self) -> list[dict]:
         """获取ETF状态 - 腾讯第一的实时行情路（2026-10-20 改造）
 
         原实现直调 AKShareSource().get_etf_quotes()（akshare 未安装，
@@ -128,7 +127,7 @@ class ETFMonitor:
         else:
             return f"{volume:.0f}"
 
-    def get_market_sentiment(self) -> Dict:
+    def get_market_sentiment(self) -> dict:
         etf_status = self.get_etf_status()
         valid_etfs = [e for e in etf_status if not e.get('no_data')]
         if not valid_etfs:

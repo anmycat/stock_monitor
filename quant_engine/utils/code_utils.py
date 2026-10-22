@@ -25,6 +25,7 @@
   92 开头（920xxx 新代码段，2024 年起启用）
 - 东财 secid：1.=沪市，0.=深市/北交所（920819 实测 f13=0，secid 用 0. 有效）
 """
+from __future__ import annotations
 import re
 from typing import Optional
 
@@ -58,7 +59,7 @@ MARKET_RULES = [
 ]
 
 
-def market_by_symbol(symbol: str) -> Optional[str]:
+def market_by_symbol(symbol: str) -> str | None:
     """由 6 位数字代码推断市场（静态兜底规则，仅用于无市场字段的源）
 
     Args:
@@ -80,13 +81,13 @@ def market_by_symbol(symbol: str) -> Optional[str]:
     return None
 
 
-def market_of_code(code: str) -> Optional[str]:
+def market_of_code(code: str) -> str | None:
     """取标准代码的市场后缀；非法代码返回 None"""
     parts = split_code(code)
     return parts[1] if parts else None
 
 
-def split_code(code: str) -> Optional[tuple]:
+def split_code(code: str) -> tuple | None:
     """拆分标准代码为 (6位数字, 市场后缀)；非法返回 None
 
     先经 normalize_code 归一化（兼容裸码/前缀/secid 等任意输入格式），
@@ -99,7 +100,7 @@ def split_code(code: str) -> Optional[tuple]:
     return symbol, market
 
 
-def normalize_code(code: str) -> Optional[str]:
+def normalize_code(code: str) -> str | None:
     """归一化任意格式代码为标准格式 "510300.SH"
 
     接受："510300" / "510300.SH" / "sh510300" / "SH510300" /
@@ -141,7 +142,7 @@ def normalize_code(code: str) -> Optional[str]:
     return None
 
 
-def to_secid(code: str) -> Optional[str]:
+def to_secid(code: str) -> str | None:
     """标准代码 → 东财 secid（"1.510300"）
 
     实测口径：沪市 secid 前缀 1.；深市与北交所共用 0. 前缀
@@ -154,7 +155,7 @@ def to_secid(code: str) -> Optional[str]:
     return f"1.{symbol}" if market == MARKET_SH else f"0.{symbol}"
 
 
-def to_tencent_code(code: str) -> Optional[str]:
+def to_tencent_code(code: str) -> str | None:
     """标准代码 → 腾讯代码（"sh510300" / "bj920819"）"""
     parts = split_code(code)
     if not parts:
@@ -163,7 +164,7 @@ def to_tencent_code(code: str) -> Optional[str]:
     return f"{market.lower()}{symbol}"
 
 
-def to_sina_code(code: str) -> Optional[str]:
+def to_sina_code(code: str) -> str | None:
     """标准代码 → 新浪代码（"sh510300" / "bj920819"，实测新浪支持 bj 前缀）"""
     return to_tencent_code(code)
 
@@ -173,7 +174,7 @@ def is_valid_code(code: str) -> bool:
     return normalize_code(code) is not None
 
 
-def code_key(code: str) -> Optional[str]:
+def code_key(code: str) -> str | None:
     """提取 6 位数字 key（快照/diff/Redis 键用，与市场后缀解耦）
 
     ETF 持仓快照的 diff 以 6 位 code 为匹配键，跨源统一。

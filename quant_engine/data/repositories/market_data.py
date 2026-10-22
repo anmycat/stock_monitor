@@ -5,9 +5,10 @@
 （调用方零行为变化）。数据校验已移至 utils/market_sanity.validate_dataframe
 （B5 单一事实源）；源注册与容错仍在 data/source.py + source_manager.py。
 """
+from __future__ import annotations
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -83,7 +84,7 @@ class MarketDataRepository:
                 self.cache.set(cache_key, df.to_dict(orient='records'), ttl=300)
         return df
 
-    def get_realtime_quote(self, codes: List[str]) -> pd.DataFrame:
+    def get_realtime_quote(self, codes: list[str]) -> pd.DataFrame:
         cached_results = []
         uncached_codes = []
         for code in codes:
@@ -137,15 +138,15 @@ class MarketDataRepository:
                 self._all_quotes_cache_time = current_time
         return df
 
-    def get_cached_quote(self, code: str) -> Optional[Dict]:
+    def get_cached_quote(self, code: str) -> dict | None:
         cache_key = f"quote:{code}"
         return self.cache.get(cache_key)
 
-    def set_cached_quote(self, code: str, data: Dict):
+    def set_cached_quote(self, code: str, data: dict):
         cache_key = f"quote:{code}"
         self.cache.set(cache_key, data, ttl=60)
 
-    def get_market_overview(self) -> Dict:
+    def get_market_overview(self) -> dict:
         cache_key = "market_overview"
         cached = self.cache.get(cache_key)
 

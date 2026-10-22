@@ -1,6 +1,7 @@
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -21,20 +22,20 @@ class Signal(BaseModel):
     code: str
     name: str
     action: SignalAction
-    level: Optional[SignalLevel] = None
+    level: SignalLevel | None = None
     score: float
     position: float
-    reason: List[str]
+    reason: list[str]
     timestamp: datetime
     strategy: str
     price: float
-    target_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    context: Optional[Dict] = None
+    target_price: float | None = None
+    stop_loss: float | None = None
+    context: dict | None = None
     # Kelly公式字段
-    kelly_position: Optional[float] = None        # Kelly建议仓位
-    kelly_confidence: Optional[float] = None      # Kelly信心指数(0-100)
-    kelly_source: Optional[str] = None            # 'dynamic' / 'default'
+    kelly_position: float | None = None        # Kelly建议仓位
+    kelly_confidence: float | None = None      # Kelly信心指数(0-100)
+    kelly_source: str | None = None            # 'dynamic' / 'default'
 
     @property
     def id(self) -> str:

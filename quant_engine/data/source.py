@@ -1,5 +1,4 @@
 """数据源配置 - 通过 SourceManager 统一调度"""
-from typing import Dict, List
 
 import pandas as pd
 from loguru import logger
@@ -65,7 +64,7 @@ class CompositeSource:
             'industry': ['银行', '房地产', '银行', '白酒', '白酒'],
         })
 
-    def get_realtime_quote(self, codes: List[str]) -> pd.DataFrame:
+    def get_realtime_quote(self, codes: list[str]) -> pd.DataFrame:
         """获取实时行情 - 复用全量行情缓存"""
         all_quotes = self.get_all_realtime_quotes()
         if not all_quotes.empty and codes:
@@ -109,6 +108,6 @@ class CompositeSource:
             return result
         return pd.DataFrame()
 
-    def get_source_status(self) -> Dict:
+    def get_source_status(self) -> dict:
         """获取数据源状态"""
         return source_manager.get_status_report()

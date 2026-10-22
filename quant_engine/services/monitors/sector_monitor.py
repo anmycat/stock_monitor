@@ -1,4 +1,3 @@
-from typing import Dict, List
 
 from loguru import logger
 
@@ -27,7 +26,7 @@ class SectorMonitor:
             '食品': ['600887.SH','603288.SH','600600.SH','000895.SZ','600132.SH','002568.SZ','600597.SH','603043.SH','002557.SZ','002507.SZ','002714.SZ','600298.SH','603517.SH','605499.SH','600791.SH','001215.SZ'],
         }
 
-    def get_sector_data(self) -> List[Dict]:
+    def get_sector_data(self) -> list[dict]:
         results = []
         for sector_name, codes in self.sectors.items():
             try:
@@ -55,13 +54,13 @@ class SectorMonitor:
         results.sort(key=lambda x: abs(x['avg_change']), reverse=True)
         return results
 
-    def get_hot_sectors(self, top_n: int = 5) -> List[Dict]:
+    def get_hot_sectors(self, top_n: int = 5) -> list[dict]:
         all_sectors = self.get_sector_data()
         up_sectors = [s for s in all_sectors if s['avg_change'] > 0]
         up_sectors.sort(key=lambda x: x['avg_change'], reverse=True)
         return up_sectors[:top_n]
 
-    def get_cold_sectors(self, top_n: int = 5) -> List[Dict]:
+    def get_cold_sectors(self, top_n: int = 5) -> list[dict]:
         all_sectors = self.get_sector_data()
         down_sectors = [s for s in all_sectors if s['avg_change'] < 0]
         down_sectors.sort(key=lambda x: x['avg_change'])

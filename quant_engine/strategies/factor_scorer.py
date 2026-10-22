@@ -5,7 +5,8 @@
 - 技术指标增强(MACD背离、RSI超买超卖)
 - 市场情绪因子(量价配合)
 """
-from typing import Dict, Optional
+from __future__ import annotations
+from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -81,7 +82,7 @@ class FactorScorer:
                         f"momentum={self.weights['momentum_score']:.2f} "
                         f"value={self.weights['value_score']:.2f}")
 
-    def calculate_factors(self, df: pd.DataFrame, indicators: Dict, fund_flow: Optional[Dict] = None) -> Dict:
+    def calculate_factors(self, df: pd.DataFrame, indicators: dict, fund_flow: dict | None = None) -> dict:
         """计算多维度因子分数
         
         Args:
@@ -105,14 +106,14 @@ class FactorScorer:
 
         return factors
 
-    def calculate_composite_score(self, factors: Dict) -> float:
+    def calculate_composite_score(self, factors: dict) -> float:
         """计算综合分数"""
         composite = 0
         for factor, weight in self.weights.items():
             composite += factors.get(factor, 0) * weight
         return round(composite, 1)
 
-    def _calc_value_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_value_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         估值因子（0-100）
         使用价格位置作为估值代理
@@ -133,7 +134,7 @@ class FactorScorer:
 
         return score
 
-    def _calc_momentum_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_momentum_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         动量因子（0-100）
         计算近期涨幅，适度上涨得分最高
@@ -171,7 +172,7 @@ class FactorScorer:
 
         return (score_5d + score_20d) / 2
 
-    def _calc_liquidity_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_liquidity_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         流动性因子（0-100）
         使用成交量作为流动性指标
@@ -196,7 +197,7 @@ class FactorScorer:
         else:
             return 30  # 严重缩量
 
-    def _calc_stability_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_stability_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         稳定性因子（0-100）
         使用波动率作为稳定性指标
@@ -218,7 +219,7 @@ class FactorScorer:
         else:
             return 30  # 高波动
 
-    def _calc_volume_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_volume_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         量能因子（0-100）
         温和放量得分最高
@@ -236,7 +237,7 @@ class FactorScorer:
         else:
             return 35  # 缩量
 
-    def _calc_trend_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_trend_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         趋势因子（0-100）
         均线多头排列得分最高
@@ -271,7 +272,7 @@ class FactorScorer:
 
         return min(100, score)
     
-    def _calc_fund_flow_score(self, df: pd.DataFrame, indicators: Dict, fund_flow: Optional[Dict] = None) -> float:
+    def _calc_fund_flow_score(self, df: pd.DataFrame, indicators: dict, fund_flow: dict | None = None) -> float:
         """
         资金流向因子（0-100）(新增)
         
@@ -338,7 +339,7 @@ class FactorScorer:
         score = 50 + correlation * 50
         return max(0, min(100, score))
     
-    def _calc_technical_score(self, df: pd.DataFrame, indicators: Dict) -> float:
+    def _calc_technical_score(self, df: pd.DataFrame, indicators: dict) -> float:
         """
         技术指标因子（0-100）(新增)
         
@@ -399,7 +400,7 @@ class FactorScorer:
         
         return max(0, min(100, score))
 
-    def get_factor_explanation(self, factors: Dict) -> Dict:
+    def get_factor_explanation(self, factors: dict) -> dict:
         """获取因子解释"""
         explanations = {}
 

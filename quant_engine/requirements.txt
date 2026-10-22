@@ -17,3 +17,4 @@ PyYAML>=6.0.1
 paramiko>=3.4.0
 hmmlearn>=0.3.0
 pytdx>=1.72  # 通达信分钟线（TCP 7709，PRD 02 §3.9）
+eval_type_backport; python_version < "3.10"  # py3.9 下 pydantic 解析 PEP604(X|None)字符串注解的桥（P5-e UP045 现代化；生产 py3.10+ 不装）

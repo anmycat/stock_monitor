@@ -1,4 +1,5 @@
-from typing import List, Optional
+from __future__ import annotations
+from typing import Optional
 
 import pandas as pd
 
@@ -12,7 +13,7 @@ class TrendStrategy:
         self.buy_score = 70
         self.watch_score = 50
 
-    def analyze(self, df: pd.DataFrame, indicators: dict, market: MarketState) -> Optional[Signal]:
+    def analyze(self, df: pd.DataFrame, indicators: dict, market: MarketState) -> Signal | None:
         if market.type.value in ['BEAR']:
             return None
         score = self._calculate_score(df, indicators, market)
@@ -89,7 +90,7 @@ class TrendStrategy:
         score_factor = score / 100
         return base * market_factor * score_factor
 
-    def _get_reasons(self, df: pd.DataFrame, indicators: dict) -> List[str]:
+    def _get_reasons(self, df: pd.DataFrame, indicators: dict) -> list[str]:
         reasons = []
         ma5 = indicators.get('ma5', 0)
         ma10 = indicators.get('ma10', 0)

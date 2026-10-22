@@ -1,5 +1,4 @@
 """增强回测评估器 - 多维度评估回测结果"""
-from typing import Dict, List
 
 import pandas as pd
 
@@ -13,7 +12,7 @@ class BacktestEvaluator:
     def __init__(self):
         self.min_signals = 30
 
-    def evaluate(self, trades: List[Dict], equity_curve: List[float]) -> Dict:
+    def evaluate(self, trades: list[dict], equity_curve: list[float]) -> dict:
         """
         全面评估回测结果
         
@@ -46,7 +45,7 @@ class BacktestEvaluator:
             'confidence_score': confidence_score,
         }
 
-    def _check_overfitting(self, trades: List[Dict], equity_curve: List[float]) -> Dict:
+    def _check_overfitting(self, trades: list[dict], equity_curve: list[float]) -> dict:
         """检查过拟合"""
         if len(trades) < self.min_signals:
             return {
@@ -92,7 +91,7 @@ class BacktestEvaluator:
                 'gap': round(gap, 3),
             }
 
-    def _check_stability(self, trades: List[Dict], equity_curve: List[float]) -> Dict:
+    def _check_stability(self, trades: list[dict], equity_curve: list[float]) -> dict:
         """检查稳定性"""
         if not equity_curve or len(equity_curve) < 2:
             return {'status': 'unknown', 'message': '数据不足', 'max_drawdown': 0}
@@ -139,11 +138,11 @@ class BacktestEvaluator:
                 'win_rate': round(monthly_win_rate, 3),
             }
 
-    def _calc_max_drawdown(self, equity_curve: List[float]) -> float:
+    def _calc_max_drawdown(self, equity_curve: list[float]) -> float:
         """计算最大回撤（使用公共实现）"""
         return calculate_max_drawdown(equity_curve)
 
-    def _calculate_confidence(self, metrics: Dict, overfit_check: Dict, stability_check: Dict) -> float:
+    def _calculate_confidence(self, metrics: dict, overfit_check: dict, stability_check: dict) -> float:
         """计算置信度分数"""
         score = 50  # 基础分
 
@@ -186,7 +185,7 @@ class BacktestEvaluator:
 
         return max(0, min(100, score))
 
-    def _empty_metrics(self) -> Dict:
+    def _empty_metrics(self) -> dict:
         """空指标"""
         return {
             'total_trades': 0,
@@ -197,7 +196,7 @@ class BacktestEvaluator:
             'sharpe_ratio': 0,
         }
 
-    def generate_report(self, evaluation: Dict, strategy_name: str = "") -> str:
+    def generate_report(self, evaluation: dict, strategy_name: str = "") -> str:
         """生成评估报告"""
         metrics = evaluation.get('metrics', {})
         overfit = evaluation.get('overfit_check', {})

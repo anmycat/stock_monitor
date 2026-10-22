@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import Optional
@@ -19,7 +20,7 @@ class MarketState(BaseModel):
     volume_ratio: float
     breadth: float
     timestamp: datetime
-    details: Optional[dict] = None
+    details: dict | None = None
 
     @property
     def factor(self) -> float:

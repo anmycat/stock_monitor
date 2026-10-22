@@ -1,6 +1,7 @@
 """腾讯财经数据源"""
+from __future__ import annotations
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -45,7 +46,7 @@ class TencentSource:
         return converted if converted else str(code)
 
     @staticmethod
-    def _parse_quote(data: str, market: Optional[str] = None) -> Optional[Dict]:
+    def _parse_quote(data: str, market: str | None = None) -> dict | None:
         """解析腾讯行情数据
 
         Args:
@@ -81,7 +82,7 @@ class TencentSource:
             return None
 
     @staticmethod
-    def get_realtime_quote(codes: List[str]) -> pd.DataFrame:
+    def get_realtime_quote(codes: list[str]) -> pd.DataFrame:
         """获取指定股票实时行情"""
         try:
             qt_codes = [TencentSource._convert_code(c) for c in codes]
@@ -209,7 +210,7 @@ class TencentSource:
     BATCH_SIZE = 200
 
     @staticmethod
-    def _resolve_code_pool() -> Tuple[List[str], str]:
+    def _resolve_code_pool() -> tuple[list[str], str]:
         """三层代码池解析，返回 (codes, tier)"""
         # 主路：新浪 hs_a 全市场列表（延迟导入避免模块级环依赖）
         try:
@@ -243,7 +244,7 @@ class TencentSource:
         return TencentSource._get_main_stock_codes(), 'static_emergency'
 
     @staticmethod
-    def _get_main_stock_codes() -> List[str]:
+    def _get_main_stock_codes() -> list[str]:
         """静态兜底号段（emergency-only，M2' 起不再作主路）
 
         仅覆盖沪市主板三段 + 深市主板两段 + 创业板一段；缺科创 688/

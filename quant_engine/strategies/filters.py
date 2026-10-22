@@ -1,4 +1,3 @@
-from typing import List, Tuple
 
 import pandas as pd
 
@@ -9,7 +8,7 @@ class AntiSignalFilter:
         self.consecutive_up_limit = 8       # 连涨天数
         self.fake_breakout_days = 3
 
-    def filter(self, df: pd.DataFrame, indicators: dict) -> Tuple[bool, List[str]]:
+    def filter(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, list[str]]:
         reasons = []
         if self._is_high_position(df):
             reasons.append("高位过滤")

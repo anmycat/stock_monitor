@@ -2,7 +2,6 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
@@ -16,7 +15,7 @@ from ..schemas import SectorResponse
 
 router = APIRouter(prefix="/api")
 
-@router.get("/sectors", response_model=List[SectorResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/sectors", response_model=list[SectorResponse], dependencies=[Depends(verify_api_key)])
 def get_sectors():
     try:
         # Redis缓存: 避免16个板块逐一查询
@@ -34,7 +33,7 @@ def get_sectors():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/sectors/hot", response_model=List[SectorResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/sectors/hot", response_model=list[SectorResponse], dependencies=[Depends(verify_api_key)])
 def get_hot_sectors(top_n: int = Query(5, ge=1, le=10)):
     try:
         sectors = sector_monitor.get_hot_sectors(top_n)
@@ -46,7 +45,7 @@ def get_hot_sectors(top_n: int = Query(5, ge=1, le=10)):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.get("/sectors/cold", response_model=List[SectorResponse], dependencies=[Depends(verify_api_key)])
+@router.get("/sectors/cold", response_model=list[SectorResponse], dependencies=[Depends(verify_api_key)])
 def get_cold_sectors(top_n: int = Query(50, ge=1, le=50)):
     try:
         sectors = sector_monitor.get_cold_sectors(top_n)

@@ -1,5 +1,4 @@
 """YAML策略执行器 - 执行YAML定义的策略逻辑"""
-from typing import Dict, List, Tuple
 
 import pandas as pd
 from loguru import logger
@@ -8,14 +7,14 @@ from loguru import logger
 class YamlStrategyExecutor:
     """YAML策略执行器"""
 
-    def __init__(self, strategy_config: Dict):
+    def __init__(self, strategy_config: dict):
         self.config = strategy_config
         self.entry_config = strategy_config.get('entry', {})
         self.filters_config = strategy_config.get('filters', [])
         self.exit_config = strategy_config.get('exit', {})
         self.scoring_config = strategy_config.get('scoring', {})
 
-    def execute(self, df: pd.DataFrame, indicators: Dict) -> Tuple[bool, float, List[str]]:
+    def execute(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, float, list[str]]:
         """
         执行YAML策略
         
@@ -42,7 +41,7 @@ class YamlStrategyExecutor:
 
         return True, score, entry_reasons
 
-    def _check_filters(self, df: pd.DataFrame, indicators: Dict) -> Tuple[bool, List[str]]:
+    def _check_filters(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, list[str]]:
         """检查过滤器"""
         reasons = []
 
@@ -85,7 +84,7 @@ class YamlStrategyExecutor:
 
         return True, []
 
-    def _check_entry(self, df: pd.DataFrame, indicators: Dict) -> Tuple[bool, float, List[str]]:
+    def _check_entry(self, df: pd.DataFrame, indicators: dict) -> tuple[bool, float, list[str]]:
         """检查入场条件"""
         conditions = self.entry_config.get('conditions', [])
         logic = self.entry_config.get('logic', 'and')
@@ -129,7 +128,7 @@ class YamlStrategyExecutor:
 
         return passed, score, reasons
 
-    def _evaluate_condition(self, indicator: str, op: str, value, df: pd.DataFrame, indicators: Dict) -> bool:
+    def _evaluate_condition(self, indicator: str, op: str, value, df: pd.DataFrame, indicators: dict) -> bool:
         """评估单个条件"""
         # 获取指标值
         indicator_value = self._get_indicator_value(indicator, df, indicators)
@@ -158,7 +157,7 @@ class YamlStrategyExecutor:
             logger.error(f"Condition evaluation error: {e}")
             return False
 
-    def _get_indicator_value(self, indicator: str, df: pd.DataFrame, indicators: Dict):
+    def _get_indicator_value(self, indicator: str, df: pd.DataFrame, indicators: dict):
         """获取指标值"""
         # 从indicators字典获取
         if indicator in indicators:
@@ -206,7 +205,7 @@ class YamlStrategyExecutor:
         # 默认从indicators获取
         return indicators.get(indicator)
 
-    def _calculate_score(self, df: pd.DataFrame, indicators: Dict, entry_score: float) -> float:
+    def _calculate_score(self, df: pd.DataFrame, indicators: dict, entry_score: float) -> float:
         """计算综合分数"""
         weights = self.scoring_config.get('weights', {})
 
@@ -257,7 +256,7 @@ class YamlStrategyExecutor:
         ma20 = df['close'].rolling(20).mean().iloc[-1]
         return ma5 < ma10 < ma20
 
-    def _is_bear_market(self, indicators: Dict) -> bool:
+    def _is_bear_market(self, indicators: dict) -> bool:
         """检查是否熊市"""
         # 简化判断：RSI低于30
         rsi = indicators.get('rsi', 50)
@@ -278,6 +277,6 @@ class YamlStrategyExecutor:
         avg_volume = df['volume'].tail(5).mean()
         return avg_volume < min_volume
 
-    def get_exit_conditions(self) -> Dict:
+    def get_exit_conditions(self) -> dict:
         """获取出场条件"""
         return self.exit_config

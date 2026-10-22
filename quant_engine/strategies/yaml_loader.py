@@ -1,6 +1,7 @@
 """YAML策略加载器 - 从YAML文件加载策略配置"""
+from __future__ import annotations
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import yaml
 from loguru import logger
@@ -13,7 +14,7 @@ class YamlStrategyLoader:
         if strategies_dir is None:
             strategies_dir = str(Path(__file__).parent / "yaml")
         self.strategies_dir = Path(strategies_dir)
-        self.strategies: Dict[str, Dict] = {}
+        self.strategies: dict[str, dict] = {}
         self._load_all()
 
     def _load_all(self):
@@ -35,7 +36,7 @@ class YamlStrategyLoader:
 
         logger.info(f"Loaded {len(self.strategies)} YAML strategies")
 
-    def _load_strategy(self, yaml_file: Path) -> Optional[Dict]:
+    def _load_strategy(self, yaml_file: Path) -> dict | None:
         """加载单个YAML策略文件"""
         try:
             with open(yaml_file, 'r', encoding='utf-8') as f:
@@ -45,11 +46,11 @@ class YamlStrategyLoader:
             logger.error(f"Parse YAML error: {e}")
             return None
 
-    def get_strategy(self, strategy_id: str) -> Optional[Dict]:
+    def get_strategy(self, strategy_id: str) -> dict | None:
         """获取策略配置"""
         return self.strategies.get(strategy_id)
 
-    def list_strategies(self) -> List[Dict]:
+    def list_strategies(self) -> list[dict]:
         """列出所有策略"""
         result = []
         for strategy_id, strategy in self.strategies.items():
@@ -62,7 +63,7 @@ class YamlStrategyLoader:
             })
         return result
 
-    def get_strategies_by_category(self, category: str) -> List[Dict]:
+    def get_strategies_by_category(self, category: str) -> list[dict]:
         """按分类获取策略"""
         result = []
         for strategy_id, strategy in self.strategies.items():

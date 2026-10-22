@@ -1,5 +1,4 @@
 """新闻舆情分析服务"""
-from typing import Dict, List
 
 import httpx
 from loguru import logger
@@ -26,7 +25,7 @@ class NewsService:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
 
-    def get_stock_news(self, code: str, name: str, limit: int = 5) -> List[Dict]:
+    def get_stock_news(self, code: str, name: str, limit: int = 5) -> list[dict]:
         """获取股票相关新闻"""
         news = []
 
@@ -52,7 +51,7 @@ class NewsService:
 
         return news[:limit]
 
-    def get_market_news(self, limit: int = 8) -> List[Dict]:
+    def get_market_news(self, limit: int = 8) -> list[dict]:
         """获取市场热点新闻（A股/宏观经济）"""
         news = []
         keywords = ["A股", "央行", "经济数据"]
@@ -74,7 +73,7 @@ class NewsService:
                 unique.append(n)
         return unique[:limit]
 
-    def _search_serpapi(self, query: str) -> List[Dict]:
+    def _search_serpapi(self, query: str) -> list[dict]:
         """使用SerpAPI搜索新闻"""
         url = "https://serpapi.com/search"
         params = {
@@ -104,7 +103,7 @@ class NewsService:
             logger.error(f"SerpAPI error: {e}")
         return []
 
-    def _search_tavily(self, query: str) -> List[Dict]:
+    def _search_tavily(self, query: str) -> list[dict]:
         """使用Tavily搜索新闻"""
         url = "https://api.tavily.com/search"
         payload = {
@@ -133,12 +132,12 @@ class NewsService:
             logger.error(f"Tavily error: {e}")
         return []
 
-    def _search_eastmoney(self, code: str) -> List[Dict]:
+    def _search_eastmoney(self, code: str) -> list[dict]:
         """使用东方财富搜索新闻（个股）"""
         symbol = code.split('.')[0]
         return self._search_eastmoney_keyword(symbol)
 
-    def _search_eastmoney_keyword(self, keyword: str, count: int = 5) -> List[Dict]:
+    def _search_eastmoney_keyword(self, keyword: str, count: int = 5) -> list[dict]:
         """使用东方财富搜索新闻（按关键词）"""
         url = "https://search-api-web.eastmoney.com/search/jsonp"
         params = {
@@ -168,7 +167,7 @@ class NewsService:
             logger.error(f"Eastmoney news error: {e}")
         return []
 
-    def analyze_sentiment(self, news: List[Dict]) -> Dict:
+    def analyze_sentiment(self, news: list[dict]) -> dict:
         """分析新闻舆情情绪"""
         if not news:
             return {

@@ -12,9 +12,10 @@
 - 指数型 ETF 季报披露全部持仓，本接口取前 N 大；主动权益基金仅十大重仓
 - 需要 Referer: https://fundf10.eastmoney.com/ccmx_<code>.html，否则可能被拒
 """
+from __future__ import annotations
 import re
 import time
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -38,7 +39,7 @@ class EastMoneyFundHoldingsSource:
 
     # ------------------------------------------------------------------ 公共
 
-    def get_holdings(self, code: str, years: Optional[List[int]] = None,
+    def get_holdings(self, code: str, years: list[int] | None = None,
                      topline: int = DEFAULT_TOPLINE) -> pd.DataFrame:
         """获取基金多个年度的季度持仓明细
 
@@ -74,7 +75,7 @@ class EastMoneyFundHoldingsSource:
         return result.sort_values(['report_date', 'seq'],
                                   ascending=[False, True]).reset_index(drop=True)
 
-    def get_available_years(self, code: str) -> List[int]:
+    def get_available_years(self, code: str) -> list[int]:
         """获取该基金有持仓数据的年份列表（降序）"""
         code = str(code).split('.')[0]
         params = {
@@ -97,7 +98,7 @@ class EastMoneyFundHoldingsSource:
 
     # ------------------------------------------------------------------ 内部
 
-    def _fetch_year(self, code: str, year: int, topline: int) -> Optional[pd.DataFrame]:
+    def _fetch_year(self, code: str, year: int, topline: int) -> pd.DataFrame | None:
         content = self._request(code, year=year, topline=topline)
         if not content:
             return None
@@ -107,7 +108,7 @@ class EastMoneyFundHoldingsSource:
             logger.warning(f"Fund holdings parse error {code} {year}: {e}")
             return None
 
-    def _request(self, code: str, year: int, topline: int) -> Optional[str]:
+    def _request(self, code: str, year: int, topline: int) -> str | None:
         """请求接口，返回 apidata.content 原文（失败返回None）"""
         params = {
             'type': 'jjcc',
@@ -117,7 +118,7 @@ class EastMoneyFundHoldingsSource:
         }
         headers = {'Referer': f'https://fundf10.eastmoney.com/ccmx_{code}.html'}
 
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(1, self._max_retries + 1):
             try:
                 resp = self.session.get(self.BASE_URL, params=params,
@@ -170,7 +171,7 @@ class EastMoneyFundHoldingsSource:
         report_date = d.group(1) if d else ''
         return quarter, report_date
 
-    def _parse_rows(self, box: str, quarter: str, report_date: str) -> List[dict]:
+    def _parse_rows(self, box: str, quarter: str, report_date: str) -> list[dict]:
         """解析一个季度区块内的持仓行"""
         records = []
         for tr in re.findall(r'<tr>(.*?)</tr>', box, re.S):

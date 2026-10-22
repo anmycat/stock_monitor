@@ -2,8 +2,9 @@
 
 跨域复用，域 router 经 `from ..schemas import X` 引用。
 """
+from __future__ import annotations
 import re
-from typing import Dict, List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -15,22 +16,22 @@ class SignalResponse(BaseModel):
     code: str
     name: str
     action: str
-    level: Optional[str]
+    level: str | None
     score: float
     position: float
-    reason: List[str]
+    reason: list[str]
     strategy: str
     price: float
-    target_price: Optional[float]
-    stop_loss: Optional[float]
+    target_price: float | None
+    stop_loss: float | None
     # Kelly公式字段
-    kelly_position: Optional[float] = None
-    kelly_confidence: Optional[float] = None
-    kelly_source: Optional[str] = None
+    kelly_position: float | None = None
+    kelly_confidence: float | None = None
+    kelly_source: str | None = None
 
 
 class BacktestRequest(BaseModel):
-    codes: List[str]
+    codes: list[str]
     start_date: str
     end_date: str
     initial_capital: float = 100000
@@ -102,51 +103,51 @@ class ETFHoldingsOverviewItem(BaseModel):
     code: str
     name: str
     category: str = ''
-    quarter: Optional[str] = None
-    report_date: Optional[str] = None
+    quarter: str | None = None
+    report_date: str | None = None
     holdings_count: int = 0
-    top: List[ETFHoldingItem] = []
+    top: list[ETFHoldingItem] = []
     tracked: bool = False
 
 
 class ETFHoldingsLatestResponse(BaseModel):
     code: str
     name: str
-    quarter: Optional[str] = None
-    report_date: Optional[str] = None
-    updated_at: Optional[str] = None
+    quarter: str | None = None
+    report_date: str | None = None
+    updated_at: str | None = None
     holdings_count: int = 0
-    top: List[ETFHoldingItem] = []
+    top: list[ETFHoldingItem] = []
 
 
 class HoldingChangeItem(BaseModel):
     code: str
     name: str
-    direction: Optional[str] = None
+    direction: str | None = None
     weight: float = 0
     prev_weight: float = 0
     shares: float = 0
     prev_shares: float = 0
-    shares_change_pct: Optional[float] = None
-    weight_delta: Optional[float] = None
+    shares_change_pct: float | None = None
+    weight_delta: float | None = None
     market_value: float = 0
 
 
 class ETFHoldingsChangesResponse(BaseModel):
     etf_code: str = ''
     etf_name: str = ''
-    previous_quarter: Optional[str] = None
-    current_quarter: Optional[str] = None
+    previous_quarter: str | None = None
+    current_quarter: str | None = None
     current_report_date: str = ''
     previous_report_date: str = ''
-    new_entries: List[HoldingChangeItem] = []
-    exits: List[HoldingChangeItem] = []
-    increased: List[HoldingChangeItem] = []
-    decreased: List[HoldingChangeItem] = []
+    new_entries: list[HoldingChangeItem] = []
+    exits: list[HoldingChangeItem] = []
+    increased: list[HoldingChangeItem] = []
+    decreased: list[HoldingChangeItem] = []
     unchanged_count: int = 0
-    nav_change_pct: Optional[float] = None
-    alert_count: Optional[int] = None
-    generated_at: Optional[str] = None
+    nav_change_pct: float | None = None
+    alert_count: int | None = None
+    generated_at: str | None = None
 
 
 class NewsBriefItem(BaseModel):
@@ -161,7 +162,7 @@ class NewsSectorGroup(BaseModel):
     count: int = 0
     shown: int = 0
     truncated: bool = False
-    items: List[NewsBriefItem] = []
+    items: list[NewsBriefItem] = []
 
 
 class NewsDigestResponse(BaseModel):
@@ -174,8 +175,8 @@ class NewsDigestResponse(BaseModel):
     sector_count: int = 0
     hidden_sectors: int = 0
     hidden_items: int = 0
-    sources: Dict[str, int] = {}
-    sectors: List[NewsSectorGroup] = []
+    sources: dict[str, int] = {}
+    sectors: list[NewsSectorGroup] = []
 
 
 class NewsSectorSummaryItem(BaseModel):
@@ -185,7 +186,7 @@ class NewsSectorSummaryItem(BaseModel):
 
 class NewsSectorsResponse(BaseModel):
     generated_at: str = ''
-    sectors: List[NewsSectorSummaryItem] = []
+    sectors: list[NewsSectorSummaryItem] = []
     hidden_sectors: int = 0
     hidden_items: int = 0
 
@@ -196,7 +197,7 @@ class CodeGuardIssueItem(BaseModel):
     code: str
     name: str = ''
     message: str = ''
-    detail: Dict = {}
+    detail: dict = {}
     repaired: bool = False
 
 
@@ -207,8 +208,8 @@ class CodeGuardReportResponse(BaseModel):
     issue_count: int = 0
     error_count: int = 0
     warning_count: int = 0
-    by_type: Dict[str, int] = {}
-    issues: List[CodeGuardIssueItem] = []
+    by_type: dict[str, int] = {}
+    issues: list[CodeGuardIssueItem] = []
     started_at: str = ''
     duration_sec: float = 0
 
@@ -219,7 +220,7 @@ class MarketSentimentResponse(BaseModel):
     avg_change: float
     up_count: int
     down_count: int
-    details: List[ETFResponse]
+    details: list[ETFResponse]
 
 
 class CooldownStatusResponse(BaseModel):
@@ -240,7 +241,7 @@ class SectorResponse(BaseModel):
     down_count: int
     total: int
     up_ratio: float
-    stocks: List[SectorStock]
+    stocks: list[SectorStock]
 
 
 class AlertResponse(BaseModel):
@@ -257,7 +258,7 @@ class ValidationReportResponse(BaseModel):
     failed_checks: int
     success_rate: float
     by_module: dict
-    last_check: Optional[str]
+    last_check: str | None
 
 
 class AISummaryResponse(BaseModel):
@@ -265,14 +266,14 @@ class AISummaryResponse(BaseModel):
     signals: str
     recommendation: str
     full_text: str
-    model: Optional[str] = None
-    summary_type: Optional[str] = None
+    model: str | None = None
+    summary_type: str | None = None
 
 
 class StockSearchResult(BaseModel):
     code: str
     name: str
-    industry: Optional[str] = None
+    industry: str | None = None
 
 
 class LimitStock(BaseModel):
@@ -300,15 +301,15 @@ class ScreeningResult(BaseModel):
     code: str
     name: str
     score: float
-    level: Optional[str]
+    level: str | None
     action: str
     position: float
     factors: dict
-    reasons: List[str]
+    reasons: list[str]
     strategy: str
     price: float
-    target_price: Optional[float]
-    stop_loss_price: Optional[float]
+    target_price: float | None
+    stop_loss_price: float | None
 
 
 class PositionResponse(BaseModel):
@@ -329,7 +330,7 @@ class PortfolioSummaryResponse(BaseModel):
     total_cost: float
     total_pnl: float
     total_pnl_pct: float
-    positions: List[PositionResponse]
+    positions: list[PositionResponse]
 
 
 class PostEvalResponse(BaseModel):
@@ -357,7 +358,7 @@ class HotspotResponse(BaseModel):
     name: str
     score: float
     avg_change: float
-    leader_stocks: List[HotspotLeaderStock]
+    leader_stocks: list[HotspotLeaderStock]
     up_count: int
     total: int
     up_ratio: float

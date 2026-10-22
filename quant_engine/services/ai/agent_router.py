@@ -1,12 +1,11 @@
 """Agent策略问股 - 意图识别 + 技能路由（借鉴 DSA Agent）"""
 import re
 import time
-from typing import Dict, Tuple
 
 from loguru import logger
 
 # Session 管理
-_sessions: Dict[str, dict] = {}
+_sessions: dict[str, dict] = {}
 _SESSION_TTL = 1800  # 30分钟
 _MAX_TURNS = 20
 
@@ -32,7 +31,7 @@ def get_session(session_id: str) -> dict:
     return session
 
 
-def detect_intent(message: str) -> Tuple[str, Dict]:
+def detect_intent(message: str) -> tuple[str, dict]:
     """
     简单规则意图识别
     
@@ -79,7 +78,7 @@ def detect_intent(message: str) -> Tuple[str, Dict]:
 
 
 async def route_message(message: str, session_id: str = "default", datacenter=None,
-                        signal_generator=None) -> Dict:
+                        signal_generator=None) -> dict:
     """
     路由消息到对应的处理技能
 
@@ -114,7 +113,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
         return {'type': 'chat', 'text': f'处理出错: {str(e)}'}
 
 
-async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -> Dict:
+async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -> dict:
     """处理个股分析"""
     from ...utils.stock_resolver import resolver
     # 尝试解析股票代码
@@ -159,7 +158,7 @@ async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -
     }
 
 
-async def _handle_hotspots(datacenter) -> Dict:
+async def _handle_hotspots(datacenter) -> dict:
     """处理热点查询"""
     from ..monitors.hotspot import HotspotService
     hs = HotspotService(datacenter)
@@ -171,7 +170,7 @@ async def _handle_hotspots(datacenter) -> Dict:
     return {'type': 'chat', 'text': '\n'.join(lines)}
 
 
-async def _handle_list_strategies(datacenter) -> Dict:
+async def _handle_list_strategies(datacenter) -> dict:
     """处理策略列表"""
     from ...strategies.registry import StrategyRegistry
     reg = StrategyRegistry(datacenter)
@@ -182,7 +181,7 @@ async def _handle_list_strategies(datacenter) -> Dict:
     return {'type': 'chat', 'text': '\n'.join(lines)}
 
 
-async def _handle_market_overview(datacenter) -> Dict:
+async def _handle_market_overview(datacenter) -> dict:
     """处理市场概览"""
     from ..market.market_analyzer import MarketAnalyzer
     analyzer = MarketAnalyzer(datacenter)
@@ -196,7 +195,7 @@ async def _handle_market_overview(datacenter) -> Dict:
     return {'type': 'chat', 'text': text}
 
 
-async def _handle_scan_signals(datacenter, signal_generator=None) -> Dict:
+async def _handle_scan_signals(datacenter, signal_generator=None) -> dict:
     """处理信号扫描"""
     if signal_generator is None:
         return {'type': 'chat', 'text': '信号服务暂不可用'}
@@ -209,7 +208,7 @@ async def _handle_scan_signals(datacenter, signal_generator=None) -> Dict:
     return {'type': 'chat', 'text': '\n'.join(lines)}
 
 
-async def _handle_evaluate(datacenter) -> Dict:
+async def _handle_evaluate(datacenter) -> dict:
     """处理后验评估"""
     from ...backtest.post_evaluation import PostEvaluation
     pe = PostEvaluation(datacenter.cache, datacenter)
@@ -227,7 +226,7 @@ async def _handle_evaluate(datacenter) -> Dict:
     return {'type': 'chat', 'text': text}
 
 
-async def _handle_free_chat(message: str, session: dict, datacenter) -> Dict:
+async def _handle_free_chat(message: str, session: dict, datacenter) -> dict:
     """处理自由对话（LLM）"""
     from .ai_summary import AISummary
     ai = AISummary()

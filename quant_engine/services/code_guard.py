@@ -28,9 +28,10 @@ ETF 监控匹配失效、持仓 diff 键错乱等问题。
 
 推送策略：仅有 🔴/🟡 时推送钉钉（避免每日全绿骚扰）；全绿记日志。
 """
+from __future__ import annotations
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from loguru import logger
 
@@ -69,20 +70,20 @@ class CodeGuard:
     PRICE_GAP_THRESHOLD = 0.11     # 竞价价 vs 缓存昨收跳空阈值（涨跌停10%+缓冲）
     NAME_IGNORE_PREFIXES = ('ST', '*ST', 'N', 'C', 'XD', 'XR', 'DR')  # 名称归一化时剥离
 
-    def __init__(self, datacenter: Optional[MarketDataRepository] = None):
+    def __init__(self, datacenter: MarketDataRepository | None = None):
         self.datacenter = datacenter
         self.tencent = TencentSource()
 
     # ------------------------------------------------------------------ 目标收集
 
-    def collect_targets(self) -> Dict[str, Dict]:
+    def collect_targets(self) -> dict[str, dict]:
         """收集全部持久化监控目标
 
         Returns:
             {标准代码: {'name': 本地名称, 'source': 来源标签}}
             来源：hot_etf / etf_holdings / stock_list
         """
-        targets: Dict[str, Dict] = {}
+        targets: dict[str, dict] = {}
 
         # 1. 热门 ETF（配置常量）
         for etf in HOT_ETFS:
@@ -114,9 +115,9 @@ class CodeGuard:
 
         return targets
 
-    def _collect_holdings_codes(self) -> Dict[str, str]:
+    def _collect_holdings_codes(self) -> dict[str, str]:
         """从 Redis 聚合全部 ETF 持仓快照的成分股（code -> name）"""
-        result: Dict[str, str] = {}
+        result: dict[str, str] = {}
         if self.datacenter is None:
             return result
         try:
@@ -145,7 +146,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 权威行情
 
-    def fetch_authoritative(self, codes: List[str]) -> Dict[str, Dict]:
+    def fetch_authoritative(self, codes: list[str]) -> dict[str, dict]:
         """批量拉取权威行情（腾讯源，行首市场前缀 + GBK 名称）
 
         查询码用静态规则推断的市场构造（本地后缀可能本身就是错的，
@@ -161,7 +162,7 @@ class CodeGuard:
         Returns:
             {标准代码: {'market': 'SH', 'name': '平安银行', 'price': 11.5}}
         """
-        authoritative: Dict[str, Dict] = {}
+        authoritative: dict[str, dict] = {}
         query_codes = []
         for code in codes:
             parts = split_code(code)
@@ -195,7 +196,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 校验
 
-    def _match_authoritative(self, code: str, authoritative: Dict) -> Optional[Tuple]:
+    def _match_authoritative(self, code: str, authoritative: dict) -> tuple | None:
         """在权威结果中匹配本地 code
 
         先精确匹配；本地码后缀错时（如 510300.SZ）按 6 位 key 匹配，
@@ -210,7 +211,7 @@ class CodeGuard:
                     return acode, aval
         return None
 
-    def check_static(self) -> Dict:
+    def check_static(self) -> dict:
         """盘前静态校验（格式/市场标记/存在性/名称）
 
         Returns:
@@ -222,7 +223,7 @@ class CodeGuard:
         authoritative = self.fetch_authoritative(list(targets.keys()))
         logger.info(f"CodeGuard authoritative quotes: {len(authoritative)}")
 
-        issues: List[Dict] = []
+        issues: list[dict] = []
         checked = 0
 
         for code, info in targets.items():
@@ -270,7 +271,7 @@ class CodeGuard:
         self._save_report(report)
         return report
 
-    def check_auction(self) -> Dict:
+    def check_auction(self) -> dict:
         """集合竞价校验（价格连续性 + 名称 + 持仓快照对账）
 
         利用 9:15-9:25 竞价期间的虚拟匹配价，与 quote:{code} 缓存中的
@@ -281,7 +282,7 @@ class CodeGuard:
         logger.info(f"CodeGuard auction check: {len(targets)} targets")
         authoritative = self.fetch_authoritative(list(targets.keys()))
 
-        issues: List[Dict] = []
+        issues: list[dict] = []
         checked = 0
 
         for code, info in targets.items():
@@ -322,7 +323,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 修复
 
-    def _repair_static(self, issues: List[Dict], authoritative: Dict):
+    def _repair_static(self, issues: list[dict], authoritative: dict):
         """静态校验的自动修复：市场标记错误 → 清理脏缓存键"""
         for issue in issues:
             if issue['type'] != 'market_mismatch':
@@ -350,7 +351,7 @@ class CodeGuard:
                                f"quote:{correct}")
             issue['repaired'] = True
 
-    def _repair_auction(self, issues: List[Dict], authoritative: Dict):
+    def _repair_auction(self, issues: list[dict], authoritative: dict):
         """竞价校验的自动修复：价格跳空 → 清缓存等下个周期刷新"""
         for issue in issues:
             if issue['type'] != 'price_gap':
@@ -367,7 +368,7 @@ class CodeGuard:
     # ------------------------------------------------------------------ 名称校验
 
     def _check_name(self, code: str, local_name: str,
-                    auth_name: str) -> Optional[Dict]:
+                    auth_name: str) -> dict | None:
         """名称一致性：归一化（剥离 ST 等前缀/空格）后比较
 
         ETF 场景本地多为简称（"沪深300ETF" vs "沪深300ETF华泰柏瑞"），
@@ -400,7 +401,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 报告与推送
 
-    def check_and_push(self, notifier, mode: str = 'static') -> Optional[Dict]:
+    def check_and_push(self, notifier, mode: str = 'static') -> dict | None:
         """校验 + 推送一体化（worker 调用入口）
 
         Args:
@@ -428,7 +429,7 @@ class CodeGuard:
 
     @staticmethod
     def _issue(severity: str, issue_type: str, code: str, name: str,
-               message: str, detail: Optional[Dict] = None) -> Dict:
+               message: str, detail: dict | None = None) -> dict:
         return {
             'severity': severity,
             'type': issue_type,
@@ -440,10 +441,10 @@ class CodeGuard:
 
     @staticmethod
     def _finalize_report(mode: str, started: datetime, checked: int,
-                         quoted: int, issues: List[Dict]) -> Dict:
+                         quoted: int, issues: list[dict]) -> dict:
         error_count = sum(1 for i in issues if i['severity'] == SEV_ERROR)
         warning_count = sum(1 for i in issues if i['severity'] == SEV_WARNING)
-        by_type: Dict[str, int] = {}
+        by_type: dict[str, int] = {}
         for i in issues:
             by_type[i['type']] = by_type.get(i['type'], 0) + 1
         return {
@@ -459,7 +460,7 @@ class CodeGuard:
             'duration_sec': round((datetime.now() - started).total_seconds(), 2),
         }
 
-    def _save_report(self, report: Dict):
+    def _save_report(self, report: dict):
         if self.datacenter is None:
             return
         try:
@@ -477,7 +478,7 @@ class CodeGuard:
         except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"CodeGuard save report error: {e}")
 
-    def get_report(self) -> Optional[Dict]:
+    def get_report(self) -> dict | None:
         """最近一次校验报告（API 用）"""
         if self.datacenter is None:
             return None
@@ -499,7 +500,7 @@ class CodeGuard:
     }
 
     @classmethod
-    def format_report_message(cls, report: Dict) -> Tuple[str, str]:
+    def format_report_message(cls, report: dict) -> tuple[str, str]:
         """生成钉钉 markdown 推送文案（分级展示）"""
         mode_label = '盘前校验' if report['mode'] == 'static' else '集合竞价校验'
         title = f"🛡️ 代码一致性{mode_label}: {report['issue_count']}个问题"
@@ -530,7 +531,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 内部
 
-    def _get_cached_quote(self, code: str) -> Optional[Dict]:
+    def _get_cached_quote(self, code: str) -> dict | None:
         if self.datacenter is None:
             return None
         try:
