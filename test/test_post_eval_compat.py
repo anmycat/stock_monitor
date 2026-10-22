@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from quant_engine.api.routes import PostEvalResponse
+from quant_engine.api.schemas import PostEvalResponse
 from quant_engine.backtest.post_evaluation import PostEvaluation
 
 

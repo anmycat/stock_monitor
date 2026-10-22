@@ -24,13 +24,16 @@ def read(p):
 
 
 # 1. 路由数（07 §7 称 36 HTTP + 1 WS + 1 根路由 = 38；12/14 称 40/42）
-routes_py = read(os.path.join(QE, "api/routes.py"))
+# P3 重构（2026-10-22）：routes.py 拆为 api/routers/*.py 12 域，此处聚合计数
+_routers_dir = os.path.join(QE, "api/routers")
+routes_py = "\n".join(read(os.path.join(_routers_dir, fn))
+                      for fn in sorted(os.listdir(_routers_dir)) if fn.endswith(".py"))
 http_routes = len(re.findall(r"@router\.(get|post|put|delete|patch)\(", routes_py))
 main_py = read(os.path.join(QE, "main.py"))
 ws_routes = len(re.findall(r"@app\.websocket\(", main_py)) + len(
     re.findall(r"@router\.websocket\(", routes_py))
 root_routes = len(re.findall(r'@app\.(get|post)\("/"\)', main_py))
-check("routes.py HTTP 路由数", http_routes, None, "07 §7 称 36；12/14 称 40/42")
+check("域 routers HTTP 路由数（P3 重构后聚合）", http_routes, None, "07 §7 称 36；12/14 称 40/42")
 check("WebSocket 路由数", ws_routes, 1, "07 §7 称 /ws 1 个")
 check("根路由 / 数", root_routes, None, "07 §7 称 1 个")
 

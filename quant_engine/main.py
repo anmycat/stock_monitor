@@ -8,7 +8,7 @@ from pathlib import Path
 import uuid
 import time
 from loguru import logger
-from .api.routes import router
+from .api.routers import export_router
 from .api.websocket_enhanced import ws_router
 from .config import get_settings
 
@@ -102,7 +102,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content=_error_payload("INTERNAL_SERVER_ERROR", "Internal server error", request_id),
     )
 
-app.include_router(router)
+app.include_router(export_router())
 app.include_router(ws_router)
 
 static_dir = Path(__file__).parent / "static"
