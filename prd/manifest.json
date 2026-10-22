@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.8",
+  "version": "3.9",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -278,5 +278,14 @@
     "validation": "ruff F/E9=0；导入冒烟 41 端点（36 API + WS + 根 + docs）；全量 14 测试文件（172 例）全绿（2 网络冒烟脚本代理受限无数据 EXIT=0）；API 冒烟 4/4 200；架构审计模块级零环",
     "scripts_added": "research/scripts/arch_audit.py（架构审计存档版）、api_smoke_p3.py（4 端点冒烟）、fix_router_star_imports.py（星号导入显式化）",
     "docs_synced": "prd/00 §3.2 文件清单 API 行、11 API/WS 行、07 §7 端点清单口径、15 v1.2（执行记录+P4 清单）、README 重构记录、manifest v3.8"
+  },
+  "d39_refactor_p4_2026_10_22": {
+    "round": "D39 架构重构 P4 L2/L1 违宪边净化（2026-10-22，prd/15 §3.2 阶段五，清单 5/5 全清）",
+    "engine_dead_construct": "backtest/engine.py 切除 PositionManager/RiskManager import+构造——实测两实例全文从未使用（engine 用 stop_loss/take_profit 参数直算）且构造纯内存无 IO 副作用；直接切除而非注入（注入永不使用的实例即屎山），行为零变更",
+    "funnel_injection": "strategies/funnel.py ThreeLayerFunnel.__init__ 加 llm_ranker/context_enricher 参数（None 跳过增强，与原构造/调用失败透传输出一致）；strategies/registry.py StrategyRegistry 透传（缺省自建向后兼容）；api/dependencies.py（L0）注入 LLMRanker/CandidateContext 单例（两类均无累积状态，单例复用等价每次新建）",
+    "agent_router_injection": "services/ai/agent_router.py route_message/_handle_analyze_stock/_handle_scan_signals 加 signal_generator 参数（None 时信号段降级）；websocket_enhanced.py 调用处改传模块级 signal_generator（原函数内 from ..signals import 删除）",
+    "bug_found_in_transit": "websocket_enhanced.py 函数内 from ._shared import signal_generator 与模块级同名 import 冲突触发 F823（局部变量赋值前引用）——删除函数内 import 改直接用 L17 模块级导入",
+    "validation": "架构审计 5 处违宪边全清（依赖边 273→271：-5 违宪边 +3 L0→L1 合法注入边，增量对账一致）；ruff F/E9=0；导入冒烟 41 端点+注入链路就位；全量 14 测试文件 172 例全绿（test_eastmoney 脚本恢复拿到东财真实数据，两脚本 EXIT=0）；API 冒烟 4/4 200",
+    "docs_synced": "prd/15 v1.2 执行记录链（补 P3 hash f20795b8 + P4 记录）、manifest v3.9(D39)"
   }
 }

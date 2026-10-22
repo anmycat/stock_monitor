@@ -4,8 +4,6 @@ from loguru import logger
 from ..data.repositories import MarketDataRepository
 from ..strategies.dispatcher import StrategyDispatcher
 from ..models.market import MarketState, MarketType
-from ..services.risk.position import PositionManager
-from ..services.risk.risk import RiskManager
 from .metrics import calculate_metrics
 
 
@@ -15,8 +13,9 @@ class BacktestEngine:
                  take_profit: float = 0.15):
         self.datacenter = datacenter
         self.dispatcher = StrategyDispatcher(datacenter)
-        self.position_manager = PositionManager(initial_capital)
-        self.risk_manager = RiskManager()
+        # P4 净化：原构造的 PositionManager/RiskManager 实例全文从未使用（engine 用
+        # stop_loss/take_profit 参数直算），且构造无 IO 副作用——直接切除而非注入
+        # （注入永不使用的实例即屎山）。依赖宪法见 prd/15 §2.5。
         self.initial_capital = initial_capital
         self.commission_rate = commission_rate
         self.stop_loss = stop_loss

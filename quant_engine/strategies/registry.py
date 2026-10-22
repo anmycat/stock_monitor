@@ -18,10 +18,12 @@ class StrategyRegistry:
     - 全市场漏斗路径: ThreeLayerFunnel (纯YAML三层筛选)
     """
 
-    def __init__(self, datacenter):
+    def __init__(self, datacenter, funnel=None, llm_ranker=None, context_enricher=None):
         self.datacenter = datacenter
         self.dispatcher = StrategyDispatcher(datacenter)
-        self.funnel = ThreeLayerFunnel(datacenter)
+        # funnel/增强器可注入（api 层 L0 注入 services 实例，L2 不再反向依赖 L1，
+        # prd/15 §3.2 P4 清单）；缺省自建 + 无增强器，向后兼容既有调用方
+        self.funnel = funnel or ThreeLayerFunnel(datacenter, llm_ranker, context_enricher)
         self.yaml_loader = get_yaml_loader()
         self._strategies = {}
         self._auto_register_builtins()

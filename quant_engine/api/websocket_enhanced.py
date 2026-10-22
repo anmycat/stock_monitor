@@ -689,7 +689,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
                             raise ValueError('无效session_id')
                         try:
                             from ..services.ai.agent_router import route_message
-                            result = await route_message(user_msg, session_id, datacenter)
+                            result = await route_message(user_msg, session_id, datacenter, signal_generator)
                             await manager.send_message(json.dumps(result, default=str), websocket)
                         except Exception as e:
                             logger.error(f"Chat error: {e}")

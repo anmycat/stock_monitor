@@ -10,12 +10,19 @@ from ..models.market import MarketState, MarketType
 
 
 class ThreeLayerFunnel:
-    """三层漏斗选股引擎"""
+    """三层漏斗选股引擎
 
-    def __init__(self, datacenter):
+    llm_ranker/context_enricher 为可选增强层（P4 参数注入，替代原函数内
+    from ..services import 的违宪依赖，prd/15 §3.2 P4 清单 #3/#4）；
+    None 时跳过对应增强（与原"构造/调用失败透传"输出一致）。
+    """
+
+    def __init__(self, datacenter, llm_ranker=None, context_enricher=None):
         self.datacenter = datacenter
         self.yaml_loader = get_yaml_loader()
         self.factor_scorer = FactorScorer()
+        self.llm_ranker = llm_ranker
+        self.context_enricher = context_enricher
 
     def screen(self, strategy_id: str, market: MarketState, max_output: int = 10) -> List[Dict]:
         """
@@ -50,25 +57,23 @@ class ThreeLayerFunnel:
         if not scored_candidates:
             return []
 
-        # L2.5: LLM排序层（可选，不可用时透传）
-        try:
-            from ..services.ai.llm_ranker import LLMRanker
-            ranker = LLMRanker()
-            scored_candidates = ranker.rank(scored_candidates, max_candidates=10)
-            logger.info(f"L2.5 LLM ranking: {len(scored_candidates)} candidates")
-        except Exception as e:
-            logger.warning(f"LLM ranking skipped: {e}")
+        # L2.5: LLM排序层（可选，注入缺失或调用失败时透传）
+        if self.llm_ranker is not None:
+            try:
+                scored_candidates = self.llm_ranker.rank(scored_candidates, max_candidates=10)
+                logger.info(f"L2.5 LLM ranking: {len(scored_candidates)} candidates")
+            except Exception as e:
+                logger.warning(f"LLM ranking skipped: {e}")
 
         # L3: 深度分析（Top N）
         final_candidates = self._l3_deep_analysis(scored_candidates[:max_output], strategy, market)
 
-        # 候选股上下文增强（新闻/舆情）
-        try:
-            from ..services.signals.candidate_context import CandidateContext
-            ctx = CandidateContext()
-            final_candidates = ctx.enrich_candidates(final_candidates, max_candidates=5)
-        except Exception as e:
-            logger.warning(f"Candidate context enrichment failed: {e}")
+        # 候选股上下文增强（新闻/舆情，可选）
+        if self.context_enricher is not None:
+            try:
+                final_candidates = self.context_enricher.enrich_candidates(final_candidates, max_candidates=5)
+            except Exception as e:
+                logger.warning(f"Candidate context enrichment failed: {e}")
 
         logger.info(f"L3 deep analysis: {len(final_candidates)} candidates")
 
