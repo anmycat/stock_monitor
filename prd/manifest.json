@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.7",
+  "version": "3.8",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -268,5 +268,15 @@
     "rewrite": "三层重写：A) 19 个下沉模块 quant_engine 级深度修正(..→...)；B) 4 个文件包内兄弟映射(signal_generator 6 边/agent_router 5 边/candidate_context/code_guard)；C) 11 个外部文件(含 backtest/engine 漏网补修)+ 6 个测试文件；services/__init__.py 聚合器保 11 个历史导出名不变",
     "validation": "ruff F/E9=0；导入冒烟 6 子包+聚合器全通；全量 14 测试文件(172 例)全绿；API 冒烟 4 端点 200；架构审计零环+宪法通过(backtest→services 2 边为 P4 目标)",
     "docs_synced": "prd/00 §3.1 架构图服务层、07 §14.1 模块地图、11 服务层清单、15 §2.3 定稿、manifest v3.7"
+  },
+  "d38_refactor_p3_2026_10_22": {
+    "round": "D38 架构重构 P3 api 拆分（2026-10-22，prd/15 §3.2 阶段四）",
+    "split": "api/routes.py 1122 行 → schemas.py（33 个 pydantic 模型 + _CODE_RE/_DATE_RE）+ _shared.py（dependencies 13 实例 + 5 模块级单例 + 4 正则 + __all__ 导出面）+ routers/ 12 域 36 端点（alerts2/etf4/evaluation3/market2/misc8/news3/portfolio2/sectors3/signals2/summary2/system3/validation2）+ export_router() 无前缀聚合；routes.py 删除；main.py 改挂 export_router()",
+    "endpoint_check": "36/36 端点 URL+方法+响应模型逐一对照表全绿；前端 UX/ 零改动；API 冒烟 4 端点（health/market/signals/evaluation/runs）200",
+    "bugs_found_in_transit": "① 首版切分污染：晚于端点定义的模型块块切时把夹中端点吞进 schemas.py（NameError router）——从废纸箧取回 routes.py 改正确解析器重切 ② 前缀堆叠：export_router 的 combined router 又加 prefix=/api 而域 router 已自带 → /api/api/...，改无前缀聚合 ③ health 域归属错：domain_of 映射漏 health 落进 misc(9)，切除回添 system.py ④ 星号导入 F403/F405 384 项：12 域 router 改显式模型导入（AST 最小集）+ _shared.py 加 __all__ 保转手导出 + ruff --fix 清 276 F401（导入面 24→实际用量）⑤ routers/ 比 routes.py 深一层致 4 处函数内延迟导入相对层级错（..utils/..data/..services 应为 ...）：/api/health 500 被 API 冒烟捕获修复",
+    "audit_finding": "架构审计（research/scripts/arch_audit.py，Tarjan+分层+services DAG 机器可检）实测 5 处违宪边——engine→services.risk.position/risk（2 模块级既有）+ funnel→services.ai.llm_ranker/signals.candidate_context（2 延迟既有）+ agent_router→signals（1 延迟，P2 只审模块级边的盲区）——全部非 P3 引入，登记 prd/15 §3.2 P4 清理清单（显式中间态）",
+    "validation": "ruff F/E9=0；导入冒烟 41 端点（36 API + WS + 根 + docs）；全量 14 测试文件（172 例）全绿（2 网络冒烟脚本代理受限无数据 EXIT=0）；API 冒烟 4/4 200；架构审计模块级零环",
+    "scripts_added": "research/scripts/arch_audit.py（架构审计存档版）、api_smoke_p3.py（4 端点冒烟）、fix_router_star_imports.py（星号导入显式化）",
+    "docs_synced": "prd/00 §3.2 文件清单 API 行、11 API/WS 行、07 §7 端点清单口径、15 v1.2（执行记录+P4 清单）、README 重构记录、manifest v3.8"
   }
 }
