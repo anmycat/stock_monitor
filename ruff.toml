@@ -1,0 +1,22 @@
+# ruff 配置（P5 引入，prd/15 §3.2 阶段六 BLE001 分级）
+# 原则：A 类（外部 IO/HTTP 边界）宽捕获为架构性兜底，文件级声明忽略；
+#       B 类（业务逻辑）不在此列——逐处收窄或 # noqa: BLE001 理由。
+# 默认规则集不变（仍为 ruff 默认 E/F/I/UP/B 等），仅追加 per-file-ignores。
+
+[lint.per-file-ignores]
+# --- A 类：外部边界宽捕获（BLE001）---
+# API 层：except HTTPException: raise + except Exception → 500 是 FastAPI 边界兜底模式
+"quant_engine/api/routers/*.py" = ["BLE001"]
+"quant_engine/api/websocket_enhanced.py" = ["BLE001"]
+# 数据层：Redis/HTTP/文件 IO 兜底
+"quant_engine/data/cache.py" = ["BLE001"]
+"quant_engine/data/sources/*.py" = ["BLE001"]
+"quant_engine/data/source_manager.py" = ["BLE001"]
+# 服务层外部调用：LLM API / 新闻源 / 通知渠道外发
+"quant_engine/services/ai/ai_summary.py" = ["BLE001"]
+"quant_engine/services/ai/llm_ranker.py" = ["BLE001"]
+"quant_engine/services/monitors/news_service.py" = ["BLE001"]
+"quant_engine/services/notifications/*.py" = ["BLE001"]
+# 第三方库 IO：exchange-calendars / hmmlearn
+"quant_engine/utils/calendar.py" = ["BLE001"]
+"quant_engine/models/hmm_detector.py" = ["BLE001"]
