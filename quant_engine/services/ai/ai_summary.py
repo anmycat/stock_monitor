@@ -15,18 +15,19 @@ AI智能分析总结服务 - 多模型融合架构
 2. 全日总结（18:15）: 全天复盘 + 技术面分析 + 明日展望
 3. 实时分析: 根据市场变化动态生成
 """
-import httpx
+import concurrent.futures
 import json
 import time
-import concurrent.futures
-import pandas as pd
-from typing import List, Dict
 from dataclasses import dataclass
-from loguru import logger
-from ...models.signal import Signal, SignalAction
-from ...models.market import MarketState, MarketType
-from ...config import get_settings
+from typing import Dict, List
 
+import httpx
+import pandas as pd
+from loguru import logger
+
+from ...config import get_settings
+from ...models.market import MarketState, MarketType
+from ...models.signal import Signal, SignalAction
 
 # === 模型配置 ===
 

@@ -1,9 +1,10 @@
 """ETF监控模块 - 腾讯第一的实时行情路（2026-10-20 起）"""
 import time
-from typing import List, Dict
-from loguru import logger
-from ...data.repositories import MarketDataRepository
+from typing import Dict, List
 
+from loguru import logger
+
+from ...data.repositories import MarketDataRepository
 
 # 热门ETF监控清单（行情监控与持仓监控共用，新增/删除需同步两侧文档）
 HOT_ETFS = [

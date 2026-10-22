@@ -22,7 +22,6 @@ from typing import Dict, Tuple
 import pandas as pd
 from loguru import logger
 
-
 # 新股标识：N（上市首日）/ C（第 2-5 日）+ 汉字简称，如 "N文峰"
 _NEW_LISTING_RE = re.compile(r"^[NC][\u4e00-\u9fff]")
 

@@ -1,12 +1,12 @@
 """腾讯财经数据源"""
-import requests
 import random
+from typing import Dict, List, Optional, Tuple
+
 import pandas as pd
-from typing import List, Dict, Optional, Tuple
+import requests
 from loguru import logger
 
-from ...utils.code_utils import (to_tencent_code,
-                                 MARKET_SH, MARKET_SZ, MARKET_BJ)
+from ...utils.code_utils import MARKET_BJ, MARKET_SH, MARKET_SZ, to_tencent_code
 
 
 class TencentSource:

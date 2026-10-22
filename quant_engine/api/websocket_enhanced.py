@@ -2,21 +2,30 @@
 WebSocket连接管理器 - 增强版支持服务器主动Push
 优化: 增量更新 + 批量推送 + 消息优先级 + AI预测活跃度
 """
-import json
-import gzip
-import base64
 import asyncio
+import base64
+import gzip
 import heapq
+import json
 import re
 import uuid
 from datetime import datetime
 from enum import IntEnum
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from loguru import logger
-from .dependencies import signal_generator, datacenter, etf_monitor, sector_monitor, market_alert, hot_money_monitor
-from .auth import verify_websocket_token
+
 from ..services.market.market_analyzer import MarketAnalyzer
+from .auth import verify_websocket_token
+from .dependencies import (
+    datacenter,
+    etf_monitor,
+    hot_money_monitor,
+    market_alert,
+    sector_monitor,
+    signal_generator,
+)
 
 ws_router = APIRouter()
 
@@ -478,8 +487,9 @@ class ConnectionManager:
             float: 活跃度分数（0-100）
         """
         try:
-            from ..utils.calendar import is_trading_day
             from datetime import datetime as dt
+
+            from ..utils.calendar import is_trading_day
             
             now = dt.now()
             if not is_trading_day(now):

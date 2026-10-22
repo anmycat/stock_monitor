@@ -1,5 +1,6 @@
 """企业微信通知器"""
 import httpx
+
 from .base import BaseNotifier
 
 

@@ -7,21 +7,21 @@
 """
 import threading
 import time
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 import pandas as pd
 from loguru import logger
 
+from ...config import get_settings
+from ...utils.calendar import get_market_phase, is_trading_time
+from ...utils.market_sanity import (
+    DROP_RATIO_SUSPECT,
+    is_overview_sane,
+    sanitize_quotes,
+    validate_dataframe,
+)
 from ..cache import RedisCache
 from ..source import CompositeSource
-from ...config import get_settings
-from ...utils.calendar import is_trading_time, get_market_phase
-from ...utils.market_sanity import (
-    validate_dataframe,
-    sanitize_quotes,
-    is_overview_sane,
-    DROP_RATIO_SUSPECT,
-)
 
 
 class MarketDataRepository:

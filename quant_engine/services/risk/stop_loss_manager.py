@@ -7,8 +7,8 @@
 - 波动率自适应(ATR倍数)
 - 动态调整止盈止损位
 """
-from typing import Dict, Optional, List
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 
 @dataclass

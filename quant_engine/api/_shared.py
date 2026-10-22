@@ -5,19 +5,28 @@
 """
 import re
 
-from .dependencies import (
-    datacenter, signal_generator, backtest_engine, etf_monitor,
-    cooldown_manager, sector_monitor, market_alert, hot_money_monitor,
-    strategy_registry, hotspot_service, etf_holdings_monitor, news_monitor,
-    code_guard
-)
-from .auth import verify_api_key
-from ..services.ai.ai_summary import AISummary
-from ..services.market.market_analyzer import MarketAnalyzer
-from ..services.market.data_validator import DataValidator
-from ..services.portfolio import PortfolioManager
 from ..backtest.post_evaluation import PostEvaluation
+from ..services.ai.ai_summary import AISummary
+from ..services.market.data_validator import DataValidator
+from ..services.market.market_analyzer import MarketAnalyzer
+from ..services.portfolio import PortfolioManager
 from ..utils.stock_resolver import resolver
+from .auth import verify_api_key
+from .dependencies import (
+    backtest_engine,
+    code_guard,
+    cooldown_manager,
+    datacenter,
+    etf_holdings_monitor,
+    etf_monitor,
+    hot_money_monitor,
+    hotspot_service,
+    market_alert,
+    news_monitor,
+    sector_monitor,
+    signal_generator,
+    strategy_registry,
+)
 
 # 域 router 的公共导出面（转手导出，勿删；__all__ 同时消除 F401）
 __all__ = [

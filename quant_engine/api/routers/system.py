@@ -2,14 +2,15 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
 from .._shared import (
-    datacenter, code_guard, verify_api_key,
+    code_guard,
+    datacenter,
+    verify_api_key,
 )
 from ..schemas import CodeGuardReportResponse
-
 
 router = APIRouter(prefix="/api")
 
@@ -55,6 +56,7 @@ def get_code_guard_report():
 async def health_check():
     """系统健康检查端点(无需认证)"""
     from datetime import datetime
+
     from ...utils.calendar import get_market_phase
     
     health = {

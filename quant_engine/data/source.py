@@ -1,13 +1,14 @@
 """数据源配置 - 通过 SourceManager 统一调度"""
+from typing import Dict, List
+
 import pandas as pd
-from typing import List, Dict
 from loguru import logger
+
 from .source_manager import source_manager
 from .sources.eastmoney import EastMoneySource
-from .sources.tencent import TencentSource
 from .sources.sina import SinaSource
 from .sources.tdx import TdxSource
-
+from .sources.tencent import TencentSource
 
 # 数据源优先级配置（2026-10-20 按用户决策调整：东财出口 IP 经常被风控，
 # ECS 实测 22 连败，降为备路；腾讯第一、新浪第二互为配合）

@@ -1,4 +1,5 @@
-from typing import List, Dict
+from typing import Dict, List
+
 from ...models.market import MarketState
 from ...models.signal import Signal
 

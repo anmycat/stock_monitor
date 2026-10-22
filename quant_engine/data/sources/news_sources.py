@@ -19,8 +19,8 @@
 import json
 import re
 import time
-import urllib.request
 import urllib.parse
+import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional

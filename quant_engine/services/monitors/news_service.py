@@ -1,7 +1,9 @@
 """新闻舆情分析服务"""
+from typing import Dict, List
+
 import httpx
-from typing import List, Dict
 from loguru import logger
+
 from ...config import get_settings
 
 

@@ -1,5 +1,6 @@
 """通知器基类"""
 from abc import ABC, abstractmethod
+
 from loguru import logger
 
 

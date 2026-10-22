@@ -1,5 +1,6 @@
 """组合风险桶 - 对标幻方CVaR风控：行业集中度+最大回撤+连续亏损熔断"""
-from typing import List, Dict
+from typing import Dict, List
+
 from loguru import logger
 
 

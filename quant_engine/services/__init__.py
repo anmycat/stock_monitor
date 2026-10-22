@@ -4,17 +4,17 @@
 signals（信号族）/ notifications（通知族）/ ai（AI 族）。
 本文件保持历史 import 路径（from ..services import X）可用。
 """
+from .ai.ai_summary import AISummary
+from .market.market_analyzer import MarketAnalyzer
+from .monitors.burst_monitor import BurstMonitor
+from .monitors.hot_money_monitor import HotMoneyMonitor
+from .notifications.manager import DingTalkNotifier
+from .portfolio import PortfolioManager
+from .risk.cooldown import CooldownManager
 from .risk.position import PositionManager
 from .risk.risk import RiskManager
-from .market.market_analyzer import MarketAnalyzer
-from .signals.signal_generator import SignalGenerator
-from .risk.cooldown import CooldownManager
-from .notifications.manager import DingTalkNotifier
-from .ai.ai_summary import AISummary
-from .portfolio import PortfolioManager
 from .signals.candidate_context import CandidateContext
-from .monitors.hot_money_monitor import HotMoneyMonitor
-from .monitors.burst_monitor import BurstMonitor
+from .signals.signal_generator import SignalGenerator
 
 __all__ = [
     "PositionManager",

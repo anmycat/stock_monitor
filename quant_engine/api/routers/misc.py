@@ -2,16 +2,23 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import List
-from loguru import logger
 import re
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from loguru import logger
 
 from .._shared import (
-    datacenter, backtest_engine, cooldown_manager, hot_money_monitor,
-    strategy_registry, hotspot_service, verify_api_key, market_analyzer,
-    resolver,
     _CODE_RE,
+    backtest_engine,
+    cooldown_manager,
+    datacenter,
+    hot_money_monitor,
+    hotspot_service,
+    market_analyzer,
+    resolver,
+    strategy_registry,
+    verify_api_key,
 )
 from ..schemas import (
     BacktestRequest,
@@ -22,7 +29,6 @@ from ..schemas import (
     StockSearchResult,
     StrategyInfo,
 )
-
 
 router = APIRouter(prefix="/api")
 

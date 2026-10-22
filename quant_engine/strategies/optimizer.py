@@ -6,8 +6,9 @@
 - 基于历史表现调整策略优先级
 - 自动选择最优策略组合
 """
-from typing import Dict, List, Tuple
 from dataclasses import dataclass
+from typing import Dict, List, Tuple
+
 from ..models.market import MarketState, MarketType
 
 

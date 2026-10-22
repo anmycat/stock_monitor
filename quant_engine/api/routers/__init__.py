@@ -17,6 +17,7 @@ from .summary import router as summary_router
 from .system import router as system_router
 from .validation import router as validation_router
 
+
 def export_router() -> APIRouter:
     """聚合全部域路由（各域 router 自带 /api 前缀，此处不再叠加）"""
     combined = APIRouter()
