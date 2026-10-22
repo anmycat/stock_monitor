@@ -47,7 +47,7 @@ class SectorMonitor:
                     'up_ratio': round(up_count / total * 100, 0) if total > 0 else 0,
                     'stocks': [{'code': row['code'], 'name': row.get('name', row['code']), 'change_pct': round(row['change_pct'], 2)} for _, row in quotes.sort_values('change_pct', ascending=False).iterrows()],
                 })
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.error(f"Get sector {sector_name} error: {e}")
 
         results.sort(key=lambda x: abs(x['avg_change']), reverse=True)

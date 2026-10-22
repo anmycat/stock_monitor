@@ -71,7 +71,7 @@ class ETFMonitor:
                             'trend': self._analyze_trend(change_pct),
                             'volume_desc': self._format_volume(volume),
                         })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Get ETF error: {e}")
         
         # 对于未获取到数据的ETF，用"--"标识

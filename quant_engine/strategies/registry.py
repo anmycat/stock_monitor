@@ -109,7 +109,7 @@ class StrategyRegistry:
             try:
                 signal = self._dict_to_signal(r)
                 signals.append(signal)
-            except Exception as e:
+            except (KeyError, TypeError, ValueError) as e:
                 logger.debug(f"Dict->Signal conversion error: {e}")
         return signals
 

@@ -47,7 +47,7 @@ class SignalGenerator:
                 scan_list = [(c, stock_dict.get(c, '')) for c in top_codes if c in stock_dict]
             else:
                 scan_list = list(stocks.itertuples(index=False, name=None))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 降级默认
             logger.warning(f"Pre-ranking failed, using default order: {e}")
             scan_list = list(stocks.itertuples(index=False, name=None))
 
@@ -59,7 +59,7 @@ class SignalGenerator:
                     signals.append(signal)
                     if len(signals) >= max_signals * 2:  # 多取一些用于后续排序
                         break
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.error(f"Analyze {stock[0]} error: {e}")
 
         # 热点板块加分
@@ -70,7 +70,7 @@ class SignalGenerator:
             for s in signals:
                 if s.code in hot_codes:
                     s.score *= 1.05  # 热点板块 +5%
-        except Exception:
+        except Exception:  # noqa: BLE001 外部调用
             pass
 
         signals.sort(key=lambda s: s.score, reverse=True)
@@ -144,7 +144,7 @@ class SignalGenerator:
             # 年化: * sqrt(252)
             annual_vol = daily_vol * (252 ** 0.5)
             return max(0.1, min(1.0, annual_vol))
-        except Exception:
+        except (KeyError, TypeError, ValueError):
             return 0.25
 
     def update_after_trade(self, code: str, pnl: float):
@@ -174,5 +174,5 @@ class SignalGenerator:
                 context = enriched_map.get(s.code)
                 if context:
                     s.context = context
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.warning(f"Signal context enrichment failed: {e}")

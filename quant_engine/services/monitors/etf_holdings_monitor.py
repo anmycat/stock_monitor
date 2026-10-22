@@ -56,7 +56,7 @@ class ETFHoldingsMonitor:
         code = etf_code.split('.')[0]
         try:
             df = self.source.get_holdings(code, topline=self.TOPLINE)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.warning(f"ETF holdings fetch failed {code}: {e}")
             return None
         if df.empty:
@@ -115,7 +115,7 @@ class ETFHoldingsMonitor:
         for etf in self.target_etfs:
             try:
                 changes = self.refresh_etf(etf['code'], etf['name'])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.warning(f"ETF holdings check failed {etf['code']}: {e}")
                 continue
             if not changes:
@@ -348,7 +348,7 @@ class ETFHoldingsMonitor:
             return default
         try:
             return self.datacenter.cache.get(key)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"ETF holdings cache get error [{key}]: {e}")
             return default
 
@@ -357,6 +357,6 @@ class ETFHoldingsMonitor:
             return False
         try:
             return self.datacenter.cache.set(key, value, ttl=ttl)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"ETF holdings cache set error [{key}]: {e}")
             return False

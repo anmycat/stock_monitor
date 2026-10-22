@@ -88,7 +88,7 @@ def push_summary_to_web(summary_type: str, title: str, summary_data: Dict):
         }
         asyncio.run(manager.broadcast(json.dumps(ws_data, default=str)))
         logger.info(f"✅ {title}已推送到Web")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"推送{title}到Web失败: {e}")
 
 
@@ -98,7 +98,7 @@ def get_sector_data(datacenter):
         from .services.monitors.sector_monitor import SectorMonitor
         monitor = SectorMonitor(datacenter)
         return monitor.get_sector_data()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.warning(f"获取板块数据失败: {e}")
         return []
 
@@ -129,7 +129,7 @@ def check_etf_holdings(datacenter, notifier):
             )
         if not push_list:
             logger.info("ETF holdings check done, no alertable changes")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"ETF holdings check error: {e}")
 
 
@@ -155,7 +155,7 @@ def check_code_guard_static(datacenter, notifier):
         guard = CodeGuard(datacenter)
         guard.check_and_push(notifier, mode='static')
         datacenter.cache.set('code_guard:check_date_static', today, ttl=2 * 86400)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"Code guard static check error: {e}")
 
 
@@ -180,7 +180,7 @@ def check_code_guard_auction(datacenter, notifier):
         guard = CodeGuard(datacenter)
         guard.check_and_push(notifier, mode='auction')
         datacenter.cache.set('code_guard:check_date_auction', today, ttl=2 * 86400)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"Code guard auction check error: {e}")
 
 
@@ -211,7 +211,7 @@ def check_morning_news(datacenter, notifier):
             )
         else:
             logger.info("Morning news check done, no new items")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"Morning news check error: {e}")
 
 
@@ -237,7 +237,7 @@ def _save_post_evaluation(post_eval, signals, market):
         ]
         market_state = {'type': market.type.value, 'score': market.score}
         post_eval.save_run(run_id, signals_data, market_state)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"Save post evaluation error: {e}")
 
 
@@ -364,7 +364,7 @@ def main():
                     logger.info(f"Phase {phase}, sleeping {sleep_sec}s")
                 time.sleep(min(sleep_sec, 60))
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 任务兜底
             logger.error(f"Worker error: {e}")
             time.sleep(60)
 

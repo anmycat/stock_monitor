@@ -33,7 +33,7 @@ class PostEvaluation:
             
             logger.info(f"Saved run: {run_id}")
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Save run error: {e}")
             return False
 
@@ -121,7 +121,7 @@ class PostEvaluation:
                 'avg_max_drawdown': avg_max_drawdown,
                 'details': results,
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Evaluate run error: {e}")
             return {'error': str(e)}
 
@@ -158,7 +158,7 @@ class PostEvaluation:
                 'total_signals': total_signals,
                 'evaluations': evaluations,
             }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Evaluate batch error: {e}")
             return {'error': str(e)}
 
@@ -179,6 +179,6 @@ class PostEvaluation:
                     })
             
             return run_list
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Get run list error: {e}")
             return []

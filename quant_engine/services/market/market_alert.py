@@ -74,7 +74,7 @@ class MarketAlert:
                     'icon': '📉',
                     'timestamp': datetime.now().isoformat(),
                 })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check limit alerts error: {e}")
         return alerts
 
@@ -117,7 +117,7 @@ class MarketAlert:
                             'timestamp': datetime.now().isoformat(),
                         })
             self.datacenter.cache.set(cache_key, {'volume': total_volume}, ttl=300)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check volume alerts error: {e}")
         return alerts
 
@@ -159,7 +159,7 @@ class MarketAlert:
                 'type': market.type.value,
                 'score': market.score,
             }, ttl=120)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check index alerts error: {e}")
         return alerts
 
@@ -184,7 +184,7 @@ class MarketAlert:
                     'icon': '😱',
                     'timestamp': datetime.now().isoformat(),
                 })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check breadth alerts error: {e}")
         return alerts
 
@@ -213,7 +213,7 @@ class MarketAlert:
                         'icon': '💥',
                         'timestamp': datetime.now().isoformat(),
                     })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check sector alerts error: {e}")
         return alerts
 

@@ -49,7 +49,7 @@ class MarketAnalyzer:
             total = len(quotes)
             breadth = up / total if total > 0 else 0.5
             return min(1.0, max(0.0, breadth))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 降级默认
             logger.error(f"Calculate breadth error: {e}")
             return 0.5
 
@@ -91,7 +91,7 @@ class MarketAnalyzer:
                         }
                         logger.info(f"HMM detected: {label} (confidence={confidence:.2f})")
                         return state_map.get(state_idx, MarketType.SIDEWAYS)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 降级默认
                 logger.warning(f"HMM detection failed, using rules: {e}")
         
         # 规则回退

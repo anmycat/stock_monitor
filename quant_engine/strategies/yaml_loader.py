@@ -29,7 +29,7 @@ class YamlStrategyLoader:
                     if strategy_id:
                         self.strategies[strategy_id] = strategy
                         logger.info(f"Loaded strategy: {strategy_id}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.error(f"Failed to load {yaml_file}: {e}")
 
         logger.info(f"Loaded {len(self.strategies)} YAML strategies")
@@ -40,7 +40,7 @@ class YamlStrategyLoader:
             with open(yaml_file, 'r', encoding='utf-8') as f:
                 strategy = yaml.safe_load(f)
             return strategy
-        except Exception as e:
+        except (OSError, yaml.YAMLError) as e:
             logger.error(f"Parse YAML error: {e}")
             return None
 
