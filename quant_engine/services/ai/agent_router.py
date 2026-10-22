@@ -2,8 +2,8 @@
 import re
 import time
 from typing import Dict, Tuple
-from loguru import logger
 
+from loguru import logger
 
 # Session 管理
 _sessions: Dict[str, dict] = {}
@@ -137,8 +137,8 @@ async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -
     if signal_generator is not None:
         signal = signal_generator.scan_stock(code, name)
 
-    from .ai_summary import AISummary
     from ...utils.indicators import calculate_indicators
+    from .ai_summary import AISummary
     df = datacenter.get_daily_data(code, 120)
     indicators = calculate_indicators(df) if df is not None and not df.empty else {}
     ai = AISummary()

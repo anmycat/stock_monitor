@@ -1,4 +1,5 @@
-from typing import List, Dict
+from typing import Dict, List
+
 from ...models.signal import Signal
 from ...utils.helpers import calculate_max_drawdown
 

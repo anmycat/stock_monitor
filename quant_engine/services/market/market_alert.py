@@ -1,8 +1,10 @@
 import time
-import pandas as pd
 from datetime import datetime
-from typing import List, Dict
+from typing import Dict, List
+
+import pandas as pd
 from loguru import logger
+
 from ...data.repositories import MarketDataRepository
 from ...models.market import MarketState
 

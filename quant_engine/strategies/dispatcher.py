@@ -1,16 +1,18 @@
+from typing import Dict, List, Optional
+
 import pandas as pd
-from typing import Optional, List, Dict
 from loguru import logger
-from .engine import StrategyEngine
-from .trend import TrendStrategy
-from .dip import DipStrategy
-from .defense import DefenseStrategy
-from .yaml_loader import get_yaml_loader
-from .yaml_executor import YamlStrategyExecutor
-from .factor_scorer import FactorScorer
-from ..utils.indicators import calculate_indicators
+
 from ..models.market import MarketState, MarketType
 from ..models.signal import Signal, SignalAction, SignalLevel
+from ..utils.indicators import calculate_indicators
+from .defense import DefenseStrategy
+from .dip import DipStrategy
+from .engine import StrategyEngine
+from .factor_scorer import FactorScorer
+from .trend import TrendStrategy
+from .yaml_executor import YamlStrategyExecutor
+from .yaml_loader import get_yaml_loader
 
 
 class StrategyDispatcher:

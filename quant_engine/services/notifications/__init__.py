@@ -1,8 +1,8 @@
 from .base import BaseNotifier
-from .wechat import WeChatNotifier
 from .feishu import FeishuNotifier
-from .telegram import TelegramNotifier
 from .manager import NotificationManager
+from .telegram import TelegramNotifier
+from .wechat import WeChatNotifier
 
 __all__ = [
     "BaseNotifier",

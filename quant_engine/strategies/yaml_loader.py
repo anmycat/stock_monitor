@@ -1,7 +1,8 @@
 """YAML策略加载器 - 从YAML文件加载策略配置"""
-import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import yaml
 from loguru import logger
 
 

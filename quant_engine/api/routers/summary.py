@@ -2,14 +2,15 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 
 from .._shared import (
-    datacenter, verify_api_key, _SUMMARY_TYPES,
+    _SUMMARY_TYPES,
+    datacenter,
+    verify_api_key,
 )
 from ..schemas import AISummaryResponse
-
 
 router = APIRouter(prefix="/api")
 

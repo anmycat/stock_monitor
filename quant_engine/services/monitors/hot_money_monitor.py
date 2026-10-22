@@ -9,7 +9,9 @@
 """
 import time
 from typing import Dict
+
 from loguru import logger
+
 from ...data.repositories import MarketDataRepository
 
 # 降级提示只打一次，避免盘中 120s 循环刷屏

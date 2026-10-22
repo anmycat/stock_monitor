@@ -1,7 +1,9 @@
+from typing import List, Optional
+
 import pandas as pd
-from typing import Optional, List
-from ..models.signal import Signal, SignalAction, SignalLevel
+
 from ..models.market import MarketState
+from ..models.signal import Signal, SignalAction, SignalLevel
 
 
 class TrendStrategy:

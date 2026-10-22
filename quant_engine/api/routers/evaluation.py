@@ -2,15 +2,17 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
 from .._shared import (
-    verify_api_key, post_evaluation, _RUN_ID_RE,
+    _RUN_ID_RE,
+    post_evaluation,
+    verify_api_key,
 )
 from ..schemas import PostEvalResponse
-
 
 router = APIRouter(prefix="/api")
 

@@ -14,13 +14,12 @@
 """
 import threading
 import time
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 from loguru import logger
 
-from ...utils.code_utils import split_code, MARKET_SH, MARKET_SZ
-
+from ...utils.code_utils import MARKET_SH, MARKET_SZ, split_code
 
 # 候选服务器池（2026-10-20 实测：117.34.114.x 集群协议级可用，置顶优先；
 # 其余为 rust-tdx 2026-07 / autoxd 2026-09 公开列表，TCP 通但协议多不可用，

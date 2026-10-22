@@ -1,10 +1,12 @@
-import pandas as pd
 from typing import Dict
+
+import pandas as pd
 from loguru import logger
-from ...models.market import MarketState, MarketType
+
 from ...data.repositories import MarketDataRepository
-from ...utils.indicators import calculate_indicators
 from ...models.hmm_detector import get_regime_detector
+from ...models.market import MarketState, MarketType
+from ...utils.indicators import calculate_indicators
 
 
 class MarketAnalyzer:

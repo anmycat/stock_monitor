@@ -36,8 +36,13 @@ from loguru import logger
 
 from ..data.repositories import MarketDataRepository
 from ..data.sources.tencent import TencentSource
-from ..utils.code_utils import (normalize_code, is_valid_code, code_key,
-                                split_code, market_by_symbol)
+from ..utils.code_utils import (
+    code_key,
+    is_valid_code,
+    market_by_symbol,
+    normalize_code,
+    split_code,
+)
 from .monitors.etf_monitor import HOT_ETFS
 
 # 严重度

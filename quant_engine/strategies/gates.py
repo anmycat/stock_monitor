@@ -1,5 +1,6 @@
+from typing import List, Tuple
+
 import pandas as pd
-from typing import Tuple, List
 from loguru import logger
 
 

@@ -1,12 +1,13 @@
 """东方财富数据源"""
 import re
 import time
-import requests
-import pandas as pd
 from typing import List, Optional
+
+import pandas as pd
+import requests
 from loguru import logger
 
-from ...utils.code_utils import to_secid, market_by_symbol
+from ...utils.code_utils import market_by_symbol, to_secid
 
 
 class EastMoneySource:

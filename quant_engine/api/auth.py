@@ -1,9 +1,11 @@
 """API认证模块 - Token验证"""
+from typing import Optional
+
 from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader
-from typing import Optional
-from ..config import get_settings
 from loguru import logger
+
+from ..config import get_settings
 
 # API Key认证头
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)

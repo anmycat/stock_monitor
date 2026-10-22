@@ -1,6 +1,8 @@
+from typing import Dict, List
+
 import numpy as np
 import pandas as pd
-from typing import List, Dict
+
 from ..utils.helpers import calculate_max_drawdown
 
 

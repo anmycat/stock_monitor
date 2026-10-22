@@ -1,9 +1,11 @@
-import pandas as pd
 from typing import Dict
-from .filters import AntiSignalFilter
-from .gates import GateModel
+
+import pandas as pd
+
 from ..models.market import MarketState
 from ..utils.indicators import calculate_indicators
+from .filters import AntiSignalFilter
+from .gates import GateModel
 
 
 class StrategyEngine:

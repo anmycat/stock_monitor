@@ -1,6 +1,6 @@
 from .engine import BacktestEngine
-from .metrics import calculate_metrics
 from .evaluator import BacktestEvaluator
+from .metrics import calculate_metrics
 from .overfit_checker import OverfitChecker
 from .post_evaluation import PostEvaluation
 

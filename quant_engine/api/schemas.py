@@ -2,9 +2,10 @@
 
 跨域复用，域 router 经 `from ..schemas import X` 引用。
 """
-from typing import List, Optional, Dict
-from pydantic import BaseModel, field_validator, model_validator
 import re
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, field_validator, model_validator
 
 # 入参校验正则（随 BacktestRequest 从 routes.py 迁入）
 _CODE_RE = re.compile(r'^\d{6}\.(SZ|SH|BJ)$')

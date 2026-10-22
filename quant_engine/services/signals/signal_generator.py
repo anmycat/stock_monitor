@@ -1,16 +1,18 @@
 from datetime import datetime
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
+
 from loguru import logger
+
 from ...data.repositories import MarketDataRepository
-from ...strategies.registry import StrategyRegistry
 from ...models.market import MarketState
 from ...models.signal import Signal, SignalAction
+from ...strategies.registry import StrategyRegistry
 from ..market.market_analyzer import MarketAnalyzer
-from ..risk.position import PositionManager
-from ..risk.risk import RiskManager
-from ..risk.cooldown import CooldownManager
-from ..risk.position_sizer import get_position_sizer
 from ..notifications.manager import NotificationManager
+from ..risk.cooldown import CooldownManager
+from ..risk.position import PositionManager
+from ..risk.position_sizer import get_position_sizer
+from ..risk.risk import RiskManager
 
 
 class SignalGenerator:

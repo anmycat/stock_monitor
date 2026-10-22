@@ -1,11 +1,13 @@
 """通知管理器 - 统一管理所有通知渠道"""
 from typing import List
+
 from loguru import logger
+
 from ...config import get_settings
 from .base import BaseNotifier
-from .wechat import WeChatNotifier
 from .feishu import FeishuNotifier
 from .telegram import TelegramNotifier
+from .wechat import WeChatNotifier
 
 
 class DingTalkNotifier(BaseNotifier):
@@ -21,10 +23,10 @@ class DingTalkNotifier(BaseNotifier):
         if not self.enabled:
             return False
         try:
-            import time
-            import hmac
-            import hashlib
             import base64
+            import hashlib
+            import hmac
+            import time
             import urllib.parse
 
             url = self.webhook_url
@@ -143,5 +145,5 @@ class NotificationManager:
 
 
 # 导入这些类以便在manager中使用
-from ...models.signal import SignalAction
 from ...models.market import MarketType
+from ...models.signal import SignalAction

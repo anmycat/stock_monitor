@@ -1,7 +1,9 @@
 """LLM排序层 - 在L1筛选后加入LLM对候选股的排序推理（借鉴 AlphaSift L2）"""
 import json
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 from loguru import logger
+
 from .ai_summary import AISummary
 
 

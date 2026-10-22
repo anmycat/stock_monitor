@@ -1,9 +1,11 @@
 """热点发现系统 - 板块热度排名 + 龙头股关联（借鉴 AlphaSift Hotspot）"""
 import time
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 from loguru import logger
-from .sector_monitor import SectorMonitor
+
 from ...data.repositories import MarketDataRepository
+from .sector_monitor import SectorMonitor
 
 
 class Hotspot:

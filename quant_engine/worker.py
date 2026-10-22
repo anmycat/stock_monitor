@@ -1,16 +1,18 @@
 import time
 from datetime import datetime, timedelta
 from typing import Dict
+
 from loguru import logger
+
+from .backtest.post_evaluation import PostEvaluation
 from .data.repositories import MarketDataRepository
-from .services.signals.signal_generator import SignalGenerator
-from .services.market.market_analyzer import MarketAnalyzer
-from .services.market.market_alert import MarketAlert
 from .services.ai.ai_summary import AISummary
+from .services.market.market_alert import MarketAlert
+from .services.market.market_analyzer import MarketAnalyzer
 from .services.monitors.burst_monitor import BurstMonitor
 from .services.notifications.manager import NotificationManager
+from .services.signals.signal_generator import SignalGenerator
 from .utils.calendar import is_trading_day
-from .backtest.post_evaluation import PostEvaluation
 
 
 def get_current_phase() -> str:
@@ -73,9 +75,10 @@ def get_sleep_seconds(phase: str) -> int:
 def push_summary_to_web(summary_type: str, title: str, summary_data: Dict):
     """通过WebSocket推送AI总结到Web页面"""
     try:
-        from .api.websocket_enhanced import manager
         import asyncio
         import json
+
+        from .api.websocket_enhanced import manager
         
         ws_data = {
             'type': 'ai_summary',

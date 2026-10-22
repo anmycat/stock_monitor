@@ -1,7 +1,9 @@
 """数据源管理器 - 多数据源轮询、冷却、随机延迟"""
-import time
 import random
-from typing import List, Dict, Optional, Callable
+import time
+from collections.abc import Callable
+from typing import Dict, List, Optional
+
 from loguru import logger
 
 

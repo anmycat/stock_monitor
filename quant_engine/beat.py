@@ -1,6 +1,8 @@
 import time
 from datetime import datetime, timedelta
+
 from loguru import logger
+
 from .data.repositories import MarketDataRepository
 from .services.market.market_analyzer import MarketAnalyzer
 from .services.notifications.manager import NotificationManager

@@ -1,7 +1,8 @@
-from enum import Enum
-from pydantic import BaseModel
-from typing import List, Optional, Dict
 from datetime import datetime
+from enum import Enum
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel
 
 
 class SignalAction(str, Enum):

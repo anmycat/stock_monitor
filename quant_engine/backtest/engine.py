@@ -1,9 +1,11 @@
+from typing import Dict, List
+
 import pandas as pd
-from typing import List, Dict
 from loguru import logger
+
 from ..data.repositories import MarketDataRepository
-from ..strategies.dispatcher import StrategyDispatcher
 from ..models.market import MarketState, MarketType
+from ..strategies.dispatcher import StrategyDispatcher
 from .metrics import calculate_metrics
 
 
