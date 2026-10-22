@@ -136,7 +136,7 @@ async def shutdown_event():
         from .api.dependencies import datacenter
         datacenter.cache.close()
         logger.info("Redis连接已关闭")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"关闭Redis连接时出错: {e}")
 
 

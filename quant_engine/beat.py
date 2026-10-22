@@ -56,7 +56,7 @@ def main():
                     logger.debug(f"Non-trading, sleeping {sleep_sec}s")
                 last_market_type = None
                 time.sleep(min(sleep_sec, 120))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 任务兜底
             logger.error(f"Beat error: {e}")
             time.sleep(60)
 

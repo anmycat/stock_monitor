@@ -112,7 +112,7 @@ class PositionSizer:
                         'source': 'dynamic',
                         'trade_count': count
                     }
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 降级默认
             logger.debug(f"获取策略 {strategy_name} Kelly参数失败: {e}")
         
         return {

@@ -59,7 +59,7 @@ class BurstMonitor:
             self.active_pool = df.head(self.target_count)['code'].tolist()
             logger.info(f"Active pool refreshed: {len(self.active_pool)} stocks")
             return self.active_pool
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Refresh active pool error: {e}")
             return self.active_pool or []
 
@@ -86,7 +86,7 @@ class BurstMonitor:
                     'name': row.get('name', ''),
                 }
             return snapshot
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Take snapshot error: {e}")
             return self.last_snapshot
 

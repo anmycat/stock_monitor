@@ -104,7 +104,7 @@ class CodeGuard:
                                 'name': row.get('name', ''),
                                 'source': 'stock_list',
                             }
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 缓存IO
                 logger.debug(f"CodeGuard stock_list collect error: {e}")
 
         return targets
@@ -134,7 +134,7 @@ class CodeGuard:
                     code = normalize_code(row.get('code', ''))
                     if code and code not in result:
                         result[code] = row.get('name', '')
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"CodeGuard holdings collect error: {e}")
         return result
 
@@ -183,7 +183,7 @@ class CodeGuard:
                         'name': str(row.get('name', '') or ''),
                         'price': float(row.get('price', 0) or 0),
                     }
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.warning(f"CodeGuard authoritative batch error: {e}")
             time.sleep(self.REQUEST_INTERVAL)
         return authoritative
@@ -417,7 +417,7 @@ class CodeGuard:
             logger.warning(
                 f"CodeGuard {mode}: {report['issue_count']} issues "
                 f"(error={report['error_count']} warning={report['warning_count']}), pushed")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"CodeGuard push error: {e}")
         return report
 
@@ -469,7 +469,7 @@ class CodeGuard:
                 if names:
                     self.datacenter.cache.set(self.KEY_NAMES, names,
                                               ttl=self.TTL_NAMES)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"CodeGuard save report error: {e}")
 
     def get_report(self) -> Optional[Dict]:
@@ -478,7 +478,7 @@ class CodeGuard:
             return None
         try:
             return self.datacenter.cache.get(self.KEY_REPORT)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"CodeGuard get report error: {e}")
             return None
 
@@ -530,7 +530,7 @@ class CodeGuard:
             return None
         try:
             return self.datacenter.cache.get(f'quote:{code}')
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.debug(f"CodeGuard cached quote error [{code}]: {e}")
             return None
 

@@ -40,7 +40,7 @@ class FactorScorer:
             from ..models.hmm_detector import get_regime_detector
             hmm = get_regime_detector()
             state = hmm._last_state
-        except Exception:
+        except Exception:  # noqa: BLE001 降级默认
             state = 2  # 默认震荡
 
         adjustments = {

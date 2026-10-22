@@ -62,7 +62,7 @@ class ThreeLayerFunnel:
             try:
                 scored_candidates = self.llm_ranker.rank(scored_candidates, max_candidates=10)
                 logger.info(f"L2.5 LLM ranking: {len(scored_candidates)} candidates")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.warning(f"LLM ranking skipped: {e}")
 
         # L3: 深度分析（Top N）
@@ -72,7 +72,7 @@ class ThreeLayerFunnel:
         if self.context_enricher is not None:
             try:
                 final_candidates = self.context_enricher.enrich_candidates(final_candidates, max_candidates=5)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.warning(f"Candidate context enrichment failed: {e}")
 
         logger.info(f"L3 deep analysis: {len(final_candidates)} candidates")
@@ -99,7 +99,7 @@ class ThreeLayerFunnel:
                         'name': stock.get('name', code),
                         'df': df,
                     })
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.debug(f"L1 filter error for {code}: {e}")
 
         return candidates
@@ -146,7 +146,7 @@ class ThreeLayerFunnel:
                     candidate['reasons'] = reasons
                     candidate['indicators'] = indicators
                     scored.append(candidate)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.debug(f"L2 score error for {candidate['code']}: {e}")
 
         # 按分数排序
@@ -207,7 +207,7 @@ class ThreeLayerFunnel:
                     'stop_loss_price': df['close'].iloc[-1] * (1 - stop_loss),
                 }
                 results.append(analysis)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.error(f"L3 analysis error for {candidate['code']}: {e}")
 
         return results

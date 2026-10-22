@@ -60,7 +60,7 @@ class PortfolioManager:
             trades_data = self.cache.get("portfolio:trades")
             if trades_data:
                 self.trades = trades_data
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Load portfolio error: {e}")
 
     def _save_to_cache(self):
@@ -69,7 +69,7 @@ class PortfolioManager:
             positions_data = {code: pos.to_dict() for code, pos in self.positions.items()}
             self.cache.set("portfolio:positions", positions_data, ttl=86400)
             self.cache.set("portfolio:trades", self.trades[-100:], ttl=86400)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Save portfolio error: {e}")
 
     def add_position(self, code: str, name: str, price: float, quantity: float, strategy: str) -> bool:

@@ -54,7 +54,7 @@ class CandidateContext:
                 
                 enriched.append(candidate)
                 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 外部调用
                 logger.error(f"Enrich candidate {code} error: {e}")
                 enriched.append(candidate)
         

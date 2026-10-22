@@ -87,6 +87,6 @@ class GateModel:
             if last_3['close'].is_monotonic_increasing:
                 return True, "分钟连续上涨"
             return True, "分钟触发通过"
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 降级默认
             logger.warning(f"Minute trigger check failed for {code}: {e}")
             return True, "分钟检查异常"

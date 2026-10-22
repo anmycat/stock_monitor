@@ -38,7 +38,7 @@ class BacktestEngine:
                 if code_equity:
                     current_capital = code_equity[-1]
                     equity_curve.extend(code_equity[1:])
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 单项跳过
                 logger.error(f"Backtest {code} error: {e}")
         metrics = calculate_metrics(trades, equity_curve)
         return {

@@ -153,7 +153,7 @@ class YamlStrategyExecutor:
             else:
                 logger.warning(f"Unknown operator: {op}")
                 return False
-        except Exception as e:
+        except (TypeError, ValueError) as e:
             logger.error(f"Condition evaluation error: {e}")
             return False
 

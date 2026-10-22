@@ -211,7 +211,7 @@ class StrategyDispatcher:
         try:
             factors = self.factor_scorer.calculate_factors(df, indicators)
             factor_score = factors.get('composite_score', 50)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 降级默认
             logger.warning(f"FactorScorer failed: {e}")
             return signal
         
