@@ -17,6 +17,7 @@
 - 36氪/和讯/网易 RSS（返回 HTML 非 XML）
 """
 from __future__ import annotations
+
 import json
 import re
 import time
@@ -24,7 +25,6 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 from xml.etree import ElementTree
 
 import pandas as pd
@@ -62,7 +62,7 @@ class NewsItem:
         }
 
 
-def _http_get(url: str, headers: dict = None, timeout: int = DEFAULT_TIMEOUT,
+def _http_get(url: str, headers: dict | None = None, timeout: int = DEFAULT_TIMEOUT,
               retry: int = DEFAULT_RETRY) -> str | None:
     """带重试的GET，失败返回None（由调用方降级）"""
     hdr = {'User-Agent': DEFAULT_UA}
@@ -74,7 +74,7 @@ def _http_get(url: str, headers: dict = None, timeout: int = DEFAULT_TIMEOUT,
             req = urllib.request.Request(url, headers=hdr)
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return resp.read().decode('utf-8', 'replace')
-        except Exception as e:  # noqa: BLE001 - 数据源层必须容错
+        except Exception as e:
             last_err = e
             logger.debug(f"HTTP GET failed ({attempt}/{retry}) {url[:80]}: {e}")
             if attempt < retry:
@@ -83,7 +83,7 @@ def _http_get(url: str, headers: dict = None, timeout: int = DEFAULT_TIMEOUT,
     return None
 
 
-def _http_post_json(url: str, payload: dict, headers: dict = None,
+def _http_post_json(url: str, payload: dict, headers: dict | None = None,
                     timeout: int = DEFAULT_TIMEOUT, retry: int = DEFAULT_RETRY) -> dict | None:
     hdr = {'User-Agent': DEFAULT_UA, 'Content-Type': 'application/json'}
     if headers:
@@ -95,7 +95,7 @@ def _http_post_json(url: str, payload: dict, headers: dict = None,
                 url, data=json.dumps(payload).encode('utf-8'), headers=hdr)
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode('utf-8', 'replace'))
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             last_err = e
             logger.debug(f"HTTP POST failed ({attempt}/{retry}) {url[:80]}: {e}")
             if attempt < retry:
@@ -143,7 +143,7 @@ def parse_datetime(value) -> datetime | None:
     # pandas 兜底
     try:
         return pd.to_datetime(text).to_pydatetime()
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
@@ -159,7 +159,7 @@ class EastMoneyNewsSource:
     RANK = 1
     BASE = 'https://np-weblist.eastmoney.com/comm/web/getFastNewsList'
 
-    def __init__(self, columns: list[str] = None, page_size: int = 50):
+    def __init__(self, columns: list[str] | None = None, page_size: int = 50):
         self.columns = columns or ['101', '102', '103']
         self.page_size = page_size
 
@@ -257,7 +257,7 @@ class SinaLiveNewsSource:
     def _split_title(rich_text: str) -> tuple:
         """新浪富文本以【标题】开头，拆出标题与正文"""
         text = strip_html(rich_text)
-        m = re.match(r'^【([^】]{4,60})】\s*(.*)$', text, re.S)
+        m = re.match(r'^【([^】]{4,60})】\s*(.*)$', text, re.DOTALL)
         if m:
             return m.group(1).strip(), m.group(2).strip()
         return text[:40].strip(), text
@@ -385,7 +385,7 @@ class XTwitterNewsSource:
     RANK = 5
     URL = 'https://api.x.com/2/tweets/search/recent'
 
-    def __init__(self, bearer_token: str, query: str = None, max_results: int = 50):
+    def __init__(self, bearer_token: str, query: str | None = None, max_results: int = 50):
         self.bearer_token = bearer_token
         self.query = query or '$SPX OR $DJIA OR $NDX OR #stocks -is:retweet'
         self.max_results = min(max_results, 100)
@@ -439,7 +439,7 @@ class TongDaXinNewsSource:
     NAME = '通达信'
     RANK = 6
 
-    def __init__(self, endpoint: str, api_key: str, query: str = None):
+    def __init__(self, endpoint: str, api_key: str, query: str | None = None):
         self.endpoint = endpoint
         self.api_key = api_key
         self.query = query or '今日财经要闻 早间快讯'
@@ -522,7 +522,7 @@ class NewsSourceManager:
             if settings is None:
                 from ..config import get_settings
                 settings = get_settings()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"News settings load failed: {e}")
             settings = None
 
@@ -556,7 +556,7 @@ class NewsSourceManager:
         for src in self.sources:
             try:
                 items.extend(src.fetch())
-            except Exception as e:  # noqa: BLE001 - 单源故障必须隔离
+            except Exception as e:
                 logger.error(f"News source {getattr(src, 'NAME', src)} failed: {e}")
         # 按时间倒序（无时间的排最后）
         items.sort(key=lambda x: x.published_at or datetime.min, reverse=True)

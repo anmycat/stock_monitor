@@ -1,6 +1,6 @@
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 
@@ -73,7 +73,7 @@ class SignalGenerator:
             for s in signals:
                 if s.code in hot_codes:
                     s.score *= 1.05  # 热点板块 +5%
-        except Exception:  # noqa: BLE001 外部调用
+        except Exception:  # noqa: BLE001,S110 外部调用失败静默跳过（热点加权非关键路径）
             pass
 
         signals.sort(key=lambda s: s.score, reverse=True)

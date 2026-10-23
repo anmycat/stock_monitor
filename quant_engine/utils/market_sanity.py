@@ -156,6 +156,4 @@ def is_overview_sane(overview: dict) -> bool:
         return False
     if down == total and avg > 0:
         return False
-    if up == 0 and down == 0 and avg != 0:
-        return False
-    return True
+    return not (up == 0 and down == 0 and avg != 0)

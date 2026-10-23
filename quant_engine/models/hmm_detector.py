@@ -1,6 +1,5 @@
 """HMM市场状态检测器 — 替代简单枚举，5种精细状态识别"""
 from __future__ import annotations
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,7 +20,7 @@ class MarketRegimeDetector:
     输出5种状态：强牛/弱牛/震荡/弱熊/深熊
     """
     
-    STATE_LABELS = ["深熊", "弱熊", "震荡", "弱牛", "强牛"]
+    STATE_LABELS = ["深熊", "弱熊", "震荡", "弱牛", "强牛"]  # noqa: RUF012 类级只读常量，运行期无原地修改
     N_STATES = 5
     
     def __init__(self):

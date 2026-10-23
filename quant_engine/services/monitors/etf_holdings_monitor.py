@@ -10,9 +10,9 @@ ETF总份额申赎会导致全部成分股持股数同比例缩放而权重不�
 因此告警判定以权重变化为主、持股数变化需伴随权重同向变动，剔除被动缩放噪声。
 """
 from __future__ import annotations
+
 import time
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 
@@ -211,8 +211,8 @@ class ETFHoldingsMonitor:
     def format_changes_message(self, changes: dict) -> str:
         """生成钉钉/企微等markdown推送文案"""
         lines = [
-            f"**{changes['previous_quarter']} → {changes['current_quarter']}**"
-            f"（截止 {changes.get('current_report_date', '')}）",
+            (f"**{changes['previous_quarter']} → {changes['current_quarter']}**"
+            f"（截止 {changes.get('current_report_date', '')}）"),
             "",
         ]
 

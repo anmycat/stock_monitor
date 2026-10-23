@@ -6,9 +6,9 @@
 （B5 单一事实源）；源注册与容错仍在 data/source.py + source_manager.py。
 """
 from __future__ import annotations
+
 import threading
 import time
-from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -61,27 +61,21 @@ class MarketDataRepository:
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:
         cache_key = f"daily:{code}:{days}"
         cached = self.cache.get(cache_key)
-        if cached is not None:
-            df = pd.DataFrame(cached)
-            if validate_dataframe(df, f"daily:{code}"):
-                return df
+        if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"daily:{code}"):
+            return df
         df = self.source.get_daily_data(code, days)
-        if df is not None and not df.empty:
-            if validate_dataframe(df, f"daily:{code}"):
-                self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
+        if df is not None and not df.empty and validate_dataframe(df, f"daily:{code}"):
+            self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
         return df
 
     def get_minute_data(self, code: str, period: str = "5") -> pd.DataFrame:
         cache_key = f"scan:{code}:{period}"
         cached = self.cache.get(cache_key)
-        if cached is not None:
-            df = pd.DataFrame(cached)
-            if validate_dataframe(df, f"minute:{code}"):
-                return df
+        if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"minute:{code}"):
+            return df
         df = self.source.get_minute_data(code, period)
-        if df is not None and not df.empty:
-            if validate_dataframe(df, f"minute:{code}"):
-                self.cache.set(cache_key, df.to_dict(orient='records'), ttl=300)
+        if df is not None and not df.empty and validate_dataframe(df, f"minute:{code}"):
+            self.cache.set(cache_key, df.to_dict(orient='records'), ttl=300)
         return df
 
     def get_realtime_quote(self, codes: list[str]) -> pd.DataFrame:
@@ -150,13 +144,10 @@ class MarketDataRepository:
         cache_key = "market_overview"
         cached = self.cache.get(cache_key)
 
-        # 非交易时间直接返回缓存数据，不更新
+        # 非交易时间直接返回缓存数据，不更新（缓存为空则获取一次数据）
         phase = get_market_phase()
-        if phase in ["MORNING_CLOSED", "AFTER_HOURS", "WEEKEND", "PRE_MARKET"]:
-            if cached is not None:
-                return cached
-            # 如果缓存为空，获取一次数据
-            pass
+        if phase in ["MORNING_CLOSED", "AFTER_HOURS", "WEEKEND", "PRE_MARKET"] and cached is not None:
+            return cached
 
         # 交易时间内且缓存有效，直接返回
         if cached is not None:
@@ -176,10 +167,10 @@ class MarketDataRepository:
             return {'total': 0, 'up': 0, 'down': 0, 'flat': 0, 'avg_change': 0, 'suspect': True}
 
         overview = {
-            'total': int(len(df)),
-            'up': int(len(df[df['change_pct'] > 0])),
-            'down': int(len(df[df['change_pct'] < 0])),
-            'flat': int(len(df[df['change_pct'] == 0])),
+            'total': len(df),
+            'up': len(df[df['change_pct'] > 0]),
+            'down': len(df[df['change_pct'] < 0]),
+            'flat': len(df[df['change_pct'] == 0]),
             'avg_change': round(float(df['change_pct'].mean()), 2),
             'suspect': False,
         }

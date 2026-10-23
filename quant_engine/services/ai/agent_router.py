@@ -110,7 +110,7 @@ async def route_message(message: str, session_id: str = "default", datacenter=No
             return {'type': 'chat', 'text': f'未识别意图: {message}'}
     except Exception as e:  # noqa: BLE001 任务兜底
         logger.error(f"Agent route error: {e}")
-        return {'type': 'chat', 'text': f'处理出错: {str(e)}'}
+        return {'type': 'chat', 'text': f'处理出错: {e!s}'}
 
 
 async def _handle_analyze_stock(query: str, datacenter, signal_generator=None) -> dict:
@@ -233,7 +233,7 @@ async def _handle_free_chat(message: str, session: dict, datacenter) -> dict:
     if not ai.models:
         return {'type': 'chat', 'text': '当前未配置AI模型，无法进行自由对话。'}
 
-    cfg = list(ai.models.values())[0]
+    cfg = next(iter(ai.models.values()))
     system = "你是量化交易助手，擅长A股分析。可调用以下技能：分析个股、查询热点、策略推荐、市场概览、信号扫描、后验评估。"
 
     # 构建上下文

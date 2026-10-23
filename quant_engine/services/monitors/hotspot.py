@@ -1,7 +1,7 @@
 """热点发现系统 - 板块热度排名 + 龙头股关联（借鉴 AlphaSift Hotspot）"""
 from __future__ import annotations
+
 import time
-from typing import Optional
 
 from loguru import logger
 

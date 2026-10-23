@@ -160,7 +160,7 @@ def get_kelly_info():
         # 各策略Kelly参数
         strategy_perf = tracker.get_strategy_performance()
         strategies_kelly = {}
-        for strategy_name, stats in strategy_perf.items():
+        for strategy_name in strategy_perf:
             params = sizer.get_strategy_kelly_params(strategy_name)
             kelly_result = sizer.calculate_kelly_position(
                 params['win_rate'],

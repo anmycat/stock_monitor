@@ -1,7 +1,7 @@
 """持仓管理器 - 记录持仓、盈亏跟踪"""
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 

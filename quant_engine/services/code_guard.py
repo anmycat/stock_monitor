@@ -29,9 +29,9 @@ ETF 监控匹配失效、持仓 diff 键错乱等问题。
 推送策略：仅有 🔴/🟡 时推送钉钉（避免每日全绿骚扰）；全绿记日志。
 """
 from __future__ import annotations
+
 import time
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 
@@ -490,7 +490,7 @@ class CodeGuard:
 
     # ------------------------------------------------------------------ 文案
 
-    _TYPE_LABELS = {
+    _TYPE_LABELS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'invalid_format': '代码格式非法',
         'missing': '行情源查无此码',
         'market_mismatch': '市场标记错判',
@@ -506,8 +506,8 @@ class CodeGuard:
         title = f"🛡️ 代码一致性{mode_label}: {report['issue_count']}个问题"
         lines = [
             f"**{mode_label}报告**",
-            f"校验目标 {report['checked']} 只，命中行情 {report['quoted']} 只，"
-            f"耗时 {report['duration_sec']}s",
+            (f"校验目标 {report['checked']} 只，命中行情 {report['quoted']} 只，"
+            f"耗时 {report['duration_sec']}s"),
             "",
         ]
 

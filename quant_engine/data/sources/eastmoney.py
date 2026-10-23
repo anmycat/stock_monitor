@@ -1,8 +1,8 @@
 """东方财富数据源"""
 from __future__ import annotations
+
 import re
 import time
-from typing import Optional
 
 import pandas as pd
 import requests
@@ -16,7 +16,7 @@ class EastMoneySource:
 
     BASE_URL = "https://push2.eastmoney.com/api/qt/clist/get"
 
-    HEADERS = {
+    HEADERS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://quote.eastmoney.com/',
     }
@@ -66,7 +66,7 @@ class EastMoneySource:
                 if response.status_code == 200:
                     return response.json()
                 last_err = f"HTTP {response.status_code}"
-            except Exception as e:  # noqa: BLE001 - 重试循环内统一记录
+            except Exception as e:
                 last_err = e
                 time.sleep(0.5 * (i + 1))
         logger.warning(f"EM request failed after {tries} tries: {last_err}")

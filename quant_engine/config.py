@@ -68,6 +68,6 @@ class Settings(BaseSettings):
         return [s.strip() for s in self.NEWS_RSS_FEEDS.split(',') if s.strip()]
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     return Settings()

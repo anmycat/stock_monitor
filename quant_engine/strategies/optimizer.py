@@ -23,7 +23,7 @@ class StrategyOptimizer:
     """策略权重优化器"""
     
     # 默认权重配置
-    DEFAULT_WEIGHTS = {
+    DEFAULT_WEIGHTS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'trend': 0.5,
         'bottom_fishing': 0.3,
         'momentum': 0.1,
@@ -31,7 +31,7 @@ class StrategyOptimizer:
     }
     
     # 不同市场状态下的最优权重配置
-    MARKET_WEIGHTS = {
+    MARKET_WEIGHTS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         MarketType.BULL: {
             'trend': 0.7,
             'bottom_fishing': 0.2,
@@ -130,11 +130,10 @@ class StrategyOptimizer:
             # 熊市: 降低所有策略权重(防守)
             adjustment['trend'] = -0.1
             adjustment['bottom_fishing'] = -0.1
-        elif market_state.type == MarketType.SIDEWAYS:
-            # 震荡市: 提升抄底和均值回归
-            if abs(score) < 20:
-                adjustment['bottom_fishing'] = 0.1
-                adjustment['mean_reversion'] = 0.05
+        elif market_state.type == MarketType.SIDEWAYS and abs(score) < 20:
+            # 震荡市(评分接近中性): 提升抄底和均值回归
+            adjustment['bottom_fishing'] = 0.1
+            adjustment['mean_reversion'] = 0.05
         
         return adjustment
     

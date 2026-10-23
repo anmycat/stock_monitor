@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 from ...models.market import MarketState
 from ...models.signal import Signal
 
@@ -11,7 +13,7 @@ class PositionManager:
         self.max_position = 0.8
         self.min_position = 0.1
 
-    def calculate_position(self, signal: Signal, market: MarketState, equity_curve: list[float] = None) -> float:
+    def calculate_position(self, signal: Signal, market: MarketState, equity_curve: list[float] | None = None) -> float:
         base = self.base_position
         market_factor = market.factor
         signal_factor = signal.level_factor
@@ -20,7 +22,7 @@ class PositionManager:
         position = max(self.min_position, min(self.max_position, position))
         return position
 
-    def _calculate_equity_factor(self, equity_curve: list[float] = None) -> float:
+    def _calculate_equity_factor(self, equity_curve: list[float] | None = None) -> float:
         if not equity_curve or len(equity_curve) < 2:
             return 1.0
         current = equity_curve[-1]
@@ -41,7 +43,7 @@ class PositionManager:
         else:
             return 0.7
 
-    def calculate_position_size(self, signal: Signal, market: MarketState, equity_curve: list[float] = None) -> float:
+    def calculate_position_size(self, signal: Signal, market: MarketState, equity_curve: list[float] | None = None) -> float:
         position_pct = self.calculate_position(signal, market, equity_curve)
         position_size = self.current_capital * position_pct
         return position_size

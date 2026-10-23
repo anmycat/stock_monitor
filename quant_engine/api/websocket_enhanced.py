@@ -3,6 +3,7 @@ WebSocket连接管理器 - 增强版支持服务器主动Push
 优化: 增量更新 + 批量推送 + 消息优先级 + AI预测活跃度
 """
 from __future__ import annotations
+
 import asyncio
 import base64
 import gzip
@@ -12,7 +13,7 @@ import re
 import uuid
 from datetime import datetime
 from enum import IntEnum
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from loguru import logger

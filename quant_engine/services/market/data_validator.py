@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 import numpy as np
@@ -26,9 +28,8 @@ class DataValidator:
         if df.isnull().any().any():
             null_cols = df.columns[df.isnull().any()].tolist()
             errors.append(f"{code}: 存在空值 {null_cols}")
-        if 'close' in df.columns:
-            if (df['close'] <= 0).any():
-                errors.append(f"{code}: 存在非正数收盘价")
+        if 'close' in df.columns and (df['close'] <= 0).any():
+            errors.append(f"{code}: 存在非正数收盘价")
         if all(col in df.columns for col in ['high', 'low', 'close']):
             invalid_hl = df[df['high'] < df['low']]
             if not invalid_hl.empty:
@@ -90,7 +91,7 @@ class DataValidator:
         is_valid = len(errors) == 0
         return is_valid, errors
 
-    def validate_calculation(self, calc_name: str, inputs: dict, output: float, expected_range: tuple[float, float] = None) -> tuple[bool, str]:
+    def validate_calculation(self, calc_name: str, inputs: dict, output: float, expected_range: tuple[float, float] | None = None) -> tuple[bool, str]:
         if expected_range:
             min_val, max_val = expected_range
             if not (min_val <= output <= max_val):

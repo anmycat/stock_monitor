@@ -28,12 +28,10 @@ def calculate_max_drawdown(equity_curve: list) -> float:
     peak = equity_curve[0]
     max_dd = 0.0
     for value in equity_curve:
-        if value > peak:
-            peak = value
+        peak = max(peak, value)
         if peak > 0:
             dd = (peak - value) / peak
-            if dd > max_dd:
-                max_dd = dd
+            max_dd = max(max_dd, dd)
     return max_dd
 
 

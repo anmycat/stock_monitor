@@ -15,6 +15,8 @@ AI智能分析总结服务 - 多模型融合架构
 2. 全日总结（18:15）: 全天复盘 + 技术面分析 + 明日展望
 3. 实时分析: 根据市场变化动态生成
 """
+from __future__ import annotations
+
 import concurrent.futures
 import json
 import time
@@ -106,11 +108,11 @@ class AISummary:
     # === 公开接口 ===
 
     def generate_summary(self, market: MarketState, signals: list[Signal],
-                         sectors: list[dict] = None,
+                         sectors: list[dict] | None = None,
                          summary_type: str = "general",
-                         alerts: list[dict] = None,
-                         etf_data: list[dict] = None,
-                         news: list[dict] = None) -> dict:
+                         alerts: list[dict] | None = None,
+                         etf_data: list[dict] | None = None,
+                         news: list[dict] | None = None) -> dict:
         """
         生成AI智能分析总结（多模型融合）
 
@@ -238,7 +240,7 @@ class AISummary:
         # 用主模型做合并
         primary = self.models.get(self.primary_model)
         if not primary:
-            primary = list(self.models.values())[0]
+            primary = next(iter(self.models.values()))
 
         try:
             merge_response = self._call_single_model(
@@ -730,8 +732,7 @@ class AISummary:
             text = ai_text.strip()
             if text.startswith('```'):
                 text = text.split('\n', 1)[1] if '\n' in text else text[3:]
-            if text.endswith('```'):
-                text = text[:-3]
+            text = text.removesuffix('```')
             text = text.strip()
 
             data = json.loads(text)
@@ -800,7 +801,7 @@ class AISummary:
 
     # === 本地降级生成 ===
 
-    def _generate_local(self, market: MarketState, signals: list[Signal], sectors: list[dict] = None) -> dict:
+    def _generate_local(self, market: MarketState, signals: list[Signal], sectors: list[dict] | None = None) -> dict:
         """本地生成总结（所有API不可用时的降级方案）"""
         type_desc = {
             MarketType.BULL: "牛市", MarketType.BULL_WEAK: "弱牛",

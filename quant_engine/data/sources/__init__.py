@@ -16,18 +16,18 @@ from .sina import SinaSource
 from .tencent import TencentSource
 
 __all__ = [
-    "EastMoneySource",
-    "TencentSource",
-    "SinaSource",
     "EastMoneyFundHoldingsSource",
+    "EastMoneyNewsSource",
+    "EastMoneySource",
     "NewsItem",
     "NewsSourceManager",
-    "EastMoneyNewsSource",
-    "TongHuaShunNewsSource",
-    "SinaLiveNewsSource",
     "RssNewsSource",
-    "XTwitterNewsSource",
+    "SinaLiveNewsSource",
+    "SinaSource",
+    "TencentSource",
     "TongDaXinNewsSource",
-    "strip_html",
+    "TongHuaShunNewsSource",
+    "XTwitterNewsSource",
     "parse_datetime",
+    "strip_html",
 ]

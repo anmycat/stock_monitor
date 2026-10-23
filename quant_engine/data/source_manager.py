@@ -1,9 +1,9 @@
 """数据源管理器 - 多数据源轮询、冷却、随机延迟"""
 from __future__ import annotations
+
 import random
 import time
 from collections.abc import Callable
-from typing import Optional
 
 from loguru import logger
 
@@ -22,9 +22,7 @@ class SourceStatus:
     def is_available(self, cooldown_seconds: int = 300) -> bool:
         """检查数据源是否可用"""
         now = time.time()
-        if now < self.cooldown_until:
-            return False
-        return True
+        return not now < self.cooldown_until
 
     def record_success(self):
         """记录成功请求"""
@@ -65,7 +63,7 @@ class SourceManager:
         """注册数据源"""
         self.sources[name] = SourceStatus(name)
 
-    def get_available_source(self, preferred: str = None) -> str | None:
+    def get_available_source(self, preferred: str | None = None) -> str | None:
         """获取可用的数据源"""
         if preferred and preferred in self.sources:
             source = self.sources[preferred]
@@ -132,11 +130,10 @@ class SourceManager:
         import inspect
         try:
             sig = inspect.signature(func)
-            if 'timeout' in sig.parameters or any(
+            if ('timeout' in sig.parameters or any(
                 p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-            ):
-                if 'timeout' not in kwargs:
-                    kwargs['timeout'] = timeout
+            )) and 'timeout' not in kwargs:
+                kwargs['timeout'] = timeout
         except (ValueError, TypeError):
             pass
 
@@ -147,7 +144,7 @@ class SourceManager:
                     self.add_random_delay()
                 result = func(*args, **kwargs)
                 if result is not None:
-                    if hasattr(result, "empty") and getattr(result, "empty"):
+                    if hasattr(result, "empty") and result.empty:
                         raise ValueError(f"{source_name} returned empty dataframe")
                     source.record_success()
                     return result

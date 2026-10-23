@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "3.9",
+  "version": "4.0",
   "date": "2026-10-22",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -287,5 +287,17 @@
     "bug_found_in_transit": "websocket_enhanced.py 函数内 from ._shared import signal_generator 与模块级同名 import 冲突触发 F823（局部变量赋值前引用）——删除函数内 import 改直接用 L17 模块级导入",
     "validation": "架构审计 5 处违宪边全清（依赖边 273→271：-5 违宪边 +3 L0→L1 合法注入边，增量对账一致）；ruff F/E9=0；导入冒烟 41 端点+注入链路就位；全量 14 测试文件 172 例全绿（test_eastmoney 脚本恢复拿到东财真实数据，两脚本 EXIT=0）；API 冒烟 4/4 200",
     "docs_synced": "prd/15 v1.2 执行记录链（补 P3 hash f20795b8 + P4 记录）、manifest v3.9(D39)"
+  },
+  "d40_refactor_p5_done_2026_10_23": {
+    "date": "2026-10-23",
+    "title": "P5 风格现代化完成：ruff 全量 1278 项 → 0",
+    "scope": "prd/15 §3.2 阶段六（BLE001 分级 + 延迟导入 + 全量现代化 + 收尾）",
+    "p5_a": "A 类外部边界宽捕获 106 处 BLE001 文件级 per-file-ignores 声明（ruff.toml，仅 per-file-ignores 默认规则集不变）：routers 12 域 38 + websocket 15 + cache 10 + sources 21 + notifications 4 + ai 5 + news_service 6 + calendar 3 + hmm 2 + source_manager 1",
+    "p5_b": "B 类业务逻辑 59 处逐处分级：收窄 4 处（yaml_loader→(OSError,yaml.YAMLError)/registry→(KeyError,TypeError,ValueError)/yaml_executor→(TypeError,ValueError)/signal_generator→(KeyError,TypeError,ValueError)）+ noqa 55 处（任务兜底 13/缓存 IO 14/外部调用 19/单项跳过 6/降级默认 3，逐处附理由标签）",
+    "p5_c_d_e": "import 区卫生 I001 97 处；注解现代化 UP006 579 处（List/Dict/Tuple→PEP585，py3.9 运行时安全）+ UP035 120 处弃用 import 随 UP006 成死 import 经 F401 清除；UP045/RUF013 149 处：33 个含 Optional 文件加 from __future__ import annotations 后 Optional[X]→X|None",
+    "py39_bridge": "pydantic v2 在 py3.9 主动 eval 字符串注解，X|None 需 eval_type_backport（pydantic 官方方案）；requirements.txt 加 `eval_type_backport; python_version < \"3.10\"`（生产 py3.10+ 不装）。自动测试抓 bug：UP045 修复后 4 测试 TypeError（etf_holdings/morning_news/post_eval_compat/quant_engine_audit），backport 装上后全绿恢复",
+    "p5_f": "RUF013 27 处（脚本初版制造 | None | None 双重残留 3 处 + 漏修裸 =None，已按 ruff 输出精确驱动重做）；S110 5 处故意静默加 noqa 理由（析构释放/连接探测/非关键路径）；机械项 20 处 unsafe fix（SIM102 嵌套 if 合并含 walrus 写法×2/SIM103/RUF015/SIM113 enumerate/SIM118/PERF102/C408/ISC004）；RUF012 9 处全为类级只读常量（HEADERS/映射表/标签表/默认权重，零原地修改验证），noqa 附理由",
+    "result": "ruff 全量 1278 → 0（All checks passed）；F/E9=0；导入冒烟 41 端点；全量 14 测试文件 172 例全绿（test_datacenter 真实概览 1600 只/suspect=False；test_eastmoney 网络波动无数据 EXIT=0 与历史口径一致）；API 冒烟 4/4 200",
+    "docs_synced": "prd/15 v1.3 状态改已执行（P0-P5 执行记录链全 hash）、manifest v4.0(D40)、prd/README v3.3"
   }
 }

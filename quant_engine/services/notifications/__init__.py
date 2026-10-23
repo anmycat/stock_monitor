@@ -6,8 +6,8 @@ from .wechat import WeChatNotifier
 
 __all__ = [
     "BaseNotifier",
-    "WeChatNotifier",
     "FeishuNotifier",
-    "TelegramNotifier",
     "NotificationManager",
+    "TelegramNotifier",
+    "WeChatNotifier",
 ]

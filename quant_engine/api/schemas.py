@@ -3,8 +3,8 @@
 跨域复用，域 router 经 `from ..schemas import X` 引用。
 """
 from __future__ import annotations
+
 import re
-from typing import Optional
 
 from pydantic import BaseModel, field_validator, model_validator
 

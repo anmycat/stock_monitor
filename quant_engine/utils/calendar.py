@@ -1,4 +1,6 @@
 """交易日历工具 - 判断是否为交易日"""
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 
 import pandas as pd
@@ -12,7 +14,7 @@ except ImportError:
     logger.warning("exchange-calendars not installed, using simple weekend check")
 
 
-def is_trading_day(date: datetime = None, market: str = 'XSHG') -> bool:
+def is_trading_day(date: datetime | None = None, market: str = 'XSHG') -> bool:
     """
     判断是否为交易日
     
@@ -44,7 +46,7 @@ def is_trading_day(date: datetime = None, market: str = 'XSHG') -> bool:
         return date.weekday() < 5
 
 
-def get_next_trading_day(date: datetime = None, market: str = 'XSHG') -> datetime:
+def get_next_trading_day(date: datetime | None = None, market: str = 'XSHG') -> datetime:
     """
     获取下一个交易日
     
@@ -106,7 +108,7 @@ def get_trading_days_between(start_date: datetime, end_date: datetime, market: s
     return days
 
 
-def is_trading_time(date: datetime = None) -> bool:
+def is_trading_time(date: datetime | None = None) -> bool:
     """
     判断是否为交易时间（包含交易日+交易时段检查）
     

@@ -1,7 +1,7 @@
 """LLM排序层 - 在L1筛选后加入LLM对候选股的排序推理（借鉴 AlphaSift L2）"""
 from __future__ import annotations
+
 import json
-from typing import Optional
 
 from loguru import logger
 
@@ -95,7 +95,7 @@ class LLMRanker:
             return None
 
         # 使用第一个可用模型
-        cfg = list(self._ai_summary.models.values())[0]
+        cfg = next(iter(self._ai_summary.models.values()))
         response = self._ai_summary._call_single_model(cfg, system_prompt, prompt, max_tokens=800)
 
         if response.success and response.text:
@@ -110,8 +110,7 @@ class LLMRanker:
             # 去除可能的markdown代码块
             if text.startswith('```'):
                 text = text.split('\n', 1)[1] if '\n' in text else text[3:]
-            if text.endswith('```'):
-                text = text[:-3]
+            text = text.removesuffix('```')
             text = text.strip()
 
             data = json.loads(text)

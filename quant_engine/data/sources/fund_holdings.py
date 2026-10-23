@@ -13,9 +13,9 @@
 - 需要 Referer: https://fundf10.eastmoney.com/ccmx_<code>.html，否则可能被拒
 """
 from __future__ import annotations
+
 import re
 import time
-from typing import Optional
 
 import pandas as pd
 import requests
@@ -129,7 +129,7 @@ class EastMoneyFundHoldingsSource:
                 if 'apidata' not in text:
                     raise ValueError("unexpected response (no apidata)")
                 # var apidata={ content:"...",arryear:[...],curyear:...};
-                m = re.search(r'content:"(.*)",arryear', text, re.S)
+                m = re.search(r'content:"(.*)",arryear', text, re.DOTALL)
                 if not m:
                     raise ValueError("content field not found")
                 return m.group(1)
@@ -174,7 +174,7 @@ class EastMoneyFundHoldingsSource:
     def _parse_rows(self, box: str, quarter: str, report_date: str) -> list[dict]:
         """解析一个季度区块内的持仓行"""
         records = []
-        for tr in re.findall(r'<tr>(.*?)</tr>', box, re.S):
+        for tr in re.findall(r'<tr>(.*?)</tr>', box, re.DOTALL):
             code_m = re.search(r"unify/r/[01]\.(\d{6})", tr)
             name_m = re.search(r"class='tol'><a [^>]*>([^<]+)</a>", tr)
             if not code_m or not name_m:
@@ -182,7 +182,7 @@ class EastMoneyFundHoldingsSource:
             # tor 单元格：过滤掉空值（最新季度的价格/涨跌幅为JS占位span），
             # 最后三个有效值依次为 占净值比例/持股数/持仓市值
             nums = []
-            for td in re.findall(r"<td class='tor'>(.*?)</td>", tr, re.S):
+            for td in re.findall(r"<td class='tor'>(.*?)</td>", tr, re.DOTALL):
                 val = re.sub(r'<[^>]+>', '', td).strip()
                 if val:
                     nums.append(val)

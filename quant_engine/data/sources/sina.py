@@ -1,8 +1,8 @@
 """新浪财经数据源"""
 from __future__ import annotations
+
 import json
 import re
-from typing import Optional
 
 import pandas as pd
 import requests
@@ -31,14 +31,14 @@ class SinaSource:
     LIST_PAGE_SIZE = 100
     LIST_MAX_PAGES = 60
 
-    HEADERS = {
+    HEADERS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://finance.sina.com.cn/',
     }
 
     # 行首市场前缀 → 标准市场后缀（新浪返回 var hq_str_bj920819="..."
     # 自带市场前缀，实测支持 bj；历史 bug 是 else 一律判 SZ）
-    _MARKET_PREFIX_MAP = {
+    _MARKET_PREFIX_MAP = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'sh': MARKET_SH,
         'sz': MARKET_SZ,
         'bj': MARKET_BJ,
