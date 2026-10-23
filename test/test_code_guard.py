@@ -14,13 +14,13 @@ import os
 import sys
 import unittest
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 
-from quant_engine.services.code_guard import CodeGuard, SEV_ERROR, SEV_WARNING
+from quant_engine.services.code_guard import SEV_ERROR, SEV_WARNING, CodeGuard
 from quant_engine.services.monitors.etf_monitor import HOT_ETFS
 
 
@@ -228,7 +228,6 @@ class TestCheckAuction(unittest.TestCase):
         self.guard = CodeGuard(self.dc)
 
     def _run(self, auth_rows=AUTH_ROWS):
-        original = self.guard.collect_targets
         self.guard.collect_targets = lambda: {r[0]: {'name': r[1], 'source': 'etf_holdings'}
                                               for r in auth_rows}
         with patch.object(self.guard.tencent, 'get_realtime_quote',
@@ -333,7 +332,6 @@ class TestPushAndReport(unittest.TestCase):
         self.notifier = MagicMock()
 
     def test_all_ok_no_push(self):
-        original = self.guard.collect_targets
         self.guard.collect_targets = lambda: {
             '000001.SZ': {'name': '平安银行', 'source': 'etf_holdings'}}
         with patch.object(self.guard.tencent, 'get_realtime_quote',
@@ -343,7 +341,6 @@ class TestPushAndReport(unittest.TestCase):
         self.notifier.send_custom_message.assert_not_called()
 
     def test_issues_trigger_push(self):
-        original = self.guard.collect_targets
         self.guard.collect_targets = lambda: {
             '510300.SZ': {'name': '沪深300ETF', 'source': 'legacy_bug'}}
         with patch.object(self.guard.tencent, 'get_realtime_quote',

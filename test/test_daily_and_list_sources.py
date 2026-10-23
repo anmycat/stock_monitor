@@ -18,7 +18,7 @@ import json
 import os
 import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -189,6 +189,7 @@ class TestConsumersReorg(unittest.TestCase):
 
     def test_etf_monitor_no_akshare_dependency(self):
         import inspect
+
         from quant_engine.services.monitors import etf_monitor
         src = inspect.getsource(etf_monitor)
         # 不得 import akshare 源、不得持有 self.akshare 实例
@@ -208,7 +209,7 @@ class TestConsumersReorg(unittest.TestCase):
         called_codes = dc.get_realtime_quote.call_args[0][0]
         self.assertIn('510300.SH', called_codes)
         self.assertEqual(len(called_codes), 14)
-        got = [r for r in rows if r['code'] == '510300.SH'][0]
+        got = next(r for r in rows if r['code'] == '510300.SH')
         self.assertFalse(got.get('no_data'))
         self.assertAlmostEqual(got['price'], 4.23, places=2)
 

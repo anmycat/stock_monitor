@@ -23,7 +23,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 def load_content(fixture_name: str) -> str:
     """从保存的原始响应中提取 apidata.content（与源类同一正则）"""
     raw = (FIXTURES / fixture_name).read_text(encoding="utf-8")
-    m = re.search(r'content:"(.*)",arryear', raw, re.S)
+    m = re.search(r'content:"(.*)",arryear', raw, re.DOTALL)
     assert m, "fixture格式不符"
     return m.group(1)
 

@@ -3,6 +3,11 @@
 #       B 类（业务逻辑）不在此列——逐处收窄或 # noqa: BLE001 理由。
 # 默认规则集不变（仍为 ruff 默认 E/F/I/UP/B 等），仅追加 per-file-ignores。
 
+# 门禁范围：quant_engine/（生产）+ test/ + deploy/ 全量纳入；
+# research/scripts 为调研线一次性分析脚本归档（66 份过程资产，非生产代码，
+# 历史产出以"正文保持产出时点原貌"约定管理），不参与现代化范围，整体排除。
+extend-exclude = ["research/scripts"]
+
 [lint.per-file-ignores]
 # --- A 类：外部边界宽捕获（BLE001）---
 # API 层：except HTTPException: raise + except Exception → 500 是 FastAPI 边界兜底模式

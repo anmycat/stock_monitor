@@ -14,13 +14,20 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from quant_engine.data.sources.news_sources import (  # noqa: E402
-    NewsItem, EastMoneyNewsSource, TongHuaShunNewsSource, SinaLiveNewsSource,
-    RssNewsSource, strip_html, parse_datetime,
+from quant_engine.data.sources.news_sources import (
+    EastMoneyNewsSource,
+    NewsItem,
+    RssNewsSource,
+    SinaLiveNewsSource,
+    TongHuaShunNewsSource,
+    parse_datetime,
+    strip_html,
 )
-from quant_engine.services.monitors.news_monitor import (  # noqa: E402
-    MorningNewsMonitor, normalize_title, title_hash, SECTOR_KEYWORDS,
+from quant_engine.services.monitors.news_monitor import (
     UNMATCHED_SECTOR,
+    MorningNewsMonitor,
+    normalize_title,
+    title_hash,
 )
 
 FIXTURES = ROOT / 'test' / 'fixtures'

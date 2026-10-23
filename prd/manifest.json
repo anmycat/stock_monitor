@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.0",
-  "date": "2026-10-22",
+  "version": "4.1",
+  "date": "2026-10-23",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -299,5 +299,30 @@
     "p5_f": "RUF013 27 处（脚本初版制造 | None | None 双重残留 3 处 + 漏修裸 =None，已按 ruff 输出精确驱动重做）；S110 5 处故意静默加 noqa 理由（析构释放/连接探测/非关键路径）；机械项 20 处 unsafe fix（SIM102 嵌套 if 合并含 walrus 写法×2/SIM103/RUF015/SIM113 enumerate/SIM118/PERF102/C408/ISC004）；RUF012 9 处全为类级只读常量（HEADERS/映射表/标签表/默认权重，零原地修改验证），noqa 附理由",
     "result": "ruff 全量 1278 → 0（All checks passed）；F/E9=0；导入冒烟 41 端点；全量 14 测试文件 172 例全绿（test_datacenter 真实概览 1600 只/suspect=False；test_eastmoney 网络波动无数据 EXIT=0 与历史口径一致）；API 冒烟 4/4 200",
     "docs_synced": "prd/15 v1.3 状态改已执行（P0-P5 执行记录链全 hash）、manifest v4.0(D40)、prd/README v3.3"
+  },
+  "d41_refactor_3m_live_validation_2026_10_23": {
+    "date": "2026-10-23",
+    "title": "全量重构 3 个月实盘验证 PASS（D41）：产品线信号 509 笔逐字段零漂移 + 门禁范围厘清",
+    "report": "research/docs/24_全量重构3M实盘验证_2026-10-23.md",
+    "scope": "prd/15 §4 验收标准'行为'项 + 用户指令'最近连续 3 个月实盘数据验证逻辑和代码'",
+    "signal_regression": {
+      "method": "worktree 双跑：重构前 91162c76（/tmp/pre_refactor）vs 重构后 d6e3ded3（主仓库），同一份静态数据（27 只调研池 × 2026-04-01~10-21 129 交易日，TDX 主源+腾讯不复权独立校验）+ 同一套 mock（get_daily_data 按 T 日截断防未来函数/get_minute_data→None 中和 TDX 全池探活/假 LLMRanker+CandidateContext 双路径/notifier 只记录）",
+      "result": "3483 次扫描，重构前后均 509 笔信号；六字段（action/score/strategy/position/kelly_position/reason）逐字段零差异；无信号槽位 2974 分布集合相等（无一侧独有）；顶层日期/股票结构零差异；notifier 128/128 一致",
+      "research_line": "重构后重跑 validate_3m_recent_v3.py 完全复现 docs/23 第三窗口定稿口径 195 笔/44.1%/+0.68%/+131.72%"
+    },
+    "gate_scope_clarified": {
+      "quant_engine": "生产代码 ruff 零问题维持（P5-f 口径 1278→0 即此范围）",
+      "test_cleanup": "本轮清洁化 35 项：I001 19 自动 + F841×3（死赋值 original）/RUF059×9（未用解包改 _ 前缀）/RUF015/RUF012×4（ClassVar 注解）；途中批量替换误伤 3 处 errors 使用点当即回滚（ruff 只标记确未使用的 2 处，不应外推）",
+      "deploy_cleanup": "本轮清洁化 10 项：deploy_with_python.py I001/F401（函数内 import 改 importlib.util.find_spec 探测）/E722+S110（mkdir 已存在属正常路径）/BLE001 3 处 noqa 附理由/RUF059×3 + chmod +x",
+      "research_scripts_excluded": "research/scripts 66 份调研线一次性分析脚本归档（过程资产非生产代码，按'正文保持产出时点原貌'约定管理），ruff.toml extend-exclude 文档化排除；全仓 ruff check . All checks passed"
+    },
+    "verification_suite": {
+      "ruff": "全仓（quant_engine+test+deploy）All checks passed",
+      "tests": "172/172 全绿（0 失败 0 错误 0 跳过）",
+      "api_smoke": "4/4 200（health/market/signals/evaluation runs）",
+      "arch_audit": "106 模块/270 内部边/31 延迟导入；零模块级循环/分层宪法合规/services DAG 合规"
+    },
+    "artifacts": "research/scripts/product_signal_regression.py（新增，长期回归资产）；/tmp/sig_after.json vs /tmp/sig_before2.json（对比产物）",
+    "pending": "ECS 部署（用户已授权）+ 部署后复验（三个定时服务重点）；rules JSON v1.7 Kelly 下修建议仍待用户确认"
   }
 }
