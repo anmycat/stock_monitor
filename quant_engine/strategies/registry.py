@@ -1,7 +1,7 @@
 """统一策略注册中心 - 整合 Dispatcher + Funnel 双路径"""
 from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 from loguru import logger
 
@@ -68,8 +68,8 @@ class StrategyRegistry:
         return result
 
     def scan_stock(self, code: str, name: str, market: MarketState,
-                   trades: list[dict] = None, equity_curve: list[float] = None,
-                   strategy_id: str = None) -> Signal | None:
+                   trades: list[dict] | None = None, equity_curve: list[float] | None = None,
+                   strategy_id: str | None = None) -> Signal | None:
         """
         单股扫描（走 Dispatcher 路径）
         
@@ -117,7 +117,7 @@ class StrategyRegistry:
         return signals
 
     def scan_all(self, market: MarketState, max_signals: int = 3,
-                 trades: list[dict] = None, equity_curve: list[float] = None) -> list[Signal]:
+                 trades: list[dict] | None = None, equity_curve: list[float] | None = None) -> list[Signal]:
         """
         遍历所有启用的单股策略扫描信号
         

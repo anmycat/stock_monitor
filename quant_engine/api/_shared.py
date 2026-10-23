@@ -30,13 +30,30 @@ from .dependencies import (
 
 # 域 router 的公共导出面（转手导出，勿删；__all__ 同时消除 F401）
 __all__ = [
-    'datacenter', 'signal_generator', 'backtest_engine', 'etf_monitor',
-    'cooldown_manager', 'sector_monitor', 'market_alert', 'hot_money_monitor',
-    'strategy_registry', 'hotspot_service', 'etf_holdings_monitor', 'news_monitor',
-    'code_guard', 'verify_api_key', 'resolver',
-    'ai_summary', 'market_analyzer', 'data_validator', 'portfolio_manager',
+    '_CODE_RE',
+    '_DATE_RE',
+    '_RUN_ID_RE',
+    '_SUMMARY_TYPES',
+    'ai_summary',
+    'backtest_engine',
+    'code_guard',
+    'cooldown_manager',
+    'data_validator',
+    'datacenter',
+    'etf_holdings_monitor',
+    'etf_monitor',
+    'hot_money_monitor',
+    'hotspot_service',
+    'market_alert',
+    'market_analyzer',
+    'news_monitor',
+    'portfolio_manager',
     'post_evaluation',
-    '_CODE_RE', '_SUMMARY_TYPES', '_DATE_RE', '_RUN_ID_RE',
+    'resolver',
+    'sector_monitor',
+    'signal_generator',
+    'strategy_registry',
+    'verify_api_key',
 ]
 
 # 入参校验正则

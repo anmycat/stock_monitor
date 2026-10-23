@@ -14,7 +14,6 @@ class BaseNotifier(ABC):
     @abstractmethod
     def send(self, title: str, content: str) -> bool:
         """发送消息"""
-        pass
 
     def send_text(self, text: str) -> bool:
         """发送纯文本"""

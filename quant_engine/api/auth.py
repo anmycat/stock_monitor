@@ -1,6 +1,5 @@
 """API认证模块 - Token验证"""
 from __future__ import annotations
-from typing import Optional
 
 from fastapi import HTTPException, Security, status
 from fastapi.security import APIKeyHeader

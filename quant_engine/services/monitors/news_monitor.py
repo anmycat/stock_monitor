@@ -14,11 +14,11 @@
 分类是关键词匹配不是NLP，存在错分可能——按板块浏览，重要条目前置。
 """
 from __future__ import annotations
+
 import hashlib
 import re
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
-from typing import Optional
 
 from loguru import logger
 
@@ -157,12 +157,12 @@ UNMATCHED_SECTOR = '综合要闻'
 _ASCII_KEYWORDS = {kw for kws in SECTOR_KEYWORDS.values() for kw in kws
                    if kw.isascii()}
 # 板块 -> 编译后的匹配器
-_SECTOR_MATCHERS: dict[str, list[tuple[str, 're.Pattern']]] = {}
+_SECTOR_MATCHERS: dict[str, list[tuple[str, re.Pattern]]] = {}
 for _sector, _kws in SECTOR_KEYWORDS.items():
     _compiled = []
     for _kw in _kws:
         if _kw.isascii():
-            _compiled.append((_kw, re.compile(r'\b' + re.escape(_kw) + r'\b', re.I)))
+            _compiled.append((_kw, re.compile(r'\b' + re.escape(_kw) + r'\b', re.IGNORECASE)))
         else:
             _compiled.append((_kw, None))
     _SECTOR_MATCHERS[_sector] = _compiled
@@ -177,7 +177,7 @@ def normalize_title(title: str) -> str:
         return ''
     text = re.sub(r'^【[^】]{1,40}】', '', title.strip())  # 新浪【标题】前缀
     text = text.lower()
-    text = re.sub(r'[\s\.,;:!?，。；：！？、（）()\[\]【】{}<>《》"\'\'""''·—\-—…~`@#￥$%&*+/\\|_]+', '', text)
+    text = re.sub(r'[\s\.,;:!?，。；：！？、（）()\[\]【】{}<>《》"\'\'""''·—\\-—…~`@#￥$%&*+/\\|_]+', '', text)
     return text
 
 
@@ -377,8 +377,7 @@ class MorningNewsMonitor:
                      from_last_push: bool) -> dict:
         groups = self.group_by_sector(kept)
         sector_entries = []
-        displayed = 0
-        for sector, lst in groups.items():
+        for displayed, (sector, lst) in enumerate(groups.items()):
             if displayed >= self.MAX_SECTORS:
                 break
             shown = lst[:self.MAX_PER_SECTOR]
@@ -389,7 +388,6 @@ class MorningNewsMonitor:
                 'truncated': len(lst) > len(shown),
                 'items': [self._item_brief(it) for it in shown],
             })
-            displayed += 1
         hidden_sectors = max(0, len(groups) - len(sector_entries))
         hidden_items = sum(len(lst) for lst in
                            list(groups.values())[len(sector_entries):])
@@ -424,10 +422,10 @@ class MorningNewsMonitor:
         start = datetime.fromisoformat(digest['window_start'])
         end = datetime.fromisoformat(digest['window_end'])
         window = f"{start.strftime('%m-%d %H:%M')} → {end.strftime('%m-%d %H:%M')}"
-        src_desc = '·'.join(f"{k}" for k in digest['sources'].keys()) or '无'
+        src_desc = '·'.join(f"{k}" for k in digest['sources']) or '无'
         lines = [
-            f"**时间窗**: {window} ｜ **新增 {digest['total']} 条**"
-            f"（去重剔除 {digest['dedup_dropped']} 条）",
+            (f"**时间窗**: {window} ｜ **新增 {digest['total']} 条**"
+            f"（去重剔除 {digest['dedup_dropped']} 条）"),
             f"**来源**: {src_desc} ｜ 覆盖 {digest['sector_count']} 个板块",
             "",
         ]

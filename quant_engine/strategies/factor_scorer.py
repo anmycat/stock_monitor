@@ -6,7 +6,6 @@
 - 市场情绪因子(量价配合)
 """
 from __future__ import annotations
-from typing import Optional
 
 import pandas as pd
 from loguru import logger

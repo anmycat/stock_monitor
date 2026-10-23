@@ -6,8 +6,8 @@ from .post_evaluation import PostEvaluation
 
 __all__ = [
     "BacktestEngine",
-    "calculate_metrics",
     "BacktestEvaluator",
     "OverfitChecker",
     "PostEvaluation",
+    "calculate_metrics",
 ]

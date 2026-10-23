@@ -9,9 +9,9 @@
 - 策略表现排名
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -62,13 +62,12 @@ class SignalTracker:
         record.current_price = current_price
         
         # 更新最高价和最大回撤
-        if high_price:
-            if record.entry_price:
-                profit = (high_price - record.entry_price) / record.entry_price
-                record.max_profit = max(record.max_profit, profit)
-                
-                drawdown = (current_price - high_price) / high_price
-                record.max_drawdown = min(record.max_drawdown, drawdown)
+        if high_price and record.entry_price:
+            profit = (high_price - record.entry_price) / record.entry_price
+            record.max_profit = max(record.max_profit, profit)
+            
+            drawdown = (current_price - high_price) / high_price
+            record.max_drawdown = min(record.max_drawdown, drawdown)
         
         # 计算持有天数
         record.holding_days = (datetime.now() - record.created_at).days

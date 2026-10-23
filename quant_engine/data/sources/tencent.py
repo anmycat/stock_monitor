@@ -1,7 +1,7 @@
 """腾讯财经数据源"""
 from __future__ import annotations
+
 import random
-from typing import Optional
 
 import pandas as pd
 import requests
@@ -17,7 +17,7 @@ class TencentSource:
     # 日线 K 线（fqkline，前复权；2026-10-20 实测，单只 ~0.4s）
     DAILY_URL = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
 
-    USER_AGENTS = [
+    USER_AGENTS = [  # noqa: RUF012 类级只读常量，运行期无原地修改
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_0) AppleWebKit/537.36',
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
@@ -26,7 +26,7 @@ class TencentSource:
     # 行首市场前缀 → 标准市场后缀（腾讯返回 v_sh510300="..." 自带市场，
     # 这是最权威的市场标识，历史 bug 是用 code.startswith('6') 推断，
     # 导致 5 开头的沪市 ETF（510300/518880）被错判为 .SZ）
-    _MARKET_PREFIX_MAP = {
+    _MARKET_PREFIX_MAP = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'sh': MARKET_SH,
         'sz': MARKET_SZ,
         'bj': MARKET_BJ,
@@ -262,7 +262,7 @@ class TencentSource:
         for i in range(601300, 601500):
             codes.append(f"{i}.SH")
         # 深圳主板
-        for i in range(0, 200):
+        for i in range(200):
             codes.append(f"{i:06d}.SZ")
         for i in range(1000, 1200):
             codes.append(f"{i:06d}.SZ")

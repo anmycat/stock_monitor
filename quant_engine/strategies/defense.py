@@ -76,11 +76,9 @@ class DefenseStrategy:
         peak = equity_curve[0]
         max_dd = 0
         for value in equity_curve:
-            if value > peak:
-                peak = value
+            peak = max(peak, value)
             dd = (peak - value) / peak
-            if dd > max_dd:
-                max_dd = dd
+            max_dd = max(max_dd, dd)
         if max_dd > self.max_drawdown:
             return {
                 'action': 'STOP',

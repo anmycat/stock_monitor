@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 import pandas as pd
 from loguru import logger
 
@@ -9,7 +11,7 @@ class GateModel:
         self.fund_flow_threshold = 0.3
         self.datacenter = datacenter
 
-    def check(self, df: pd.DataFrame, indicators: dict, code: str = None) -> tuple[bool, list[str]]:
+    def check(self, df: pd.DataFrame, indicators: dict, code: str | None = None) -> tuple[bool, list[str]]:
         reasons = []
         trend_pass, trend_reason = self._check_trend(df, indicators)
         if not trend_pass:

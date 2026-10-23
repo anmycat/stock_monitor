@@ -1,7 +1,7 @@
 """YAML策略加载器 - 从YAML文件加载策略配置"""
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from loguru import logger
@@ -10,7 +10,7 @@ from loguru import logger
 class YamlStrategyLoader:
     """YAML策略加载器"""
 
-    def __init__(self, strategies_dir: str = None):
+    def __init__(self, strategies_dir: str | None = None):
         if strategies_dir is None:
             strategies_dir = str(Path(__file__).parent / "yaml")
         self.strategies_dir = Path(strategies_dir)

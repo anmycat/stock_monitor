@@ -120,10 +120,7 @@ class ThreeLayerFunnel:
             return False
 
         # 熊市检查
-        if market.type == MarketType.BEAR:
-            return False
-
-        return True
+        return market.type != MarketType.BEAR
 
     def _l2_score_filter(self, candidates: list[dict], strategy: dict, market: MarketState) -> list[dict]:
         """L2: 评分排序 - 多因子评分"""

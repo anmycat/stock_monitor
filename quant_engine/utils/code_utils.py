@@ -26,14 +26,23 @@
 - 东财 secid：1.=沪市，0.=深市/北交所（920819 实测 f13=0，secid 用 0. 有效）
 """
 from __future__ import annotations
+
 import re
-from typing import Optional
 
 __all__ = [
-    'MARKET_SH', 'MARKET_SZ', 'MARKET_BJ',
-    'MARKET_RULES', 'market_by_symbol', 'market_of_code',
-    'normalize_code', 'to_secid', 'to_tencent_code', 'to_sina_code',
-    'is_valid_code', 'code_key', 'split_code',
+    'MARKET_BJ',
+    'MARKET_RULES',
+    'MARKET_SH',
+    'MARKET_SZ',
+    'code_key',
+    'is_valid_code',
+    'market_by_symbol',
+    'market_of_code',
+    'normalize_code',
+    'split_code',
+    'to_secid',
+    'to_sina_code',
+    'to_tencent_code',
 ]
 
 MARKET_SH = 'SH'

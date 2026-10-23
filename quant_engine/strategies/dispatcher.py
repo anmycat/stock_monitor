@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -25,7 +24,7 @@ class StrategyDispatcher:
         self.yaml_loader = get_yaml_loader()
         self.factor_scorer = FactorScorer()
 
-    def dispatch(self, df: pd.DataFrame, market: MarketState, trades: list[dict] = None, equity_curve: list[float] = None, strategy_id: str = None) -> Signal | None:
+    def dispatch(self, df: pd.DataFrame, market: MarketState, trades: list[dict] | None = None, equity_curve: list[float] | None = None, strategy_id: str | None = None) -> Signal | None:
         """
         策略调度
         

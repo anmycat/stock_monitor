@@ -13,9 +13,9 @@
 任何失败都返回空 DataFrame 交降级链处理，绝不向上抛异常。
 """
 from __future__ import annotations
+
 import threading
 import time
-from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -97,7 +97,7 @@ class TdxSource:
         if cls._api is not None:
             try:
                 cls._api.disconnect()
-            except Exception:
+            except Exception:  # noqa: S110 连接释放静默（调用方持锁，失败由后续状态兜底）
                 pass
         cls._api = None
         cls._server = None
@@ -125,7 +125,7 @@ class TdxSource:
             logger.debug(f"TdxSource: {ip}:{port} 探活失败 {type(e).__name__}")
             try:
                 api.disconnect()
-            except Exception:
+            except Exception:  # noqa: S110 探活失败后释放静默（上方已 logger.debug 记录原因）
                 pass
             return False
 
@@ -148,7 +148,7 @@ class TdxSource:
                     if cls._api.get_security_quotes([(_PROBE_MARKET, _PROBE_CODE)]):
                         cls._probe_time = time.time()
                         return cls._api
-                except Exception:
+                except Exception:  # noqa: S110 连接探测失败静默（转 _disconnect 走重连/轮换路径）
                     pass
                 cls._disconnect()
             # 3) 连接不可用：当前服务器优先重连，失败则池内轮换

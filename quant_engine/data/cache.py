@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 import json
 import time
-from typing import Any, Optional
+from typing import Any
 
 import redis
 from loguru import logger
@@ -11,7 +12,7 @@ class RedisCache:
     """Redis缓存管理器，支持连接池、重试、SSL和优雅降级"""
 
     def __init__(self, host: str = "localhost", port: int = 6379,
-                 db: int = 0, password: str = None, ssl: bool = False,
+                 db: int = 0, password: str | None = None, ssl: bool = False,
                  max_connections: int = 20, socket_timeout: float = 5.0):
         self._host = host
         self._port = port
@@ -28,15 +29,15 @@ class RedisCache:
     def _init_pool(self):
         """初始化连接池"""
         try:
-            pool_kwargs = dict(
-                host=self._host,
-                port=self._port,
-                db=self._db,
-                max_connections=self._max_connections,
-                socket_timeout=self._socket_timeout,
-                socket_connect_timeout=self._socket_timeout,
-                decode_responses=True,
-            )
+            pool_kwargs = {
+                "host": self._host,
+                "port": self._port,
+                "db": self._db,
+                "max_connections": self._max_connections,
+                "socket_timeout": self._socket_timeout,
+                "socket_connect_timeout": self._socket_timeout,
+                "decode_responses": True,
+            }
             if self._password:
                 pool_kwargs['password'] = self._password
             # redis-py 8.x 不再支持 ConnectionPool 的 ssl 参数
@@ -170,5 +171,5 @@ class RedisCache:
         """析构时确保资源释放"""
         try:
             self.close()
-        except Exception:
+        except Exception:  # noqa: S110 析构期资源释放必须静默，禁止向上抛
             pass

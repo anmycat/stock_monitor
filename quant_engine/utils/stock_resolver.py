@@ -1,6 +1,5 @@
 """股票代码解析器 - 支持代码/名称/拼音搜索"""
 from __future__ import annotations
-from typing import Optional
 
 from loguru import logger
 
