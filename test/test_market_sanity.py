@@ -14,10 +14,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from quant_engine.utils.market_sanity import (
-    change_pct_limit,
-    sanitize_quotes,
-    is_overview_sane,
     DROP_RATIO_SUSPECT,
+    change_pct_limit,
+    is_overview_sane,
+    sanitize_quotes,
 )
 
 
@@ -63,7 +63,7 @@ class SanitizeQuotesTests(unittest.TestCase):
             {"code": "600000.SH", "price": 10.0, "change_pct": 10.5},   # 主板容差界合法
             {"code": "600001.SH", "price": 10.0, "change_pct": 10.6},   # 主板超限剔除
         ])
-        clean, stats = sanitize_quotes(df)
+        clean, _stats = sanitize_quotes(df)
         self.assertEqual(set(clean["code"]), {"688111.SH", "300059.SZ", "600000.SH"})
 
     def test_crema_301_segment_not_dropped(self):
@@ -125,7 +125,7 @@ class SuspectThresholdTests(unittest.TestCase):
     def test_systematic_corruption_detected(self):
         rows = [{"code": f"60000{i}.SH", "price": 1.0, "change_pct": 999.0} for i in range(10)]
         rows.append({"code": "600010.SH", "price": 1.0, "change_pct": 0.5})
-        clean, stats = sanitize_quotes(_df(rows))
+        _clean, stats = sanitize_quotes(_df(rows))
         self.assertGreater(stats["drop_ratio"], DROP_RATIO_SUSPECT)  # 触发 suspect 回退
 
 
@@ -147,7 +147,7 @@ class NewListingExemptTests(unittest.TestCase):
     def test_c_prefixed_new_stock_exempt(self):
         rows = [{"code": "688001.SH", "name": "C华兴", "price": 10.0,
                  "change_pct": 150.0}]
-        clean, stats = sanitize_quotes(_df(rows))
+        clean, _stats = sanitize_quotes(_df(rows))
         self.assertEqual(len(clean), 1)
 
     def test_dirty_row_still_dropped(self):
@@ -157,7 +157,7 @@ class NewListingExemptTests(unittest.TestCase):
             {"code": "600000.SH", "name": "浦发银行", "price": 9.66, "change_pct": 999.0},
             {"code": "600001.SH", "name": "N假冒", "price": 0.0, "change_pct": 50.0},  # price<=0 仍剔
         ]
-        clean, stats = sanitize_quotes(_df(rows))
+        clean, _stats = sanitize_quotes(_df(rows))
         self.assertEqual(len(clean), 1)
         self.assertEqual(clean.iloc[0]["name"], "N文峰")
 
@@ -165,13 +165,13 @@ class NewListingExemptTests(unittest.TestCase):
         """名称以 N 开头但非汉字简称（异常数据）不豁免"""
         rows = [{"code": "600000.SH", "name": "NX123", "price": 9.66,
                  "change_pct": 999.0}]
-        clean, stats = sanitize_quotes(_df(rows))
+        clean, _stats = sanitize_quotes(_df(rows))
         self.assertEqual(len(clean), 0)
 
     def test_missing_name_column_no_exemption(self):
         """无 name 列时保守处理（不豁免）"""
         rows = [{"code": "920296.BJ", "price": 36.3, "change_pct": 217.03}]
-        clean, stats = sanitize_quotes(_df(rows))
+        clean, _stats = sanitize_quotes(_df(rows))
         self.assertEqual(len(clean), 0)
 
 

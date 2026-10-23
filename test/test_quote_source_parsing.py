@@ -11,15 +11,14 @@ import json
 import os
 import sys
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import pandas as pd
 
-from quant_engine.data.sources.tencent import TencentSource
-from quant_engine.data.sources.sina import SinaSource
 from quant_engine.data.sources.eastmoney import EastMoneySource
+from quant_engine.data.sources.sina import SinaSource
+from quant_engine.data.sources.tencent import TencentSource
 
 FIXTURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures')
 

@@ -12,13 +12,13 @@ import os
 import sys
 import types
 import unittest
+from typing import ClassVar
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import pandas as pd
 
-from quant_engine.data.sources.tdx import TdxSource, TDX_SERVERS
+from quant_engine.data.sources.tdx import TDX_SERVERS, TdxSource
 
 
 def _make_bars(count=20, start_price=10.0):
@@ -42,11 +42,11 @@ class FakeTdxHq_API:
     """假 TDX 客户端：模拟协议级抖动（TCP 通但返空/超时）与成功路径"""
 
     # 类级配置：每次测试前重置
-    fail_connect = set()    # {(ip, port), ...} connect 返回 False
-    empty_quote = set()     # {(ip, port), ...} 连接成功但快照返空（协议级不可用）
-    bar_errors = 0          # get_security_bars 前 N 次抛异常（会话中抖动）
-    quote_calls = []        # 记录探活快照调用
-    bar_calls = []          # 记录 K 线调用参数
+    fail_connect: ClassVar[set] = set()    # {(ip, port), ...} connect 返回 False
+    empty_quote: ClassVar[set] = set()     # {(ip, port), ...} 连接成功但快照返空（协议级不可用）
+    bar_errors: ClassVar[int] = 0          # get_security_bars 前 N 次抛异常（会话中抖动）
+    quote_calls: ClassVar[list] = []       # 记录探活快照调用
+    bar_calls: ClassVar[list] = []         # 记录 K 线调用参数
 
     def __init__(self, heartbeat=False):
         self.connected = False

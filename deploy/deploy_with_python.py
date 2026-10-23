@@ -3,11 +3,13 @@
 量化交易系统自动部署脚本
 使用paramiko库处理SSH连接
 """
-import paramiko
+import importlib.util
+import os
 import subprocess
 import sys
-import os
 from pathlib import Path
+
+import paramiko
 
 # 配置
 REMOTE_USER = "root"
@@ -28,13 +30,10 @@ def print_step(step, total, text):
 
 def check_dependencies():
     """检查并安装依赖"""
-    try:
-        import paramiko
-        print("✅ paramiko已安装")
-    except ImportError:
+    if importlib.util.find_spec("paramiko") is None:
         print("❌ 正在安装paramiko...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "paramiko"])
-        import paramiko
+    print("✅ paramiko已安装")
 
 def create_ssh_client():
     """创建SSH客户端"""
@@ -52,7 +51,7 @@ def create_ssh_client():
 
 def execute_ssh_command(client, command, verbose=True):
     """执行SSH命令"""
-    stdin, stdout, stderr = client.exec_command(command)
+    _, stdout, stderr = client.exec_command(command)
     
     if verbose:
         output = stdout.read().decode('utf-8')
@@ -90,8 +89,8 @@ def upload_files(client):
         """递归上传目录"""
         try:
             sftp.mkdir(remote_path)
-        except:
-            pass
+        except OSError:
+            pass  # 目录已存在属正常路径
         
         for item in os.listdir(local_path):
             # 简单字符串匹配
@@ -107,7 +106,7 @@ def upload_files(client):
                 try:
                     sftp.put(str(local_item), remote_item)
                     print(f"  ⬆️  {item}")
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001  # SFTP IO 边界兜底，失败续传
                     print(f"  ❌ 上传失败 {item}: {e}")
     
     upload_dir(LOCAL_DIR, REMOTE_DIR)
@@ -150,12 +149,12 @@ LOG_FILE=logs/quant_engine.log
 """
     
     # 检查.env是否存在
-    stdin, stdout, stderr = client.exec_command(f"test -f {REMOTE_DIR}/.env && echo 'exists' || echo 'not_exists'")
+    _, stdout, _stderr = client.exec_command(f"test -f {REMOTE_DIR}/.env && echo 'exists' || echo 'not_exists'")
     result = stdout.read().decode('utf-8').strip()
     
     if result == 'not_exists':
         # 创建.env文件
-        stdin, stdout, stderr = client.exec_command(f"cat > {REMOTE_DIR}/.env << 'EOF'\n{env_content}\nEOF")
+        _, stdout, _stderr = client.exec_command(f"cat > {REMOTE_DIR}/.env << 'EOF'\n{env_content}\nEOF")
         print("✅ 配置文件已创建")
     else:
         print("✅ 配置文件已存在")
@@ -298,7 +297,7 @@ def main():
         # 打印总结
         print_summary()
         
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001  # main 边界兜底：打印 traceback 后走 finally 关连接
         print(f"\n❌ 部署失败: {e}")
         import traceback
         traceback.print_exc()

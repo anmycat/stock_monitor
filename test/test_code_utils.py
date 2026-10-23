@@ -14,9 +14,18 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from quant_engine.utils.code_utils import (
-    normalize_code, market_by_symbol, market_of_code, split_code,
-    to_secid, to_tencent_code, to_sina_code, is_valid_code, code_key,
-    MARKET_SH, MARKET_SZ, MARKET_BJ,
+    MARKET_BJ,
+    MARKET_SH,
+    MARKET_SZ,
+    code_key,
+    is_valid_code,
+    market_by_symbol,
+    market_of_code,
+    normalize_code,
+    split_code,
+    to_secid,
+    to_sina_code,
+    to_tencent_code,
 )
 
 

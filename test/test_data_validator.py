@@ -49,12 +49,12 @@ class ValidateMarketDataTests(unittest.TestCase):
         self.assertEqual(errors, [])
 
     def test_sum_mismatch_fails(self):
-        ok, errors = self.v.validate_market_data(
+        ok, _errors = self.v.validate_market_data(
             {"total": 100, "up": 60, "down": 30, "flat": 5, "avg_change": 0.5})
         self.assertFalse(ok)
 
     def test_extreme_avg_fails(self):
-        ok, errors = self.v.validate_market_data(
+        ok, _errors = self.v.validate_market_data(
             {"total": 10, "up": 10, "down": 0, "flat": 0, "avg_change": 11.35})
         self.assertFalse(ok)
 

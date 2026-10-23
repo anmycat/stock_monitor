@@ -11,7 +11,7 @@ _get_main_stock_codes 硬编码号段（~406 只，缺科创/ETF/北交所/深�
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
