@@ -24,6 +24,7 @@ class RedisCache:
         self._connected = False
         self._pool: redis.ConnectionPool | None = None
         self.client: redis.Redis | None = None
+        self._last_probe = float('-inf')  # 节流重连探针时间戳（-inf 保证首次必探测）
         self._init_pool()
 
     def _init_pool(self):
@@ -102,19 +103,45 @@ class RedisCache:
 
     @property
     def is_connected(self) -> bool:
-        """检查当前Redis连接状态"""
+        """检查当前Redis连接状态（含节流重连自愈）"""
         if not self._connected or self.client is None:
-            return False
+            return self._try_reconnect()
         try:
             self.client.ping()
+            return True
+        except Exception:
+            self._connected = False
+            return self._try_reconnect()
+
+    def _try_reconnect(self) -> bool:
+        """节流重连探针（≥5s 一次）：Redis 抖动恢复后自动自愈
+
+        修复历史缺陷：连接失败后 _connected 永久为假，进程级缓存瘫痪
+        至重启才恢复。探针轻量（单次 ping，不 sleep），故障期每次调用
+        最多每 5s 一次探测，恢复后下一入口即回正。
+        """
+        now = time.monotonic()
+        if now - self._last_probe < 5.0:
+            return self._connected
+        self._last_probe = now
+        try:
+            if self.client is None:
+                self._init_pool()
+            if self.client is None:
+                self._connected = False
+                return False
+            self.client.ping()
+            self._connected = True
+            logger.info(
+                f"Redis重连成功: {self._host}:{self._port}/{self._db}")
             return True
         except Exception:
             self._connected = False
             return False
 
     def get(self, key: str) -> Any | None:
-        """获取缓存值，失败时返回None"""
-        if not self._connected:
+        """获取缓存值，失败时返回None（断线时经节流探针自愈）"""
+        if not self._connected and not self._try_reconnect():
             return None
         try:
             data = self.client.get(key)
@@ -126,8 +153,8 @@ class RedisCache:
             return None
 
     def set(self, key: str, value: Any, ttl: int = 3600) -> bool:
-        """设置缓存值，失败时返回False"""
-        if not self._connected:
+        """设置缓存值，失败时返回False（断线时经节流探针自愈）"""
+        if not self._connected and not self._try_reconnect():
             return False
         try:
             self.client.setex(key, ttl, json.dumps(value, default=str))
@@ -137,8 +164,8 @@ class RedisCache:
             return False
 
     def delete(self, key: str) -> bool:
-        """删除缓存键，失败时返回False"""
-        if not self._connected:
+        """删除缓存键，失败时返回False（断线时经节流探针自愈）"""
+        if not self._connected and not self._try_reconnect():
             return False
         try:
             self.client.delete(key)
@@ -148,8 +175,8 @@ class RedisCache:
             return False
 
     def exists(self, key: str) -> bool:
-        """检查键是否存在"""
-        if not self._connected:
+        """检查键是否存在（断线时经节流探针自愈）"""
+        if not self._connected and not self._try_reconnect():
             return False
         try:
             return self.client.exists(key) > 0
@@ -159,7 +186,7 @@ class RedisCache:
 
     def keys(self, pattern: str) -> list:
         """按 pattern 扫描键（SCAN，非阻塞；失败返回空列表）"""
-        if not self._connected:
+        if not self._connected and not self._try_reconnect():
             return []
         try:
             return list(self.client.scan_iter(match=pattern, count=100))
