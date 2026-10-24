@@ -2,12 +2,14 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
+from __future__ import annotations
 
 import threading
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
+from ...data.store import get_history_store
 from ...services.signals.signal_generator import (
     api_signals_cache_key,
     signal_to_api_dict,
@@ -15,11 +17,12 @@ from ...services.signals.signal_generator import (
 )
 from .._shared import (
     _CODE_RE,
+    _DATE_RE,
     datacenter,
     signal_generator,
     verify_api_key,
 )
-from ..schemas import SignalResponse
+from ..schemas import SignalHistoryItem, SignalResponse
 
 router = APIRouter(prefix="/api")
 
@@ -60,6 +63,37 @@ def get_signals(max_signals: int = Query(3, ge=1, le=10)):
         raise
     except Exception as e:
         logger.error(f"API error in get_signals: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/signals/history", response_model=list[SignalHistoryItem],
+            dependencies=[Depends(verify_api_key)])
+def get_signal_history(limit: int = Query(50, ge=1, le=200),
+                       code: str | None = Query(None),
+                       action: str | None = Query(None),
+                       date_from: str | None = Query(None),
+                       date_to: str | None = Query(None)):
+    """信号历史（SQLite 持久层，docs/25 §5.1；signal_date 倒序）
+
+    只含 scan_all 系统性轮次归档的 BUY/WATCH 信号（SKIP 不落库）；
+    date_from/date_to 为 YYYY-MM-DD 含边界。
+    """
+    if code is not None and not _CODE_RE.match(code):
+        raise HTTPException(status_code=400, detail=f'无效股票代码格式: {code}，应为如000001.SZ')
+    if action is not None and action not in ('BUY', 'WATCH'):
+        raise HTTPException(status_code=400, detail=f'无效action: {action}，可选: BUY/WATCH')
+    for name, d in (('date_from', date_from), ('date_to', date_to)):
+        if d is not None and not _DATE_RE.match(d):
+            raise HTTPException(status_code=400, detail=f'无效{name}格式: {d}，应为YYYY-MM-DD')
+    try:
+        rows = get_history_store().get_signal_history(
+            limit=limit, code=code, action=action,
+            date_from=date_from, date_to=date_to)
+        return [SignalHistoryItem(**r) for r in rows]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_signal_history: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

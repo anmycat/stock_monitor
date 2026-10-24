@@ -87,6 +87,9 @@ class SignalGenerator:
         signals.sort(key=lambda s: s.score, reverse=True)
         signals = signals[:max_signals]
 
+        # 持久化到 SQLite（docs/25 §5.1）：修复 Redis 15 分钟 TTL 后的审计缺口
+        self._persist_signals(signals, market)
+
         # 为 BUY 信号添加上下文（新闻/舆情）
         self._enrich_signals(signals)
         return signals
@@ -173,6 +176,43 @@ class SignalGenerator:
         except Exception as e:  # noqa: BLE001 外部调用，降级不影响主流程
             logger.warning(f"Capital flow fill failed for {signal.code}: {e}")
     
+    def _persist_signals(self, signals: list[Signal], market: MarketState) -> None:
+        """信号归档到 SQLite（docs/25 §5.1）
+
+        只落 BUY/WATCH（可执行信号；SKIP 是噪声）。同日同代码同策略
+        upsert——盘中多轮扫描只保留最新一次观测。只归档 scan_all 系统性
+        轮次（worker/API 冷扫都走本路径），不含 /api/signals/{code} 按需查询。
+        持久层故障静默降级，绝不影响推送主流程。
+        """
+        try:
+            from ...data.store import get_history_store
+            actionable = [s for s in signals if s.action != SignalAction.SKIP]
+            if not actionable:
+                return
+            rows = [{
+                'signal_date': s.timestamp.strftime('%Y-%m-%d'),
+                'created_at': s.timestamp.isoformat(),
+                'code': s.code,
+                'name': s.name,
+                'action': s.action.value,
+                'level': s.level.value if s.level else None,
+                'score': s.score,
+                'strategy': s.strategy,
+                'price': s.price,
+                'position': s.position,
+                'target_price': s.target_price,
+                'stop_loss': s.stop_loss,
+                'capital_flow_5d': s.capital_flow_5d,
+                'kelly_position': s.kelly_position,
+                'kelly_confidence': s.kelly_confidence,
+                'kelly_source': s.kelly_source,
+                'market_type': market.type.value,
+                'reason': s.reason,
+            } for s in actionable]
+            get_history_store().save_signals(rows)
+        except Exception as e:  # noqa: BLE001 持久层降级不影响主流程
+            logger.warning(f"Persist signals failed: {e}")
+
     def _estimate_volatility(self, df) -> float:
         """估算年化波动率"""
         try:

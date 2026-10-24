@@ -32,6 +32,41 @@ class SignalResponse(BaseModel):
     capital_flow_5d: float | None = None
 
 
+class SignalHistoryItem(BaseModel):
+    """信号历史项（SQLite 持久层，docs/25 §5.1，/api/signals/history）"""
+    signal_date: str
+    created_at: str
+    code: str
+    name: str = ''
+    action: str
+    level: str | None = None
+    score: float = 0
+    strategy: str = ''
+    price: float = 0
+    position: float = 0
+    target_price: float | None = None
+    stop_loss: float | None = None
+    capital_flow_5d: float | None = None
+    kelly_position: float | None = None
+    kelly_confidence: float | None = None
+    kelly_source: str | None = None
+    market_type: str | None = None
+    reason: list[str] = []
+
+
+class SummaryHistoryItem(BaseModel):
+    """AI 总结历史项（SQLite 持久层，/api/summary/history）"""
+    id: int
+    summary_type: str
+    generated_at: str
+    market: str | None = None
+    model: str | None = None
+    signals_count: int = 0
+    sectors_count: int = 0
+    full_text: str = ''
+    data: dict = {}
+
+
 class BacktestRequest(BaseModel):
     codes: list[str]
     start_date: str

@@ -5,10 +5,16 @@ from loguru import logger
 
 from ..data.cache import RedisCache
 from ..data.repositories import MarketDataRepository
+from ..data.store import get_history_store
 
 
 class PostEvaluation:
-    """T+N后验评估"""
+    """T+N后验评估
+
+    双轨存储（2026-10-25，docs/25 §5.1）：Redis（30 天 TTL，实时读）+
+    SQLite eval_runs（耐久归档）。Redis 未命中时回退 SQLite 快照——
+    修复「运行结果 30 天后消失、历史靠 JSON 散落」的审计缺口。
+    """
 
     def __init__(self, cache: RedisCache, datacenter: MarketDataRepository):
         self.cache = cache
@@ -31,7 +37,15 @@ class PostEvaluation:
             if len(runs) > 100:
                 runs = runs[-100:]
             self.cache.set("runs:list", runs, ttl=86400 * 30)
-            
+
+            # SQLite 耐久归档（Redis TTL 之外的审计层；失败不影响 Redis 主流程）
+            try:
+                get_history_store().save_eval_run(
+                    run_id, run_data['timestamp'],
+                    market_state.get('type'), market_state.get('score'), signals)
+            except Exception as e:  # noqa: BLE001 归档降级
+                logger.warning(f"SQLite archive eval run failed: {e}")
+
             logger.info(f"Saved run: {run_id}")
             return True
         except Exception as e:  # noqa: BLE001 缓存IO
@@ -42,6 +56,12 @@ class PostEvaluation:
         """评估运行结果"""
         try:
             run_data = self.cache.get(f"run:{run_id}")
+            if not run_data:
+                # Redis 未命中（TTL 过期/被清）→ SQLite 耐久归档回退
+                archived = get_history_store().get_eval_run(run_id)
+                if archived:
+                    run_data = archived
+                    logger.info(f"Run {run_id} recovered from SQLite archive")
             if not run_data:
                 return {'error': f'Run not found: {run_id}'}
             
@@ -111,7 +131,7 @@ class PostEvaluation:
                 avg_max_profit = 0
                 avg_max_drawdown = 0
             
-            return {
+            result = {
                 'run_id': run_id,
                 'run_date': run_data.get('timestamp', ''),
                 'total_signals': total_count,
@@ -122,6 +142,12 @@ class PostEvaluation:
                 'avg_max_drawdown': avg_max_drawdown,
                 'details': results,
             }
+            # 评估结果归档 SQLite（latest-wins，回填审计轨迹；失败不影响返回）
+            try:
+                get_history_store().save_eval_result(run_id, result)
+            except Exception as e:  # noqa: BLE001 归档降级
+                logger.warning(f"Archive eval result failed for {run_id}: {e}")
+            return result
         except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Evaluate run error: {e}")
             return {'error': str(e)}
@@ -164,13 +190,24 @@ class PostEvaluation:
             return {'error': str(e)}
 
     def get_run_list(self, limit: int = 20) -> list[dict]:
-        """获取运行列表"""
+        """获取运行列表
+
+        Redis runs:list 丢失（TTL 过期/被清）时回退 SQLite 归档列表
+        （2026-10-25，docs/25 §5.1）；单条 run 数据同样先 Redis 后 SQLite。
+        """
         try:
             runs = self.cache.get("runs:list") or []
+            if runs:
+                recent = runs[-limit:]
+            else:
+                # Redis 列表丢失 → SQLite 耐久归档（timestamp 倒序即最新在前）
+                recent = [r['run_id'] for r in get_history_store().list_eval_runs(limit)]
             run_list = []
-            
-            for run_id in runs[-limit:]:
+
+            for run_id in recent:
                 run_data = self.cache.get(f"run:{run_id}")
+                if not run_data:
+                    run_data = get_history_store().get_eval_run(run_id)
                 if run_data:
                     run_list.append({
                         'run_id': run_id,
@@ -178,7 +215,7 @@ class PostEvaluation:
                         'total_signals': len(run_data.get('signals', [])),
                         'market_state': run_data.get('market_state', {}).get('type', 'unknown'),
                     })
-            
+
             return run_list
         except Exception as e:  # noqa: BLE001 缓存IO
             logger.error(f"Get run list error: {e}")

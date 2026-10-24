@@ -4,6 +4,10 @@
 公开方法签名、缓存 key/TTL、线程锁保护、B5 卫生断言全部逐一对齐
 （调用方零行为变化）。数据校验已移至 utils/market_sanity.validate_dataframe
 （B5 单一事实源）；源注册与容错仍在 data/source.py + source_manager.py。
+
+2026-10-25（docs/25 §5.2）：get_stock_list/get_daily_data/get_minute_data
+三个稳定键路径增加进程内 in-flight 请求合并（InflightMerger）——同键
+并发只放行一个真实取数，其余等待复用其结果，避免重复冲击 TDX/东财。
 """
 from __future__ import annotations
 
@@ -22,6 +26,7 @@ from ...utils.market_sanity import (
     validate_dataframe,
 )
 from ..cache import RedisCache
+from ..inflight import InflightMerger
 from ..source import CompositeSource
 
 
@@ -45,6 +50,16 @@ class MarketDataRepository:
         self._cache_lock = threading.Lock()
         self._all_quotes_cache = None
         self._all_quotes_cache_time = 0
+        # in-flight 请求合并（docs/25 §5.2）；惰性创建兼容 __new__ 构造的测试替身
+        self._inflight = InflightMerger()
+
+    def _merger(self) -> InflightMerger:
+        """in-flight 合并器访问器（__new__ 手工构造的替身无该属性时兜底）"""
+        merger = getattr(self, '_inflight', None)
+        if merger is None:
+            merger = InflightMerger()
+            self._inflight = merger
+        return merger
 
     def get_stock_list(self) -> pd.DataFrame:
         cache_key = "stock_list"
@@ -53,6 +68,9 @@ class MarketDataRepository:
             df = pd.DataFrame(cached)
             if validate_dataframe(df, "stock_list"):
                 return df
+        return self._merger().run(cache_key, lambda: self._fetch_stock_list(cache_key))
+
+    def _fetch_stock_list(self, cache_key: str) -> pd.DataFrame:
         df = self.source.get_stock_list()
         if validate_dataframe(df, "stock_list"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=86400)
@@ -63,6 +81,10 @@ class MarketDataRepository:
         cached = self.cache.get(cache_key)
         if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"daily:{code}"):
             return df
+        return self._merger().run(
+            cache_key, lambda: self._fetch_daily_data(code, days, cache_key))
+
+    def _fetch_daily_data(self, code: str, days: int, cache_key: str) -> pd.DataFrame:
         df = self.source.get_daily_data(code, days)
         if df is not None and not df.empty and validate_dataframe(df, f"daily:{code}"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
@@ -73,6 +95,10 @@ class MarketDataRepository:
         cached = self.cache.get(cache_key)
         if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"minute:{code}"):
             return df
+        return self._merger().run(
+            cache_key, lambda: self._fetch_minute_data(code, period, cache_key))
+
+    def _fetch_minute_data(self, code: str, period: str, cache_key: str) -> pd.DataFrame:
         df = self.source.get_minute_data(code, period)
         if df is not None and not df.empty and validate_dataframe(df, f"minute:{code}"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=300)
