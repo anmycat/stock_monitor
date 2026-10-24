@@ -54,7 +54,7 @@ class EastMoneySource:
         return by_prefix
 
     @staticmethod
-    def _get_json(url: str, params: dict, tries: int = 3):
+    def _get_json(url: str, params: dict, tries: int = 3, headers: dict | None = None):
         """带重试的 GET+JSON 解析（代理下 push2 偶发 RemoteDisconnected，
         实测重试 1-2 次即恢复；M2' 备路依赖本方法稳定性）"""
         last_err = None
@@ -62,7 +62,7 @@ class EastMoneySource:
             try:
                 response = requests.get(
                     url, params=params,
-                    headers=EastMoneySource.HEADERS, timeout=15)
+                    headers=headers or EastMoneySource.HEADERS, timeout=15)
                 if response.status_code == 200:
                     return response.json()
                 last_err = f"HTTP {response.status_code}"
@@ -187,11 +187,15 @@ class EastMoneySource:
             "fields1": "f1,f2,f3,f7",
             "fields2": "f51,f52,f53,f54,f55,f56",
         }
+        # 资金流接口属 data.eastmoney.com 域，Referer 与行情站不同
+        headers = dict(EastMoneySource.HEADERS)
+        headers['Referer'] = 'https://data.eastmoney.com/'
         try:
             data = None
             for host in ("push2his.eastmoney.com", "push2.eastmoney.com"):
                 data = EastMoneySource._get_json(
-                    f"https://{host}/api/qt/stock/fflow/kline/get", params)
+                    f"https://{host}/api/qt/stock/fflow/kline/get", params,
+                    headers=headers)
                 if data and data.get('data') is not None and \
                         data['data'].get('klines'):
                     break
