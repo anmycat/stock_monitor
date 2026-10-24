@@ -520,7 +520,7 @@ class NewsSourceManager:
         self.sources = []
         try:
             if settings is None:
-                from ..config import get_settings
+                from ...config import get_settings
                 settings = get_settings()
         except Exception as e:
             logger.warning(f"News settings load failed: {e}")

@@ -248,7 +248,8 @@ def main():
     datacenter = MarketDataRepository()
     generator = SignalGenerator(datacenter)
     analyzer = MarketAnalyzer(datacenter)
-    alert_detector = MarketAlert(datacenter)
+    alert_detector = MarketAlert(
+        datacenter, sector_data_provider=lambda: get_sector_data(datacenter))
     ai_summary = AISummary()
     burst_monitor = BurstMonitor(datacenter)
     notifier = NotificationManager()

@@ -9,10 +9,19 @@ from ...models.market import MarketState
 
 
 class MarketAlert:
-    """大盘异动检测模块 - 类似同花顺异动监控"""
+    """大盘异动检测模块 - 类似同花顺异动监控
 
-    def __init__(self, datacenter: MarketDataRepository):
+    板块数据由外部经 sector_data_provider 注入（依赖倒置）：
+    market 为 services 叶族子包，按 DAG 宪法不得 import monitors 的
+    SectorMonitor；消费者（worker 入口 / api 依赖注入）传入
+    ``lambda: SectorMonitor(dc).get_sector_data()``。
+    未注入时板块异动检测自动跳过（功能降级而非报错）。
+    """
+
+    def __init__(self, datacenter: MarketDataRepository,
+                 sector_data_provider=None):
         self.datacenter = datacenter
+        self.sector_data_provider = sector_data_provider
         self.last_alert_time = {}
         self.alert_cooldown = 300
         self.history = []
@@ -191,10 +200,10 @@ class MarketAlert:
 
     def _check_sector_alerts(self) -> list[dict]:
         alerts = []
+        if self.sector_data_provider is None:
+            return alerts  # 未注入板块数据源，功能降级跳过
         try:
-            from .sector_monitor import SectorMonitor
-            sector_monitor = SectorMonitor(self.datacenter)
-            sectors = sector_monitor.get_sector_data()
+            sectors = self.sector_data_provider()
             for sector in sectors[:5]:
                 if sector['avg_change'] >= 3:
                     alerts.append({
