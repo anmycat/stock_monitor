@@ -26,10 +26,18 @@ class SignalGenerator:
         self.risk_manager = RiskManager()
         self.cooldown_manager = CooldownManager(datacenter.cache)
         self.notifier = NotificationManager()
-        self.position_sizer = get_position_sizer()  # Kelly深度融合
+        # Kelly深度融合：动态参数经 provider 注入（risk 叶族不得反向 import signals）
+        self.position_sizer = get_position_sizer(
+            strategy_performance_provider=self._get_strategy_performance)
         self.current_positions: dict[str, float] = {}
         self.equity_curve: list[float] = []
         self.trades: list[dict] = []
+
+    @staticmethod
+    def _get_strategy_performance() -> dict:
+        """策略绩效提供者（供 PositionSizer 动态 Kelly 参数，延迟导入避免环）"""
+        from .signal_tracker import get_signal_tracker
+        return get_signal_tracker().get_strategy_performance()
 
     def scan_all(self, max_signals: int = 3) -> list[Signal]:
         market = self.market_analyzer.analyze_market()
@@ -67,7 +75,7 @@ class SignalGenerator:
 
         # 热点板块加分
         try:
-            from .hotspot import HotspotService
+            from ..monitors.hotspot import HotspotService
             hotspot = HotspotService(self.datacenter)
             hot_codes = set(hotspot.get_hot_sector_codes())
             for s in signals:

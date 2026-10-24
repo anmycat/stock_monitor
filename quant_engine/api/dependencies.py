@@ -23,7 +23,10 @@ news_monitor = MorningNewsMonitor(datacenter)
 code_guard = CodeGuard(datacenter)
 cooldown_manager = CooldownManager(datacenter.cache)
 sector_monitor = SectorMonitor(datacenter)
-market_alert = MarketAlert(datacenter)
+# market 叶族不得 import monitors：板块数据由 L0 注入 provider（依赖倒置）
+market_alert = MarketAlert(
+    datacenter,
+    sector_data_provider=lambda: sector_monitor.get_sector_data())
 hot_money_monitor = HotMoneyMonitor(datacenter)
 # P4：funnel 增强层由 L0 注入 L1 实例（L2 strategies 不再反向 import L1 services）
 strategy_registry = StrategyRegistry(

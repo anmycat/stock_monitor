@@ -43,10 +43,19 @@ class PositionSizingResult:
 
 
 class PositionSizer:
-    """动态仓位管理器(含Kelly公式深度融合)"""
-    
-    def __init__(self, config: KellyConfig = None):
+    """动态仓位管理器(含Kelly公式深度融合)
+
+    策略绩效由外部经 strategy_performance_provider 注入（依赖倒置）：
+    risk 为 services 叶族子包，按 DAG 宪法不得 import signals 的
+    signal_tracker；消费者（signal_generator 等）在获取单例时注入
+    ``lambda: get_signal_tracker().get_strategy_performance()``。
+    未注入时动态 Kelly 降级为默认参数。
+    """
+
+    def __init__(self, config: KellyConfig = None,
+                 strategy_performance_provider=None):
         self.config = config or KellyConfig()
+        self.strategy_performance_provider = strategy_performance_provider
         
         # 仓位限制
         self.min_position = 0.05   # 最小仓位5%
@@ -68,7 +77,7 @@ class PositionSizer:
         Returns:
             {'win_rate': float, 'profit_loss_ratio': float, 'source': str, 'trade_count': int}
         """
-        if not self.config.use_dynamic_params:
+        if not self.config.use_dynamic_params or self.strategy_performance_provider is None:
             return {
                 'win_rate': self.config.default_win_rate,
                 'profit_loss_ratio': self.config.default_profit_loss_ratio,
@@ -77,9 +86,7 @@ class PositionSizer:
             }
         
         try:
-            from .signal_tracker import get_signal_tracker
-            tracker = get_signal_tracker()
-            perf = tracker.get_strategy_performance()
+            perf = self.strategy_performance_provider()
             
             if strategy_name in perf:
                 stats = perf[strategy_name]
@@ -461,14 +468,25 @@ class PositionSizer:
 # 全局仓位管理器
 _position_sizer = None
 
-def get_position_sizer(config: KellyConfig = None) -> PositionSizer:
-    """获取全局仓位管理器"""
+def get_position_sizer(config: KellyConfig = None,
+                       strategy_performance_provider=None) -> PositionSizer:
+    """获取全局仓位管理器
+
+    strategy_performance_provider 首次创建时生效；后续传入且当前实例
+    未注入过 provider 时补注（消费者启动顺序无关）。
+    """
     global _position_sizer
     if _position_sizer is None:
-        _position_sizer = PositionSizer(config)
+        _position_sizer = PositionSizer(
+            config, strategy_performance_provider=strategy_performance_provider)
+    elif strategy_performance_provider is not None and \
+            _position_sizer.strategy_performance_provider is None:
+        _position_sizer.strategy_performance_provider = strategy_performance_provider
     return _position_sizer
 
-def reset_position_sizer(config: KellyConfig = None):
+def reset_position_sizer(config: KellyConfig = None,
+                         strategy_performance_provider=None):
     """重置仓位管理器(用于配置变更)"""
     global _position_sizer
-    _position_sizer = PositionSizer(config)
+    _position_sizer = PositionSizer(
+        config, strategy_performance_provider=strategy_performance_provider)
