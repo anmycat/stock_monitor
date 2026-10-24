@@ -28,6 +28,8 @@ class SignalResponse(BaseModel):
     kelly_position: float | None = None
     kelly_confidence: float | None = None
     kelly_source: str | None = None
+    # 资金流字段（近5日主力净流入累计，元；无数据 None）
+    capital_flow_5d: float | None = None
 
 
 class BacktestRequest(BaseModel):

@@ -10,7 +10,7 @@ from .services.market.market_alert import MarketAlert
 from .services.market.market_analyzer import MarketAnalyzer
 from .services.monitors.burst_monitor import BurstMonitor
 from .services.notifications.manager import NotificationManager
-from .services.signals.signal_generator import SignalGenerator
+from .services.signals.signal_generator import SignalGenerator, warm_api_signals_cache
 from .utils.calendar import is_trading_day
 
 
@@ -312,6 +312,7 @@ def main():
                     for s in signals:
                         if s.action.value == 'BUY':
                             notifier.send_signal(s)
+                warm_api_signals_cache(datacenter.cache, signals)
 
                 time.sleep(300)
 
@@ -319,6 +320,7 @@ def main():
                 # 12:15 推送【早盘总结】（避开DS 12:00-13:00涨价时段）
                 market = analyzer.analyze_market()
                 signals = generator.scan_all(max_signals=3)
+                warm_api_signals_cache(datacenter.cache, signals)
                 sectors = get_sector_data(datacenter)
                 summary = ai_summary.generate_summary(
                     market, signals, sectors,
@@ -335,6 +337,7 @@ def main():
                 # 18:15 推送【全日总结】（避开DS 18:00-19:00涨价时段）
                 market = analyzer.analyze_market()
                 signals = generator.scan_all(max_signals=3)
+                warm_api_signals_cache(datacenter.cache, signals)
                 alerts_history = alert_detector.get_history(10)
                 alert_summary = f"今日异动{len(alerts_history)}次" if alerts_history else "今日无异动"
                 sectors = get_sector_data(datacenter)
