@@ -32,6 +32,8 @@ class Signal(BaseModel):
     target_price: float | None = None
     stop_loss: float | None = None
     context: dict | None = None
+    # 资金流字段（东财 fflow，近5日主力净流入累计，元；None=降级不展示）
+    capital_flow_5d: float | None = None
     # Kelly公式字段
     kelly_position: float | None = None        # Kelly建议仓位
     kelly_confidence: float | None = None      # Kelly信心指数(0-100)
