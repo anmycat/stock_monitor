@@ -35,6 +35,13 @@ def get_signals(max_signals: int = Query(3, ge=1, le=10)):
         cached = datacenter.cache.get(cache_key)
         if cached is not None:
             return [SignalResponse(**s) for s in cached]
+        # 护栏：Redis 不可用时拒绝冷扫兜底——无缓存的全量扫描会退化为 TDX 全池
+        # 探活（分钟级），并与 worker/beat 争抢 TDX 连接，故障期反而放大故障
+        if not datacenter.cache.is_connected:
+            raise HTTPException(
+                status_code=503,
+                detail="Cache unavailable, signal scan disabled",
+                headers={"Retry-After": "30"})
         # 单飞：并发冷缓存请求只放行一个扫描，其余快速失败而非堆积
         if not _scan_lock.acquire(blocking=False):
             raise HTTPException(
