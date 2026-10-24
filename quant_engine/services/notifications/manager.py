@@ -93,17 +93,20 @@ class NotificationManager:
 
         logger.info(f"NotificationManager initialized with {len(self.notifiers)} notifiers")
 
-    def send(self, title: str, content: str):
-        """发送到所有已配置的渠道"""
+    def send(self, title: str, content: str) -> bool:
+        """发送到所有已配置渠道，任一成功返回 True"""
+        success = False
         for notifier in self.notifiers:
             try:
-                notifier.send(title, content)
+                if notifier.send(title, content):
+                    success = True
             except Exception as e:
                 logger.error(f"Send to {notifier.name} failed: {e}")
+        return success
 
-    def send_custom_message(self, title: str, content: str):
+    def send_custom_message(self, title: str, content: str) -> bool:
         """发送自定义消息（兼容旧代码）"""
-        self.send(title, content)
+        return self.send(title, content)
 
     def send_signal(self, signal):
         """发送信号通知"""
@@ -128,7 +131,7 @@ class NotificationManager:
 - **策略**: {signal.strategy}
 {flow_line}- **原因**: {', '.join(signal.reason)}
         """
-        self.send(title, content)
+        return self.send(title, content)
 
     def send_market_alert(self, market):
         """发送市场状态变更通知"""

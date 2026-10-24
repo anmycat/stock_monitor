@@ -149,9 +149,12 @@ class SignalGenerator:
     def _fill_capital_flow(self, signal: Signal) -> None:
         """填充近5日主力资金净流入（推送前 enrichment）
 
-        东财 fflow 日频接口，Redis 按日缓存（key 含日期，TTL 2 天）：
+        东财 fflow 日频接口，Redis 按日缓存（key 含日期）：
         同一股票当日重复扫描不重复请求；接口失败/无数据静默降级
         （字段留 None，通知模板隐藏该行）。
+        成功缓存 2 天；失败负缓存仅 10 分钟——东财 push2 端点偶发
+        IP 级限流（RemoteDisconnected），短 TTL 保证限流恢复后可自愈，
+        同时避免连续扫描反复冲击。
         """
         try:
             from ...data.sources.eastmoney import EastMoneySource
@@ -163,7 +166,10 @@ class SignalGenerator:
                 return
             flow = EastMoneySource.get_capital_flow(signal.code, days=5)
             signal.capital_flow_5d = flow
-            self.datacenter.cache.set(cache_key, '' if flow is None else flow, ttl=2 * 86400)
+            # 成功 2 天 / 失败 10 分钟负缓存（空串哨兵）
+            self.datacenter.cache.set(
+                cache_key, '' if flow is None else flow,
+                ttl=600 if flow is None else 2 * 86400)
         except Exception as e:  # noqa: BLE001 外部调用，降级不影响主流程
             logger.warning(f"Capital flow fill failed for {signal.code}: {e}")
     
