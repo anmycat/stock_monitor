@@ -158,3 +158,61 @@ class EastMoneySource:
         except Exception as e:
             logger.error(f"EastMoney get realtime quote error: {e}")
             return pd.DataFrame()
+
+    @staticmethod
+    def get_capital_flow(code: str, days: int = 5) -> float | None:
+        """获取近 N 个交易日主力资金净流入累计（元）
+
+        东财个股资金流 K 线（fflow/kline，klt=101 日频）：
+        fields2 f51=日期, f52=主力净流入, f53=小单, f54=中单,
+        f55=大单, f56=超大单（单位: 元）。
+        主用 push2his（约 120 根日频历史），失败降级 push2（仅当日）。
+        按日期排序后取最近 days 条累加 f52（含当日，盘中为当日累计值）。
+
+        Args:
+            code: 标准代码（如 "300450.SZ"）
+            days: 累计交易日数（默认 5）
+
+        Returns:
+            近 N 日主力净流入累计（元）；接口失败/解析异常返回 None（降级）
+        """
+        secid = to_secid(code)
+        if not secid:
+            logger.warning(f"EM capital flow: invalid code {code!r}")
+            return None
+        params = {
+            "lmt": "0",
+            "klt": "101",
+            "secid": secid,
+            "fields1": "f1,f2,f3,f7",
+            "fields2": "f51,f52,f53,f54,f55,f56",
+        }
+        try:
+            data = None
+            for host in ("push2his.eastmoney.com", "push2.eastmoney.com"):
+                data = EastMoneySource._get_json(
+                    f"https://{host}/api/qt/stock/fflow/kline/get", params)
+                if data and data.get('data') is not None and \
+                        data['data'].get('klines'):
+                    break
+                data = None
+            if not data:
+                return None
+            klines = data['data'].get('klines') or []
+            if not klines:
+                return None
+            # 解析 (日期, 主力净流入) 并按日期排序，取最近 days 条（不依赖返回顺序）
+            rows: list[tuple[str, float]] = []
+            for line in klines:
+                parts = line.split(',')
+                if len(parts) < 2 or parts[1] in ('', '-'):
+                    continue
+                rows.append((parts[0], float(parts[1])))
+            if not rows:
+                return None
+            rows.sort(key=lambda r: r[0])
+            head = rows[-days:] if days > 0 else rows
+            return sum(v for _, v in head)
+        except (ValueError, TypeError, KeyError) as e:
+            logger.warning(f"EM capital flow parse error for {code}: {e}")
+            return None

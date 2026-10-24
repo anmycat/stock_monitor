@@ -3,6 +3,7 @@
 from loguru import logger
 
 from ...config import get_settings
+from ...utils.helpers import format_number
 from .base import BaseNotifier
 from .feishu import FeishuNotifier
 from .telegram import TelegramNotifier
@@ -113,15 +114,19 @@ class NotificationManager:
         }
         emoji = action_emoji.get(signal.action, "❓")
         title = f"{emoji} 量化信号: {signal.name}"
+        # 资金流行（可选）：近5日主力净流入累计，正负号直读；无数据时隐藏整行
+        flow_line = ""
+        if signal.capital_flow_5d is not None:
+            sign = "+" if signal.capital_flow_5d >= 0 else ""
+            flow_line = f"- **资金**: 5日主力净流入 {sign}{format_number(signal.capital_flow_5d)}\n"
         content = f"""
 - **股票**: {signal.name} ({signal.code})
 - **操作**: {signal.action.value}
-- **评分**: {signal.score:.1f}
-- **级别**: {signal.level.value if signal.level else 'N/A'}
+- **评分/级别**: {signal.score:.1f} / {signal.level.value if signal.level else 'N/A'}
 - **仓位**: {signal.position:.1%}
 - **价格**: {signal.price:.2f}
 - **策略**: {signal.strategy}
-- **原因**: {', '.join(signal.reason)}
+{flow_line}- **原因**: {', '.join(signal.reason)}
         """
         self.send(title, content)
 

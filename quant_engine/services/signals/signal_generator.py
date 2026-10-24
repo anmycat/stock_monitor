@@ -134,8 +134,30 @@ class SignalGenerator:
         self.cooldown_manager.set_idempotent(signal_hash)
         if signal.action == SignalAction.BUY:
             self.cooldown_manager.set_cooldown(code)
+            self._fill_capital_flow(signal)
             self.notifier.send_signal(signal)
         return signal
+
+    def _fill_capital_flow(self, signal: Signal) -> None:
+        """填充近5日主力资金净流入（推送前 enrichment）
+
+        东财 fflow 日频接口，Redis 按日缓存（key 含日期，TTL 2 天）：
+        同一股票当日重复扫描不重复请求；接口失败/无数据静默降级
+        （字段留 None，通知模板隐藏该行）。
+        """
+        try:
+            from ...data.sources.eastmoney import EastMoneySource
+            today = datetime.now().strftime('%Y%m%d')
+            cache_key = f'capflow:{signal.code}:{today}'
+            cached = self.datacenter.cache.get(cache_key)
+            if cached is not None:
+                signal.capital_flow_5d = cached if cached != '' else None
+                return
+            flow = EastMoneySource.get_capital_flow(signal.code, days=5)
+            signal.capital_flow_5d = flow
+            self.datacenter.cache.set(cache_key, '' if flow is None else flow, ttl=2 * 86400)
+        except Exception as e:  # noqa: BLE001 外部调用，降级不影响主流程
+            logger.warning(f"Capital flow fill failed for {signal.code}: {e}")
     
     def _estimate_volatility(self, df) -> float:
         """估算年化波动率"""
