@@ -215,3 +215,44 @@ class SignalGenerator:
                     s.context = context
         except Exception as e:  # noqa: BLE001 外部调用
             logger.warning(f"Signal context enrichment failed: {e}")
+
+
+# ---- API 信号缓存（worker 预热 + api/routers/signals.py 同一键读取）----
+API_SIGNALS_TTL = 900  # 15 分钟：信号非高频数据，避免缓存未命中触发分钟级全量扫描
+
+
+def api_signals_cache_key(max_signals: int = 3) -> str:
+    """API 信号缓存键（routers/signals.py 与本函数必须一致）"""
+    return f'api_cache:signals:{max_signals}'
+
+
+def signal_to_api_dict(s: Signal) -> dict:
+    """Signal → API 响应 dict（字段与 api/schemas SignalResponse 对齐）"""
+    return {
+        'code': s.code,
+        'name': s.name,
+        'action': s.action.value,
+        'level': s.level.value if s.level else None,
+        'score': s.score,
+        'position': s.position,
+        'reason': s.reason,
+        'strategy': s.strategy,
+        'price': s.price,
+        'target_price': s.target_price,
+        'stop_loss': s.stop_loss,
+        'kelly_position': s.kelly_position,
+        'kelly_confidence': s.kelly_confidence,
+        'kelly_source': s.kelly_source,
+        'capital_flow_5d': s.capital_flow_5d,
+    }
+
+
+def warm_api_signals_cache(cache, signals: list[Signal],
+                           max_signals: int = 3) -> None:
+    """worker 扫描后预热 API 信号缓存（键/TTL 与 routers/signals.py 一致）"""
+    try:
+        cache.set(api_signals_cache_key(max_signals),
+                  [signal_to_api_dict(s) for s in signals],
+                  ttl=API_SIGNALS_TTL)
+    except Exception as e:  # noqa: BLE001 预热失败不影响主流程
+        logger.warning(f"Warm api signals cache failed: {e}")

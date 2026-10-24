@@ -3,9 +3,16 @@
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
 
+import threading
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
+from ...services.signals.signal_generator import (
+    api_signals_cache_key,
+    signal_to_api_dict,
+    warm_api_signals_cache,
+)
 from .._shared import (
     _CODE_RE,
     datacenter,
@@ -16,30 +23,32 @@ from ..schemas import SignalResponse
 
 router = APIRouter(prefix="/api")
 
+# 全量扫描单飞锁：分钟级扫描不得并发叠加（并发会争抢 TDX 连接互相拖垮）。
+# 冷缓存首请求独占扫描，其余请求 503 + Retry-After，30s 后重试即命中 warm 缓存。
+_scan_lock = threading.Lock()
+
 @router.get("/signals", response_model=list[SignalResponse], dependencies=[Depends(verify_api_key)])
 def get_signals(max_signals: int = Query(3, ge=1, le=10)):
     try:
-        # Redis缓存: 避免全量扫描1.2s
-        cache_key = f'api_cache:signals:{max_signals}'
+        # Redis缓存: 避免全量扫描（worker 交易时段持续预热，TTL 15 分钟）
+        cache_key = api_signals_cache_key(max_signals)
         cached = datacenter.cache.get(cache_key)
         if cached is not None:
             return [SignalResponse(**s) for s in cached]
-        signals = signal_generator.scan_all(max_signals)
-        result = [
-            SignalResponse(
-                code=s.code, name=s.name, action=s.action.value,
-                level=s.level.value if s.level else None,
-                score=s.score, position=s.position, reason=s.reason,
-                strategy=s.strategy, price=s.price,
-                target_price=s.target_price, stop_loss=s.stop_loss,
-                kelly_position=s.kelly_position,
-                kelly_confidence=s.kelly_confidence,
-                kelly_source=s.kelly_source,
-            )
-            for s in signals
-        ]
-        datacenter.cache.set(cache_key, [s.model_dump() for s in result], ttl=300)
-        return result
+        # 单飞：并发冷缓存请求只放行一个扫描，其余快速失败而非堆积
+        if not _scan_lock.acquire(blocking=False):
+            raise HTTPException(
+                status_code=503,
+                detail="Signal scan in progress, please retry",
+                headers={"Retry-After": "30"})
+        try:
+            signals = signal_generator.scan_all(max_signals)
+            result = [SignalResponse(**signal_to_api_dict(s)) for s in signals]
+            warm_api_signals_cache(
+                datacenter.cache, signals, max_signals=max_signals)
+            return result
+        finally:
+            _scan_lock.release()
     except HTTPException:
         raise
     except Exception as e:
