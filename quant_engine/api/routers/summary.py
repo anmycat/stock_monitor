@@ -2,15 +2,18 @@
 
 URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享依赖见 ../_shared。
 """
-from fastapi import APIRouter, Depends, HTTPException
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
+from ...data.store import get_history_store
 from .._shared import (
     _SUMMARY_TYPES,
     datacenter,
     verify_api_key,
 )
-from ..schemas import AISummaryResponse
+from ..schemas import AISummaryResponse, SummaryHistoryItem
 
 router = APIRouter(prefix="/api")
 
@@ -34,6 +37,24 @@ def get_ai_summary():
         raise
     except Exception as e:
         logger.error(f"API error in get_ai_summary: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/summary/history", response_model=list[SummaryHistoryItem],
+            dependencies=[Depends(verify_api_key)])
+def get_summary_history(summary_type: str | None = Query(None),
+                        limit: int = Query(20, ge=1, le=100)):
+    """AI 总结历史（SQLite 持久层，docs/25 §5.1；id 倒序）"""
+    if summary_type is not None and summary_type not in _SUMMARY_TYPES:
+        raise HTTPException(status_code=400, detail=f'无效总结类型: {summary_type}，可选: {_SUMMARY_TYPES}')
+    try:
+        rows = get_history_store().get_summary_history(
+            summary_type=summary_type, limit=limit)
+        return [SummaryHistoryItem(**r) for r in rows]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_summary_history: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
 

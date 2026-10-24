@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     SERPAPI_API_KEY: str = ""
     TAVILY_API_KEY: str = ""
 
+    # SQLite 持久层（2026-10-25，research/docs/25 §5.1）：信号/评估/总结耐久归档
+    SQLITE_DB_PATH: str = "data/history.db"   # 相对路径按仓库根解析
+    SIGNAL_RETENTION_DAYS: int = 400          # 信号归档保留天数
+    EVAL_RETENTION_DAYS: int = 200            # 回测评估归档保留天数
+    SUMMARY_RETENTION_COUNT: int = 500        # 总结归档保留条数（按 id 取最新）
+
     # 早间财经新闻推送配置（每日9:15，按板块，去重）
     NEWS_WINDOW_HOURS: int = 20          # 无上次推送记录时的回看窗口（小时）
     NEWS_MAX_PER_SECTOR: int = 6         # 每板块最多展示条数

@@ -217,10 +217,19 @@ def check_morning_news(datacenter, notifier):
         logger.error(f"Morning news check error: {e}")
 
 
-def save_summary_to_cache(datacenter, summary_type: str, summary_data: dict):
-    """保存总结到Redis缓存，供 Web页面显示"""
+def save_summary_to_cache(datacenter, summary_type: str, summary_data: dict,
+                          signals_count: int | None = None,
+                          sectors_count: int | None = None):
+    """保存总结到Redis缓存，供 Web页面显示；同时归档 SQLite（docs/25 §5.1）"""
     cache_key = f"ai_summary:{summary_type}"
     datacenter.cache.set(cache_key, summary_data, ttl=86400)  # 缓存24小时
+    try:
+        from .data.store import get_history_store
+        get_history_store().save_summary(
+            summary_type, summary_data,
+            signals_count=signals_count, sectors_count=sectors_count)
+    except Exception as e:  # noqa: BLE001 归档降级不影响缓存主流程
+        logger.error(f"Archive summary failed: {e}")
 
 
 def _save_post_evaluation(post_eval, signals, market):
@@ -328,7 +337,9 @@ def main():
                 )
                 msg = f"【早盘总结】\n\n{summary['full_text']}"
                 notifier.send_custom_message("早盘总结", msg)
-                save_summary_to_cache(datacenter, "morning_review", summary)
+                save_summary_to_cache(datacenter, "morning_review", summary,
+                                      signals_count=len(signals),
+                                      sectors_count=len(sectors))
                 push_summary_to_web("morning_review", "早盘总结", summary)
                 logger.info("✅ 早盘总结已推送 (12:15)")
                 time.sleep(1800)  # 30分钟后进入午休
@@ -349,7 +360,9 @@ def main():
                 summary['full_text'] = f"{summary['full_text']}\n\n{alert_summary}"
                 msg = f"【全日总结】\n\n{summary['full_text']}"
                 notifier.send_custom_message("全日总结", msg)
-                save_summary_to_cache(datacenter, "daily_review", summary)
+                save_summary_to_cache(datacenter, "daily_review", summary,
+                                      signals_count=len(signals),
+                                      sectors_count=len(sectors))
                 push_summary_to_web("daily_review", "全日总结", summary)
 
                 # 保存运行结果供 T+N 后验评估

@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.1",
-  "date": "2026-10-23",
+  "version": "4.2",
+  "date": "2026-10-25",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -324,5 +324,30 @@
     },
     "artifacts": "research/scripts/product_signal_regression.py（新增，长期回归资产）；/tmp/sig_after.json vs /tmp/sig_before2.json（对比产物）",
     "pending": "ECS 部署（用户已授权）+ 部署后复验（三个定时服务重点）；rules JSON v1.7 Kelly 下修建议仍待用户确认"
+  },
+  "d42_efficiency_optimization_2026_10_25": {
+    "date": "2026-10-25",
+    "title": "系统效率评估（docs/25）结论落地：维持 Python 架构 + SQLite 持久层 + in-flight 请求合并（D42）",
+    "report": "research/docs/25_系统效率评估与架构选型_2026-10-25.md",
+    "conclusion": "维持 Python：API 2-5ms/负载 0.14/内存 32%，I/O 绑定无换语言收益；docs/25 §5 两项增量建议全部落地",
+    "sqlite_persistence": {
+      "module": "quant_engine/data/store.py（HistoryStore，WAL 单文件 data/history.db，线程本地连接，*.db 已被 .gitignore 排除）",
+      "tables": "signals（BUY/WATCH upsert）/ eval_runs / eval_results / summaries 四表，保留期 SIGNAL_RETENTION_DAYS=400 / EVAL_RETENTION_DAYS=200 / SUMMARY_RETENTION_COUNT=500，启动时 _prune 一次 + 孤儿评估结果级联清理",
+      "write_points": "SignalGenerator.scan_all → save_signals；PostEvaluation.save_run/evaluate_run → save_eval_run/save_eval_result（双写 Redis+SQLite）；worker.save_summary_to_cache → save_summary",
+      "read_fallback": "evaluate_run/get_run_list 在 Redis 未命中时回退 SQLite（get_eval_run/list_eval_runs）；新增 API /api/signals/history（code/action/date_from/date_to 过滤）与 /api/summary/history（summary_type 过滤），schemas 新增 SignalHistoryItem/SummaryHistoryItem",
+      "safety": "全部公开方法 _safe 包装异常自吞返回安全默认值，持久层故障绝不影响信号推送主流程（Redis 仍是实时层，SQLite 只是审计归档）"
+    },
+    "inflight_merge": {
+      "module": "quant_engine/data/inflight.py（InflightMerger，同键并发只放行一个取数、其余等待其结果）",
+      "integration": "MarketDataRepository.get_stock_list/get_daily_data/get_minute_data 三个稳定键路径包装（leader 执行、follower 等待，超时与失败各自回退取数，防惊群）"
+    },
+    "docs_synced": "prd/03 v2.6（§0 存储选型第三轨 + §4.6 产品线 SQLite 归档表结构）、prd/README v3.5（D42 版 + 看板 + 代码关系段）、manifest v4.2",
+    "verification_suite": {
+      "ruff": "全仓（quant_engine+test+deploy）All checks passed",
+      "tests": "新增 4 测试文件 24 例（test_history_store/test_inflight/test_post_eval_sqlite/test_inflight_repo）全绿；存量 16 离线测试全绿（test_datacenter/test_eastmoney 为代理环境网络脚本，非回归）",
+      "arch_audit": "108 模块/279 内部边/33 延迟导入；零模块级循环/分层宪法合规/services DAG 合规（跨子包边 11 合法）",
+      "import_smoke": "quant_engine.main 导入 OK，history 三路由注册（/api/signals/history、/api/summary/history、/api/alerts/history）"
+    },
+    "pending": "ECS 部署（update_ecs.sh）+ history 端点/SQLite 落库复验；rules JSON v1.7 Kelly 下修建议仍待用户确认"
   }
 }
