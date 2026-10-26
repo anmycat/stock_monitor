@@ -54,12 +54,25 @@ class MarketRegimeDetector:
                 return False
             
             X = features.values
-            
+
+            # 数据卫生检查（D44 修复 10-26 日志 'covars must be symmetric,
+            # positive-definite'）：一字板/停牌股价格无波动时 return/range
+            # 方差精确为 0，协方差矩阵退化，hmmlearn 抛 ValueError。
+            # hmmlearn 官方 FAQ 对数据退化的建议即降级不训练——本项目的
+            # 降级路径是 predict 返回"震荡"（不影响信号主流程）。
+            if not np.isfinite(X).all():
+                logger.info("HMM skipped: non-finite features (suspended stock?)")
+                return False
+            if (X.std(axis=0) < 1e-12).any():
+                logger.info("HMM skipped: degenerate feature variance (one-way board?)")
+                return False
+
             self.model = hmm.GaussianHMM(
                 n_components=self.N_STATES,
                 covariance_type="full",
                 n_iter=100,
                 random_state=42,
+                min_covar=1e-3,  # 协方差对角线下限，官方建议的数值加固
             )
             self.model.fit(X)
             self._trained = True

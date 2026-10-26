@@ -307,6 +307,9 @@ def main():
                     notifier.send_custom_message(f"强势异动: {burst['name']}", msg)
                     logger.info(f"Burst alert: {burst['name']} {burst['change_pct']}%")
 
+                # 合并发送限流期暂存的异动摘要（D44 防钉钉 660026）
+                notifier.flush_signals()
+
                 # 大盘异动检测
                 market = analyzer.analyze_market()
                 alerts = alert_detector.detect_alerts(market)

@@ -67,14 +67,28 @@ class MarketDataRepository:
         if cached is not None:
             df = pd.DataFrame(cached)
             if validate_dataframe(df, "stock_list"):
-                return df
+                return self._filter_markets(df)
         return self._merger().run(cache_key, lambda: self._fetch_stock_list(cache_key))
+
+    @staticmethod
+    def _filter_markets(df: pd.DataFrame) -> pd.DataFrame:
+        """过滤项目不支持的市场（D44：修复 10-26 日志 920285.BJ 每轮
+        扫描浪费一次 TDX 取数 + 一条 ERROR）。
+
+        TDX 网关不支持北交所（tdx.py 实测 920819 两市场均空），且分钟线
+        双源（TDX/腾讯）对 BJ 均不可用——扫描池排除 .BJ 是数据源能力
+        边界，不是临时规避。缓存命中路径同样过滤：存量缓存（TTL 86400）
+        在部署后过期前仍含 BJ。
+        """
+        if df.empty or 'code' not in df.columns:
+            return df
+        return df[~df['code'].astype(str).str.endswith('.BJ')]
 
     def _fetch_stock_list(self, cache_key: str) -> pd.DataFrame:
         df = self.source.get_stock_list()
         if validate_dataframe(df, "stock_list"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=86400)
-        return df
+        return self._filter_markets(df)
 
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:
         cache_key = f"daily:{code}:{days}"

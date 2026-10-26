@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     # 钉钉配置
     DINGTALK_WEBHOOK: str = ""
     DINGTALK_SECRET: str = ""
+
+    # 通知流量控制（D44：钉钉自定义机器人 20 条/分钟硬限，超限限流 10 分钟）
+    # 最小发送间隔（秒）：低于间隔的消息暂存聚合缓冲，轮末合并为摘要发出
+    NOTIFY_MIN_INTERVAL_SECONDS: float = 3.0
+    # 每分钟发送上限（留余量给市场告警）：窗口满时消息暂存，flush 延到下一轮
+    NOTIFY_MAX_PER_MINUTE: int = 18
     
     # AI配置
     DEEPSEEK_API_KEY: str = ""

@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.3",
+  "version": "4.4",
   "date": "2026-10-27",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -369,5 +369,27 @@
     ],
     "constraint": "D28/D41 已实证四大K线形态3个月实盘全部跑输基准；所有新技术因子必须走 docs/09 §11 三层验证（L1三件套/L2取数参数化/L3牛熊分段），通过才升 rules JSON（需用户确认）；本轮仅出评估文档，未动任何生产代码",
     "pending": "用户裁定 P0 两项是否立项回测；rules JSON v1.7 Kelly 下修建议仍待用户确认"
+  },
+  "d44_production_fixes_and_p0_strategy_2026_10_27": {
+    "trigger": "用户指令：①针对 10-26 生产日志分析发现的 3 个问题全网检索修复方案并修复；②按 docs/26 优化点提升项目（P0 立项批准）",
+    "web_research": [
+      "钉钉官方：每机器人每分钟最多 20 条、超限限流 10 分钟，官方建议整合为 markdown 摘要发送",
+      "BIAS 阈值（百度百科/中经网/TMGM 一致）：6 日 ±6%/+8%、12 日 ±5%；明确警告强势股可长期维持高正乖离，一刀切禁买易卖飞主升浪",
+      "hmmlearn 官方 FAQ：协方差奇异（数据退化）时应降级，配合 min_covar 加固"
+    ],
+    "fixes": [
+      "钉钉 660026 限流（10-26 日志 21 次）：notifications/manager.py 新增 send_signals 批量合并入口 + 渠道级最小间隔（NOTIFY_MIN_INTERVAL_SECONDS 3s）+ 每分钟硬上限（NOTIFY_MAX_PER_MINUTE 18）+ 窗口满缓冲 flush；worker burst 循环与 scan_all 两处集成",
+      "HMM covars 数值崩溃（10-26 日志 13 次）：hmm_detector.py fit() 前特征列方差检查（std<1e-12 直接降级返回 False）+ 模型 min_covar=1e-3 加固 + 日志降级 WARNING",
+      "北交所股票池污染（10-26 日志 32 次，920285.BJ×30）：repositories/market_data.py get_stock_list 缓存命中+拉取双路径过滤 .BJ（_filter_markets）"
+    ],
+    "p0_strategy": [
+      "trend.py 新增 _check_veto：pullback_ma5 >9% 禁 BUY 转 WATCH（乖离超买保护，转 WATCH 不丢弃以兼容强势股高乖离警告）",
+      "trend.py 新增 _volume_position_score：20 日位置（复用 dip.py 算法）× volume_ratio 五档矩阵——低位+温和放量+8、高位+放量≥5 硬 veto、高位+明显放量-10、量增价平-5",
+      "量比分档细化：0.5/1.5/2.5/5/10 五档；'高位放量禁买'与'主升浪放量跟进'冲突调和：剧烈放量（≥5）在高位才禁，温和放量仅降分"
+    ],
+    "not_landed": "M3-2 金叉/M3-3 年线门/M3-4 粘合度/M3-7 换手率/M3-8 分时均价线 维持 docs/26 原评估；本轮未升 rules JSON、未动生产 YAML（遵守 D28/D41 纪律，走 docs/09 §11 三层验证）",
+    "tests": "新增 4 测试文件（trend veto / notifier throttle / HMM 退化 / BJ 过滤）；顺带修复 test_morning_news 时间炸弹复发（fixture 10-18 静态日期被 7 天窗口老化，放宽至 30 天）",
+    "signal_regression": "product_signal_regression.py 129 日 × 27 票双跑对比（D43 基线 vs D44）；详见 docs/26 §7.4",
+    "pending": "ECS 部署复验；rules JSON v1.7 Kelly 下修建议仍待用户确认"
   }
 }

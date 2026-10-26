@@ -92,6 +92,13 @@ class SignalGenerator:
 
         # 为 BUY 信号添加上下文（新闻/舆情）
         self._enrich_signals(signals)
+
+        # 合并发送限流期暂存的信号摘要（D44 防钉钉 660026：
+        # 钉钉 20 条/分钟硬限，扫描轮内多票连发会被暂存，此处轮末汇总发出）
+        try:
+            self.notifier.flush_signals()
+        except Exception as e:  # noqa: BLE001 聚合失败不影响扫描结果
+            logger.warning(f"Flush signals failed: {e}")
         return signals
 
     def scan_stock(self, code: str, name: str = "") -> Signal | None:
