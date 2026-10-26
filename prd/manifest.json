@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.2",
-  "date": "2026-10-25",
+  "version": "4.3",
+  "date": "2026-10-27",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -349,5 +349,25 @@
       "import_smoke": "quant_engine.main 导入 OK，history 三路由注册（/api/signals/history、/api/summary/history、/api/alerts/history）"
     },
     "pending": "ECS 部署（update_ecs.sh）+ history 端点/SQLite 落库复验；rules JSON v1.7 Kelly 下修建议仍待用户确认"
+  },
+  "d43_methodology_iteration_assessment_2026_10_27": {
+    "trigger": "用户分享两则抖音视频（7条经典均线口诀 / 量比的短线实战应用），要求提取内容并评估是否对项目有帮助或可融合",
+    "extraction": "抖音网页端反爬无法直取视频本体；两个主题为标准化技术分析公开方法论，经新浪财经×4/凤凰网/今日头条×3/东方财富财富号/百度百科等多来源交叉还原，内容骨干一致",
+    "assessment_doc": "research/docs/26_均线七诀与量比实战迭代评估_2026-10-27.md",
+    "key_findings": [
+      "均线七诀7条中项目已覆盖3.5条（trend.py 多头排列覆盖①④；ma60已算未消费；consolidation_days为价格收敛近似非均线粘合）",
+      "最结构化缺口：趋势策略只认多头排列、不识别追高位置（位置决定性质）；BIAS乖离率数据已在 indicators.pullback_ma5 但 trend.py 未消费",
+      "口径问题：volume_ratio 为自定义近似（当日量/20日均量）非标准量比定义，日K粒度无法精确计算标准值，建议保留口径并注释",
+      "数据缺口：换手率（models/stock.py 有字段但日K取数链路不带），量比×换手率组合本轮不立项"
+    ],
+    "iteration_backlog": [
+      "P0 M3-1 乖离率过滤（>9%禁BUY/回踩不破加分）+ M3-5 位置×量比组合（低位放量加分、高位放量禁BUY）——数据零成本，建议优先回测",
+      "P1 M3-6 量比五档细化 + M3-4 真均线粘合度 + volume_ratio 口径注释（文档级）",
+      "P2 M3-2 MA10/20金叉；M3-3 年线趋势门（需先评估250日取数与样本量压缩）",
+      "P3 M3-7 换手率组合（依赖数据建设）；M3-8 分时均价线真伪放量（分钟线午后双源不稳，暂缓）",
+      "排除：打板类（涨停量比<1连板）与项目定位不符"
+    ],
+    "constraint": "D28/D41 已实证四大K线形态3个月实盘全部跑输基准；所有新技术因子必须走 docs/09 §11 三层验证（L1三件套/L2取数参数化/L3牛熊分段），通过才升 rules JSON（需用户确认）；本轮仅出评估文档，未动任何生产代码",
+    "pending": "用户裁定 P0 两项是否立项回测；rules JSON v1.7 Kelly 下修建议仍待用户确认"
   }
 }
