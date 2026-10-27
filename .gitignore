@@ -39,3 +39,4 @@ research/raw/pattern_pool_klines_2y.json
 
 # ===== 本地工作日志（.memory 留痕，不入库）=====
 .memory/
+.trash/

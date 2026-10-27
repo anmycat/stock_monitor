@@ -1,6 +1,5 @@
 from .market import MarketState, MarketType
 from .signal import Signal, SignalAction, SignalLevel
-from .stock import StockQuote
 
 __all__ = [
     "MarketState",
@@ -8,5 +7,4 @@ __all__ = [
     "Signal",
     "SignalAction",
     "SignalLevel",
-    "StockQuote",
 ]
