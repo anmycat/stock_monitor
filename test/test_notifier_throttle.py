@@ -48,6 +48,10 @@ class TestNotifierThrottle(unittest.TestCase):
         ok = self.manager.send_signal(_signal('000001.SZ'))
         self.assertTrue(ok)
         self.assertEqual(self.mock_channel.send.call_count, 1)
+        # 文案断言：价格字段名为"信号价"（非"价格"——盘中为前收收盘价，非现价）
+        _, content = self.mock_channel.send.call_args[0]
+        self.assertIn('**信号价**', content)
+        self.assertNotIn('**价格**', content)
 
     def test_second_signal_within_interval_buffered(self):
         self.manager.send_signal(_signal('000001.SZ'))
