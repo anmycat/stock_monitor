@@ -28,6 +28,7 @@ from ...utils.market_sanity import (
 from ..cache import RedisCache
 from ..inflight import InflightMerger
 from ..source import CompositeSource
+from ..stock_info import get_stock_info_table
 
 
 class MarketDataRepository:
@@ -85,9 +86,24 @@ class MarketDataRepository:
         return df[~df['code'].astype(str).str.endswith('.BJ')]
 
     def _fetch_stock_list(self, cache_key: str) -> pd.DataFrame:
+        # D49：静态信息表 fresh（默认 7 天内）→ 本地构建，不打行情源。
+        # 静态表数据来自既有 get_stock_list 链路的 ingest / 盘后 refresh，
+        # 与源返回同为 code/name/industry 三列静态信息。
+        info = get_stock_info_table()
+        if info.is_fresh():
+            df = info.to_dataframe()
+            if not df.empty:
+                self.cache.set(cache_key, df.to_dict(orient='records'), ttl=86400)
+                logger.debug(f"[StockInfo] stock_list 本地构建 {len(df)} 只（未打源）")
+                return self._filter_markets(df)
         df = self.source.get_stock_list()
         if validate_dataframe(df, "stock_list"):
             self.cache.set(cache_key, df.to_dict(orient='records'), ttl=86400)
+            # D49：借势 ingest（不发起新请求，频率由 MIN_INGEST_ROWS 防兜底污染）
+            try:
+                info.ingest(df)
+            except Exception as e:  # noqa: BLE001 兜底：静态表失败不影响股票池
+                logger.debug(f"[StockInfo] ingest 跳过: {e}")
         return self._filter_markets(df)
 
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:

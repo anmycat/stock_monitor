@@ -35,12 +35,39 @@ def get_sleep_seconds() -> int:
     return 120
 
 
+# D49：盘后静态股票信息表刷新（15:35 后执行一次，ST/脱帽/退市变更推送）
+STOCK_INFO_REFRESH_T = 15 * 60 + 35
+
+
+def maybe_refresh_stock_info(notifier, state: dict) -> None:
+    """每个非交易时段检查一次：收盘后刷新静态表，有变更则钉钉通知"""
+    now = datetime.now()
+    if not is_trading_day(now):
+        return
+    if now.hour * 60 + now.minute < STOCK_INFO_REFRESH_T:
+        return
+    if state.get('stock_info_date') == now.date().isoformat():
+        return
+    state['stock_info_date'] = now.date().isoformat()
+    from .data.stock_info import format_stock_info_diff, get_stock_info_table
+    try:
+        diff = get_stock_info_table().refresh()
+    except Exception as e:  # noqa: BLE001 盘后任务兜底
+        logger.error(f"StockInfo refresh error: {e}")
+        return
+    summary = format_stock_info_diff(diff)
+    if summary:
+        notifier.send_custom_message('股票池静态信息变更', summary)
+        logger.info(f"StockInfo 变更已推送:\n{summary}")
+
+
 def main():
     logger.info("Beat scheduler started")
     datacenter = MarketDataRepository()
     analyzer = MarketAnalyzer(datacenter)
     notifier = NotificationManager()
     last_market_type = None
+    stock_info_state: dict = {}
 
     while True:
         try:
@@ -53,6 +80,7 @@ def main():
                 last_market_type = market.type
                 time.sleep(120)
             else:
+                maybe_refresh_stock_info(notifier, stock_info_state)
                 sleep_sec = get_sleep_seconds()
                 if sleep_sec > 120:
                     logger.debug(f"Non-trading, sleeping {sleep_sec}s")
