@@ -43,9 +43,19 @@ class BurstMonitor:
             if df.empty:
                 return self.active_pool or []
             
-            # 过滤ST、价格过低
+            # 过滤ST、价格过低（D49：ST 判定优先用静态信息表——
+            # 名称 contains('ST') 会漏判"*ST"变体并误伤名称含 ST 字母者）
             if 'name' in df.columns:
-                df = df[~df['name'].str.contains('ST', na=False)]
+                try:
+                    from ...data.stock_info import get_stock_info_table
+                    info = get_stock_info_table()
+                    if len(info) > 0:
+                        st_mask = df['code'].map(info.is_st).fillna(False).astype(bool)
+                        df = df[~st_mask]
+                    else:
+                        df = df[~df['name'].str.contains('ST', na=False)]
+                except Exception:  # noqa: BLE001 静态表异常时回退名称判定
+                    df = df[~df['name'].str.contains('ST', na=False)]
             if 'price' in df.columns:
                 df['price'] = pd.to_numeric(df['price'], errors='coerce')
                 df = df[df['price'] >= self.min_price]
