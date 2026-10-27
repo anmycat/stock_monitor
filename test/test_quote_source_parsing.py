@@ -73,6 +73,53 @@ class TestTencentParsing(unittest.TestCase):
         self.assertAlmostEqual(row['price'], 4.236, places=3)
         self.assertAlmostEqual(row['change_pct'], -0.14, places=2)
 
+    @patch('quant_engine.data.sources.tencent.requests.get')
+    def test_volume_unit_normalized_to_shares(self, mock_get):
+        """成交量统一为「股」口径（2026-10-27 事故修复）
+
+        腾讯 qt 接口口径分裂（实测 12/12 样本零例外）：科创板
+        (688/689) parts[6] 原值即股，沪主板/深市/北交所/ETF 为
+        「手」。不统一会使跨板块成交额计算差 100 倍——
+        burst_monitor 活跃池曾 299/300 被科创板霸榜。
+        验证：解析后 volume×price ≈ 原始报文 parts[37] 成交额（万元）
+        """
+        mock_get.return_value = _mock_response(_load_bytes('quote_tencent_raw.txt'))
+        codes = ['510300.SH', '000001.SZ', '920819.BJ', '688981.SH',
+                 '300750.SZ', '600000.SH', '518880.SH', '588000.SH']
+        df = TencentSource.get_realtime_quote(codes)
+
+        # 从原始报文提取成交额（万元）作基准
+        raw = _load_bytes('quote_tencent_raw.txt').decode('gbk', errors='replace')
+        amounts = {}
+        for line in raw.strip().split('\n'):
+            var, _, payload = line.partition('=')
+            prefix = var.strip().replace('v_', '')[:2]
+            mkt = TencentSource._MARKET_PREFIX_MAP.get(prefix)
+            parts = payload.strip(';').strip('"').split('~')
+            if mkt and len(parts) > 37 and parts[2]:
+                amounts[f"{parts[2]}.{mkt}"] = float(parts[37])
+        self.assertTrue(amounts, 'fixture 应含成交额字段')
+
+        volumes = dict(zip(df['code'], df['volume']))
+        prices = dict(zip(df['code'], df['price']))
+        for code, amount_wan in amounts.items():
+            calc_wan = float(volumes[code]) * float(prices[code]) / 1e4
+            # 收盘价 vs 成交均价差异，容差 5%
+            self.assertAlmostEqual(
+                calc_wan, amount_wan, delta=amount_wan * 0.05,
+                msg=f"{code} volume×price 与成交额不符（单位未统一？）")
+
+    def test_parse_quote_star_vs_main_board_unit(self):
+        """_parse_quote 单测：688 原值即股、600 手→股（合成报文）"""
+        star = ('1~中芯国际~688981~102.66~100.00~101.00~37855220~' + '0~' * 26
+                + '3.16~' + '0~' * 3 + '387916~' + '0~' * 6 + '1~' * 10)
+        main = ('1~浦发银行~600000~9.73~9.70~9.71~922942~' + '0~' * 26
+                + '0.31~' + '0~' * 3 + '89616~' + '0~' * 6 + '1~' * 10)
+        q_star = TencentSource._parse_quote(star, market='sh')
+        q_main = TencentSource._parse_quote(main, market='sh')
+        self.assertEqual(q_star['volume'], 37855220)      # 股，不换算
+        self.assertEqual(q_main['volume'], 922942 * 100)  # 手→股
+
     def test_convert_code(self):
         self.assertEqual(TencentSource._convert_code('510300.SH'), 'sh510300')
         self.assertEqual(TencentSource._convert_code('920819.BJ'), 'bj920819')

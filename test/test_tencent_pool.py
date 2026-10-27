@@ -82,7 +82,9 @@ class TencentPoolTests(unittest.TestCase):
         row = df[df['code'] == '600000.SH'].iloc[0]
         self.assertAlmostEqual(row['price'], 10.00)
         self.assertAlmostEqual(row['change_pct'], 1.01)
-        self.assertAlmostEqual(row['volume'], 1000.0)
+        # 成交量统一为「股」：沪主板 parts[6]=1000 手 → 100000 股
+        # （2026-10-27 修复腾讯口径分裂：688 原值即股、其他板块为手）
+        self.assertAlmostEqual(row['volume'], 100000.0)
 
     @patch('quant_engine.data.sources.eastmoney.EastMoneySource.get_all_stocks')
     @patch('quant_engine.data.sources.sina.SinaSource.get_stock_list')

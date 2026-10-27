@@ -76,7 +76,14 @@ class TencentSource:
                 'name': parts[1],
                 'price': float(parts[3]) if parts[3] else 0,
                 'change_pct': float(parts[32]) if parts[32] else 0,
-                'volume': float(parts[6]) if parts[6] else 0,
+                # 成交量单位统一为「股」（与新浪实时/列表、日K链路口径一致）。
+                # 腾讯 qt 接口口径分裂（2026-10-27 实测 12/12 样本零例外）：
+                # 科创板(688/689) parts[6] 原值即股；沪主板/深市/北交所
+                # parts[6] 为「手」。不统一会导致跨板块成交额计算虚高/虚低
+                # 100 倍——burst_monitor 活跃池曾因此 299/300 被科创板霸榜。
+                'volume': (float(parts[6]) if parts[6] else 0)
+                if symbol.startswith(('688', '689'))
+                else (float(parts[6]) * 100 if parts[6] else 0),
             }
         except Exception:
             return None
