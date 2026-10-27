@@ -3,12 +3,20 @@
 # 用法（仓库根）：bash deploy/update_ecs.sh
 # 流程：备份现网 → 上传代码（排除 .env/缓存/日志）→ 装依赖 → 导入冒烟 → 重启三服务 → 端点验证
 # 注意：.env 永不上传（gitignore 凭据，ECS 保留自身配置）；--delete 受 --exclude 保护不会删 ECS 侧日志/配置
+# 认证：显式 -i ~/.ssh/id_ed25519 + BatchMode（agent 不可见时仍走密钥，失败即报错不挂起等密码）
 set -euo pipefail
 
 ECS=root@8.134.89.55
 REMOTE=/stock_monitor
 TS=$(date +%Y%m%d_%H%M%S)
-SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15"
+SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes"
+# 显式指定身份文件：沙箱/CI 环境下 ssh-agent 可能不可见，默认身份探测会被拦导致回退密码交互挂起
+if [ -f "${HOME}/.ssh/id_ed25519" ]; then
+    SSH_OPTS="$SSH_OPTS -i ${HOME}/.ssh/id_ed25519"
+    RSYNC_RSH="ssh $SSH_OPTS"
+else
+    RSYNC_RSH="ssh $SSH_OPTS"
+fi
 
 echo "== 0/6 连通性与现网状态"
 ssh $SSH_OPTS $ECS "echo CONNECTED; systemctl is-active quant-api quant-worker quant-beat; cd $REMOTE/quant_engine 2>/dev/null && (git rev-parse --short HEAD 2>/dev/null || echo 'no-git-repo')"
@@ -20,8 +28,8 @@ echo "== 2/6 上传代码（quant_engine + UX；排除 .env/__pycache__/logs）"
 RSYNC_EXCLUDES=(--exclude='__pycache__' --exclude='*.pyc' --exclude='.env' --exclude='.env.*'
                 --exclude='logs/' --exclude='*.log' --exclude='.ruff_cache' --exclude='.DS_Store')
 if ssh $SSH_OPTS $ECS "command -v rsync >/dev/null"; then
-    rsync -az --delete "${RSYNC_EXCLUDES[@]}" quant_engine/ "$ECS:$REMOTE/quant_engine/"
-    rsync -az --delete --exclude='__pycache__' --exclude='.DS_Store' UX/ "$ECS:$REMOTE/UX/"
+    rsync -az --delete -e "$RSYNC_RSH" "${RSYNC_EXCLUDES[@]}" quant_engine/ "$ECS:$REMOTE/quant_engine/"
+    rsync -az --delete -e "$RSYNC_RSH" --exclude='__pycache__' --exclude='.DS_Store' UX/ "$ECS:$REMOTE/UX/"
 else
     echo "ECS 无 rsync，走 tar 管道"
     tar czf - --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' --exclude='.env.*' \
