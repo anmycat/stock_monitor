@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.4",
+  "version": "4.5",
   "date": "2026-10-27",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -391,5 +391,33 @@
     "tests": "新增 4 测试文件（trend veto / notifier throttle / HMM 退化 / BJ 过滤）；顺带修复 test_morning_news 时间炸弹复发（fixture 10-18 静态日期被 7 天窗口老化，放宽至 30 天）",
     "signal_regression": "product_signal_regression.py 129 日 × 27 票双跑对比（D43 基线 vs D44）；详见 docs/26 §7.4",
     "pending": "ECS 部署复验；rules JSON v1.7 Kelly 下修建议仍待用户确认"
+  },
+  "d45_volume_unit_fix_and_d46_youzi_eval_2026_10_27": {
+    "trigger": "用户反馈：①监控未发现游资类操盘（附同花顺暗盘资金榜录屏）②昨天今天推送全是科创板，其他板块没有，要求排查设计问题还是阈值问题",
+    "d45_production_fix": {
+      "conclusion": "设计问题（数据解析缺陷），非阈值问题",
+      "root_cause": "腾讯 qt 接口成交量单位口径分裂（实测12/12样本零例外）：科创板688/689 parts[6] 原值即股，沪主板/深市/北交所/ETF 为手；_parse_quote 未统一，burst_monitor amount=volume×price 使科创板虚高100倍，活跃池 top300 中 299/300 为科创板，异动推送因此只出688",
+      "fix": "tencent.py _parse_quote：688/689 保留原值，其余 ×100（手→股），统一为股口径（与新浪/日K链路一致）",
+      "verification": "修复前 top300={688:299,300:1}；修复后 {300:58,002:58,688:46,600:42,603:25,601:25,000:24,301:15,...}；top10 为长鑫148亿/中际旭创134.8亿/新易盛109亿等真实排名；新增2测试+更新test_tencent_pool旧口径断言；全量20测试文件全绿、ruff零问题；已部署ECS复验通过",
+      "commit": "38c3a439（D45）"
+    },
+    "d46_capability_eval": {
+      "doc": "research/docs/27_游资暗盘资金操盘机制识别与项目能力提升评估",
+      "video_content": "同花顺暗盘资金榜录屏（36.5s无有效人声，18帧提取）：暗盘/明盘资金拆分+暗盘占成交额比+逆势流入标签；四类游资模式：暗盘吸筹+明盘拉升/暗盘逆势流入/明盘流出暗盘流入（派发掩护）/暗盘占比骤升",
+      "api_survey_ecs": {
+        "dragon_tiger_list": "RPT_DAILYBILLBOARD_DETAILSNEW + RPT_OPERATEDEPT_TRADE（filter TRADE_ID 不带引号）——ECS实测可用，营业部维度直接暴露资金主体（机构专用vs游资营业部）",
+        "sina_sector_flow": "MoneyFlow.ssl_bkzj_bk 概念板块资金流——ECS实测可用",
+        "em_capital_flow": "push2his/push2 从ECS ConnectionError（出口IP风控）；生产库33笔信号 capital_flow_5d 仅3笔非空——资金流字段形同虚设（静默降级）",
+        "dark_pool": "同花顺L2逐笔拆解数据不可得，本轮不立项"
+      },
+      "proposals_pending_user": [
+        "M5-1 龙虎榜日报（盘后，营业部+机构/游资识别）",
+        "M5-2 资金流瘫痪排障（fill-rate监控+换可达源）——所有资金面能力的地基",
+        "M5-4 板块资金流接入（新浪）",
+        "M5-5 逆势流入近似信号（日级，依赖M5-2）"
+      ],
+      "secondary_finding": "10-27信号少（6笔）的另一半原因是10:38后熊市门控跳过扫描，属既有策略设计非bug"
+    },
+    "not_landed": "M5-1/M5-2/M5-4/M5-5 全部待用户裁定后按 docs/09 §11 三层验证走；未动 rules JSON/生产YAML"
   }
 }
