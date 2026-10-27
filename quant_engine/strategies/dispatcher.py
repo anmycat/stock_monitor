@@ -234,6 +234,20 @@ class StrategyDispatcher:
         
         # 用融合分替换原始分
         signal.score = round(blended, 1)
+
+        # 级别与分数同源：按融合分重算（S80/A70/B60，与 YAML levels 对齐）。
+        # 修复原实现"level 在融合前按策略分判定、score 被融合分替换"导致的
+        # 观感矛盾（如 63.5 分挂 B 级——实际 B 来自策略分 65-70 的 else 分支）。
+        # 仅 BUY 挂级；已降级 WATCH 的信号保持无级。
+        if signal.action == SignalAction.BUY:
+            if blended >= 80:
+                signal.level = SignalLevel.S
+            elif blended >= 70:
+                signal.level = SignalLevel.A
+            elif blended >= 60:
+                signal.level = SignalLevel.B
+            else:
+                signal.level = None
         
         # 添加因子亮点到理由
         top_factors = self._get_top_factors(factors)

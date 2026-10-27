@@ -258,7 +258,7 @@ class NotificationManager:
 - **操作**: {signal.action.value}
 - **评分/级别**: {signal.score:.1f} / {signal.level.value if signal.level else 'N/A'}
 - **仓位**: {signal.position:.1%}
-- **价格**: {signal.price:.2f}
+- **信号价**: {signal.price:.2f}
 - **策略**: {signal.strategy}
 {flow_line}- **原因**: {', '.join(signal.reason)}
         """
