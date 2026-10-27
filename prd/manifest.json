@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.5",
+  "version": "4.6",
   "date": "2026-10-27",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -419,5 +419,20 @@
       "secondary_finding": "10-27信号少（6笔）的另一半原因是10:38后熊市门控跳过扫描，属既有策略设计非bug"
     },
     "not_landed": "M5-1/M5-2/M5-4/M5-5 全部待用户裁定后按 docs/09 §11 三层验证走；未动 rules JSON/生产YAML"
+  },
+  "d47_signal_card_wording_and_level_consistency_2026_10_27": {
+    "trigger": "用户查证截图信号（中新集团 601512.SH 10-27 10:33 生成）：①\"价格 7.74\"是否为现价、是则改名现价；②评分 63.5 与 ABC 级别的含义",
+    "facts_verified": {
+      "price_semantics": "price = df['close'].iloc[-1]（数据源最新一根日K收盘价）。该信号盘中生成，7.74 实为 10-26 收盘价；10-27 实际收盘 7.40（-4.4%）。盘中推送时该字段与市价存在偏差——不是现价，不改成\"现价\"",
+      "score_semantics": "评分 = 策略分×0.7 + 多因子综合分×0.3（dispatcher._apply_factor_scoring 融合公式）。多因子 8 维基准权重：趋势15%/动量15%/技术15%/资金流13%/估值12%/流动性10%/稳定性10%/量能10%，HMM 市场状态下动态调整",
+      "level_bug": "级别在融合前按策略分判定（dip.py：≥80 S / ≥70 A / else B），score 后被融合分替换但 level 未同步——\"63.5 分挂 B 级\"即此不同源问题（该例策略分 65-67 → else B）",
+      "factor_highlights": "\"因子: 流动性80, 稳定性75\"= 多因子中 ≥70 的前二名（_get_top_factors）"
+    },
+    "fixes": [
+      "manager.py send_signal 模板：\"价格\"→\"信号价\"（名称诚实，盘中为前收收盘价不冒充现价）",
+      "dispatcher._apply_factor_scoring：blended 替换 score 后按同阈值重算 level（S80/A70/B60 与 YAML levels 对齐，仅 BUY 挂级，WATCH 降级保持无级）"
+    ],
+    "verification": "新增 test_factor_blend_level.py 6 例；test_notifier_throttle 补信号价文案断言；全量 21 测试文件全绿；ruff 全仓零问题；导入冒烟 OK；已部署 ECS",
+    "pending": "数据截止日期标注（Signal 模型加 data_date 字段，涉及 store/API 契约）列为增强待办，本轮未动契约"
   }
 }
