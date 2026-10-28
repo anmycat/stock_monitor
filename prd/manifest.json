@@ -472,13 +472,20 @@
     "kelly_v17_status": "文档中间态维持（docs/23 + 12 §3.20 有建议记录），rules JSON 未动——D28 纪律：待用户确认才合入配置",
     "security_fix_plan_deploy_guide": "两份遗留源文件已不在库（早期清理移除，未入 git）；主题由同源文档覆盖（安全→SECURITY_FIX_REPORT/QUICK_START_SECURITY；部署→DEPLOYMENT_SUMMARY/TEST_REPORT/QUICK_ACCESS/OPTIMIZATION/REDIS），核心事实无缺失",
     "remaining_after_d50": [
-      "B2/B3/B6 ECS 服务器操作（systemd MemoryMax / mask guardian / logrotate）——随 D50 部署复验",
+      "首交易日三日志点验收（D50 部署后首个完整交易日 2026-10-28，收盘后跑 first_day_check.py 全量含 SSH 日志点）",
       "月度复验首跑（11-01，monthly_recheck.py）",
       "首交易日三日志点验收（D50 部署后首个完整交易日，first_day_check.py）",
       "C/D/E/F 阈值调优评审（首月末/首季末）",
       "M5 系列待用户裁定（docs/27）：M5-1 龙虎榜日报/M5-2 资金流排障/M5-4 板块资金流/M5-5 逆势流入近似",
       "THS daily 第三线 + 涨停池（P2 待确认）"
     ],
-    "verification": "ruff 全仓零问题（quant_engine/test/deploy + 两个新脚本）；28 个测试文件全绿；100 模块导入冒烟通过；架构审计通过（105 模块/278 依赖边/零循环）"
+    "verification": "ruff 全仓零问题（quant_engine/test/deploy + 两个新脚本）；28 个测试文件全绿；100 模块导入冒烟通过；架构审计通过（105 模块/278 依赖边/零循环）",
+    "ecs_hardening_b2_b3_b6": {
+      "script": "deploy/ecs_hardening.sh（幂等）",
+      "B2": "quant-worker/api/beat MemoryMax 700M/500M/300M（按实测 RSS 2-4 倍余量）——systemd 可预期处决替代内核 OOM 随机杀",
+      "B3": "guardian unit 移 /root/trash + mask /dev/null——403,738 次崩溃循环终结（ActiveState=masked/NRestarts=0）；D44 复验记录'已消除'有误，本轮实测纠正",
+      "B6": "journald 2.8G→SystemMaxUse=500M（实割 450M）；logrotate /stock_monitor/logs/*.log 50M/5 份；Redis maxmemory 256mb + allkeys-lru（现用量 7MB 零影响）",
+      "bonus": "旧 quant-engine.service unit（uvicorn 旧入口、指向不存在的 logs 目录）入 /root/trash"
+    }
   }
 }
