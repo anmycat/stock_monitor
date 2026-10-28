@@ -552,7 +552,10 @@ class NewsSourceManager:
 
     def fetch_all(self) -> list[NewsItem]:
         """抓取所有源，单源异常/卡死不影响其他源（M4：硬超时 kill）"""
-        from ..utils.fetch_guard import guarded_fetch
+        # 注意：本模块在 quant_engine/data/sources/ 下，utils 在 quant_engine/utils/，
+        # 相对导入须三点（...utils）。两点会解析到不存在的 quant_engine.data.utils——
+        # D50 曾因此少一层点导致 9:15 早间新闻推送整天静默失败（见 D52 登记）
+        from ...utils.fetch_guard import guarded_fetch
 
         items: list[NewsItem] = []
         for src in self.sources:
