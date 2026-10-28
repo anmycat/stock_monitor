@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.7",
+  "version": "4.8",
   "date": "2026-10-28",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -487,5 +487,27 @@
       "B6": "journald 2.8G→SystemMaxUse=500M（实割 450M）；logrotate /stock_monitor/logs/*.log 50M/5 份；Redis maxmemory 256mb + allkeys-lru（现用量 7MB 零影响）",
       "bonus": "旧 quant-engine.service unit（uvicorn 旧入口、指向不存在的 logs 目录）入 /root/trash"
     }
+  },
+  "d51_rules_json_v17_landing_2026_10_28": {
+    "trigger": "用户指令 'rules JSON 修复和优化'——对 D33 登记的 Kelly v1.7 中间态显式确认，授权落库（D28 纪律：文档裁定→用户确认→配置合入）",
+    "kelly_v17": {
+      "ruling": "三窗口取保守者（v1.6 原则由双窗口扩为三窗口）：R04 半凯利 2.84%→2.36%、混合 1.92%→1.69%；R01 2.46%/R02 0/R05 0 维持 v1.6 值",
+      "basis": "3M-v3（2026-07-22~10-21，195 笔/44.1%/+0.68%）：R04 39.9%/1.71→2.36%、all 41.9%/1.51→1.69%；两值三窗口单调下衰减（R04 2.92→2.84→2.36；混合 3.70→1.92→1.69）",
+      "json_changes": "新增 kelly.rule_positions_v17（执行值）+ kelly.kelly_3m_v3（观测块，含 ruling_v17）；rule_positions_v16 标注'已被 v1.7 取代'保留备查；_3m_validation_v2 补 ruling_v17；_meta.version 1.6→1.7"
+    },
+    "internal_fixes": {
+      "stale_kelly_in_scope": "R02 scope 'Kelly半凯利13.13%'→0（6M 旧值已废）；R04 '3.54%'→2.36%；R05 '微仓0.91%'→零仓0（v1.4 微仓裁定被 3M 窗口证伪）——三处 scope 停留 v1.4/6M 旧值与 v1.6 执行值矛盾",
+      "r12_scope_contradiction": "R12 scope '弱过滤（默认关闭）' 与 params.default_enabled=true + note_v15'恢复默认开启' 矛盾（v1.4 旧文残留）→ 改为默认开启并注明沿革",
+      "r13_bull_noop": "R13 conditions.bull.all 首项 {idx_close > 0}（note 却写'指数收盘>MA20'）恒真无意义，且与下方 computed idx_above_ma20 重复 → 删除，bull 定义由两个 computed 条件正确表达",
+      "validation_refresh": "R01/R02/R04/R05 validation 追加 3M-v3 观测（docs/23 §五）；R02 补'半年最强声明已撤销'（docs/22 归因）"
+    },
+    "docs_sync": "06 v2.4（§3.1 执行值口径 + §7.5 注记转 ✅）；14 §5.10 调整③转已落库；12 v2.9（§3.20 B1 行 + §6 复查清单 + 净结果）；README ⑭ 结案 + 版本线/模块表 + 规则库版本 v1.7",
+    "remaining": [
+      "降仓条款（连续两月≤0）仍待用户裁定（12 §6）",
+      "首交易日三日志点验收（今日 15:20 自动化）",
+      "月度复验 11-01",
+      "M5 系列待裁定"
+    ],
+    "verification": "JSON 1425 行合法；消费方路径冒烟通过（capital_range/backtest_engine/kelly_analysis 三脚本的 RULES 键完好：capital_rules 5 条、R07/R08 conditions、kelly.params fraction/max_pos 不变）；13 条 trade_rules 键位完整"
   }
 }
