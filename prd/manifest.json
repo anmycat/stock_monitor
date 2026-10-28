@@ -1,7 +1,7 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.6",
-  "date": "2026-10-27",
+  "version": "4.7",
+  "date": "2026-10-28",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
   "structure": "仓库根布局：prd/ 17 个模块文档（00-14 + README + manifest.json）+ quant_engine/（生产代码）+ test/ + UX/ + deploy/ + research/（调研线 137 文件+3个月验证产出）；coding/ 仅含本地 .venv（不入 git）",
@@ -434,5 +434,51 @@
     ],
     "verification": "新增 test_factor_blend_level.py 6 例；test_notifier_throttle 补信号价文案断言；全量 21 测试文件全绿；ruff 全仓零问题；导入冒烟 OK；已部署 ECS",
     "pending": "数据截止日期标注（Signal 模型加 data_date 字段，涉及 store/API 契约）列为增强待办，本轮未动契约"
+  },
+  "d48_d49_d50_backlog_clear_and_recheck_mechanization_2026_10_28": {
+    "trigger": "用户指令：修复全部剩余项（Kelly v1.7 确认/首交易日三日志点/月度复验/C/D/E/F 调优/B2/B3/B6/P1-1/P1-2/M4/deploy.sh 脱敏/SECURITY_FIX_PLAN+DEPLOY_GUIDE）+ 旧代码全清理 + ECS 代码-名称映射表定期校验减少行情请求",
+    "d48_dead_code_cleanup": {
+      "method": "AST 导入图 + 逐符号跨文件引用计数双重确认（含 __init__ re-export 甄别，D13 教训）",
+      "removed": [
+        "services/risk/stop_loss_manager.py",
+        "strategies/optimizer.py",
+        "services/risk/risk_bucket.py",
+        "backtest/evaluator.py",
+        "backtest/overfit_checker.py",
+        "data/sources/stock.py"
+      ],
+      "safety": "6 个零引用模块 mv .trash/（gitignored，可恢复）；删除后导入冒烟 + 全量测试复跑"
+    },
+    "d49_stock_info_table": {
+      "module": "quant_engine/data/stock_info.py 单例 StockInfoTable（code→name/board/is_st，JSON 落盘 data/stock_info.json，原子写 + 6h 频率闸 + 最小 1000 行保护）",
+      "integration": "market_data._fetch_stock_list 命中缓存/拉新后借势 ingest（不额外发请求）；beat 盘后 15:35 refresh + diff（新增/退市/戴帽/脱帽/更名）经 send_custom_message 推送",
+      "purpose": "用户建议的 ECS 代码-名称映射表定期校验——静态信息本地化，减少行情服务重复请求"
+    },
+    "d50_engineering_backlog_cleared": {
+      "B7": "data/sources/tushare.py 兜底源适配器（延迟导入/token 缺失/接口错全返 None；daily 倒序修正；_PRIORITY 末位注册）；test_tushare_source.py 7 例",
+      "B8": "main.py 挂载静态 UI（quant_engine/static 优先，UX/static 回退，路径基于 __file__）",
+      "B9": "deploy/inspect_drift.sh md5 清单本地 vs ECS 漂移巡检",
+      "M4": "utils/fetch_guard.py 子进程硬超时（fork+Pipe+BoundedSemaphore(4)+terminate→2s→kill）；news_sources 三源各 10s + fund_holdings 整体 20s 接入；test_fetch_guard.py 5 例（哨兵文件验证真 kill）",
+      "P1-1": "auth.py 空值启动警告强化 + WS 无效 token 脱敏（_mask 前4后2）；update_ecs.sh 0.5/6 步 token 探测告警；deploy.sh .env 模板敏感字段留空",
+      "P1-2": "CompositeSource.DIRECT_QUOTE_MAX_CODES=50 小批量腾讯直查分支（部分 miss 回退全量兜底）",
+      "G14": "deploy.sh .env heredoc 脱敏占位符修复（原 DINGTALK_WEBHOOK=<redacted> 字面量会把现网 .env 写废；已存在则不覆盖；移除零引用遗留字段 DATA_SOURCE 写入）",
+      "py39_import_fix": "worker.py D42 引入的 int | None 注解缺 from __future__ import annotations——本地 venv py3.9 导入断裂（生产 ECS 3.10+ 未暴露）；全库扫描确认无其它同类隐患"
+    },
+    "recheck_mechanization": {
+      "monthly_recheck": "research/scripts/monthly_recheck.py——signals 归档 T+5/T+10 前向收益归月 + 连续两月盈亏>0 门禁判定（14 §4），--csv/--db 双输入，markdown 报告输出",
+      "first_day_check": "research/scripts/first_day_check.py——部署后首交易日三日志点验收（①CodeGuard 9:00-9:15 ②新闻推送 9:15 ③/api/market total≥5000 + /api/sectors），SSH+curl，PASS/FAIL 清单退出码",
+      "tuning_framework": "research/docs/28_四线阈值调优框架——可调参数清单/数据基础/节奏门禁（首月末 2026-11-30 调 D/E 线小参，首季末 2027-01-31 定调）/单参数操作流程/回滚线"
+    },
+    "kelly_v17_status": "文档中间态维持（docs/23 + 12 §3.20 有建议记录），rules JSON 未动——D28 纪律：待用户确认才合入配置",
+    "security_fix_plan_deploy_guide": "两份遗留源文件已不在库（早期清理移除，未入 git）；主题由同源文档覆盖（安全→SECURITY_FIX_REPORT/QUICK_START_SECURITY；部署→DEPLOYMENT_SUMMARY/TEST_REPORT/QUICK_ACCESS/OPTIMIZATION/REDIS），核心事实无缺失",
+    "remaining_after_d50": [
+      "B2/B3/B6 ECS 服务器操作（systemd MemoryMax / mask guardian / logrotate）——随 D50 部署复验",
+      "月度复验首跑（11-01，monthly_recheck.py）",
+      "首交易日三日志点验收（D50 部署后首个完整交易日，first_day_check.py）",
+      "C/D/E/F 阈值调优评审（首月末/首季末）",
+      "M5 系列待用户裁定（docs/27）：M5-1 龙虎榜日报/M5-2 资金流排障/M5-4 板块资金流/M5-5 逆势流入近似",
+      "THS daily 第三线 + 涨停池（P2 待确认）"
+    ],
+    "verification": "ruff 全仓零问题（quant_engine/test/deploy + 两个新脚本）；28 个测试文件全绿；100 模块导入冒烟通过；架构审计通过（105 模块/278 依赖边/零循环）"
   }
 }
