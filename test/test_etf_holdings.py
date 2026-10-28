@@ -266,5 +266,26 @@ class TestMessageFormat(unittest.TestCase):
         self.assertNotIn("新进", msg)
 
 
+class TestGetHoldingsLazyImport(unittest.TestCase):
+    """回归：get_holdings 懒加载的 fetch_guard 相对导入必须可解析
+
+    D50 同款事故（与 news_sources 一并修复，D52）：`from ...utils.fetch_guard`
+    曾少一层点；既有 TestMonitorFlow 桩掉 source.get_holdings 整体，
+    从未触发该方法内部的懒加载导入。本测试走真实方法，仅桩 _fetch_year 断网。
+    """
+
+    def test_get_holdings_import_chain(self):
+        from quant_engine.data.sources.fund_holdings import (
+            EastMoneyFundHoldingsSource,
+        )
+        src = EastMoneyFundHoldingsSource()
+        df = fixture_df("jjcc_510300_2026.txt")
+        src._fetch_year = lambda code, year, topline=100: df  # 不联网
+        # 旧代码（少一层点）在此抛 ModuleNotFoundError
+        out = src.get_holdings("510300", years=[2026])
+        self.assertFalse(out.empty)
+        self.assertIn("quarter", out.columns)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

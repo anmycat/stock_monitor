@@ -60,7 +60,9 @@ class EastMoneyFundHoldingsSource:
 
         # M4：ETF 持仓抓取整体走子进程硬超时（多年份串行 + 限流，最坏
         # 2 年 × 请求超时；20s 覆盖正常路径，卡死则杀掉不影响 worker）
-        from ..utils.fetch_guard import guarded_fetch
+        # 注意：本模块在 quant_engine/data/sources/ 下，相对导入须三点（...utils）；
+        # 两点会解析到不存在的 quant_engine.data.utils（D50 同款事故，见 D52 登记）
+        from ...utils.fetch_guard import guarded_fetch
 
         def _collect() -> pd.DataFrame:
             frames = []

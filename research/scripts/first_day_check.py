@@ -47,29 +47,38 @@ def curl_json(path: str, timeout: int = 20) -> dict | None:
 
 def check_codeguard(date: str) -> tuple[bool, str]:
     """① 9:00-9:15 CodeGuard 静态校验报告"""
-    _, out = ssh(
+    _, logs = ssh(
         f"journalctl -u quant-worker --since '{date} 08:55' --until '{date} 09:20' "
-        f"--no-pager 2>/dev/null | grep -i -E 'code.?guard|代码一致性' | tail -5; "
-        f"redis-cli get code_guard:check_date_static 2>/dev/null")
-    lines = [l for l in out.splitlines() if l.strip()]
+        f"--no-pager 2>/dev/null | grep -i -E 'code.?guard|代码一致性' | tail -5")
+    _, redis_raw = ssh("redis-cli get code_guard:check_date_static 2>/dev/null")
+    # 精确匹配：勿用 date in out——journalctl 日志行自带日期会把
+    # 无记录的日期误判为有记录（D52 首日验收实测踩坑）
+    check_date = redis_raw.strip().strip('"')
+    lines = [l for l in logs.splitlines() if l.strip()]
     has_log = any('code' in l.lower() or '代码' in l for l in lines)
-    has_date = date in out
+    has_date = check_date == date
     ok = has_log or has_date
-    evidence = lines[-3:] if lines else ['(无日志/无 Redis 记录)']
+    evidence = lines[-3:] if lines else ['(无日志)']
+    evidence.append(f'redis check_date_static={check_date or "(无)"}')
     return ok, ' | '.join(evidence)
 
 
 def check_news_push(date: str) -> tuple[bool, str]:
     """② 9:15 早间新闻推送"""
-    _, out = ssh(
+    _, logs = ssh(
         f"journalctl -u quant-worker --since '{date} 09:00' --until '{date} 09:45' "
-        f"--no-pager 2>/dev/null | grep -i -E 'morning news|news pushed|早间' | tail -5; "
-        f"redis-cli get news:check_date 2>/dev/null")
-    pushed = 'pushed' in out.lower() or ('items' in out and ' Morning' in out)
-    done = date in out
+        f"--no-pager 2>/dev/null | grep -i -E 'morning news|news pushed|早间' | tail -5")
+    _, redis_raw = ssh("redis-cli get news:check_date 2>/dev/null")
+    # 精确匹配（同 ①）：news:check_date 停在非当日 = 当日推送未完成，
+    # 即使日志里有当日时间戳的 ERROR 行也不算通过
+    check_date = redis_raw.strip().strip('"')
+    lines = [l for l in logs.splitlines() if l.strip()]
+    pushed = any('pushed' in l.lower() for l in lines)
+    done = check_date == date
     ok = pushed or done
-    lines = [l for l in out.splitlines() if l.strip()]
-    return ok, ' | '.join(lines[-3:]) if lines else '(无推送记录)'
+    evidence = lines[-3:] if lines else ['(无推送记录)']
+    evidence.append(f'redis news:check_date={check_date or "(无)"}')
+    return ok, ' | '.join(evidence)
 
 
 def check_market_coverage() -> tuple[bool, str]:

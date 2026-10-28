@@ -436,5 +436,29 @@ class TestCheckAndPush(unittest.TestCase):
         self.assertEqual(len(sent), 1)
 
 
+class TestFetchAllLazyImport(unittest.TestCase):
+    """回归：fetch_all 懒加载的 fetch_guard 相对导入必须可解析
+
+    D50（22e95768）曾把 `from ...utils.fetch_guard` 写成两点（解析到
+    不存在的 quant_engine.data.utils）；既有测试用 _StubSourceManager
+    桩掉真实 fetch_all，从未触发该懒加载导入，导致 2026-10-28 9:15
+    早间新闻推送整天静默失败（worker 日志只有 check error，Redis
+    news:check_date 停在前一日）——D52 修复并补本回归。
+    """
+
+    def test_fetch_all_import_chain(self):
+        import quant_engine.utils.fetch_guard as fg
+        orig = fg.guarded_fetch
+        fg.guarded_fetch = lambda fn, *a, **k: []  # 不联网，仅验证导入链
+        try:
+            from quant_engine.data.sources.news_sources import NewsSourceManager
+            mgr = NewsSourceManager()
+            self.assertEqual(len(mgr.sources), 3)
+            # 旧代码（少一层点）在此抛 ModuleNotFoundError
+            self.assertEqual(mgr.fetch_all(), [])
+        finally:
+            fg.guarded_fetch = orig
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
