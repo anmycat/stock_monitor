@@ -58,22 +58,35 @@ class EastMoneyFundHoldingsSource:
             this_year = pd.Timestamp.now().year
             years = [this_year - 1, this_year]
 
-        frames = []
-        for year in years:
-            df = self._fetch_year(code, year, topline)
-            if df is not None and not df.empty:
-                frames.append(df)
-            time.sleep(0.3)  # 轻微限流，避免触发风控
+        # M4：ETF 持仓抓取整体走子进程硬超时（多年份串行 + 限流，最坏
+        # 2 年 × 请求超时；20s 覆盖正常路径，卡死则杀掉不影响 worker）
+        from ..utils.fetch_guard import guarded_fetch
 
-        if not frames:
+        def _collect() -> pd.DataFrame:
+            frames = []
+            for year in years:
+                df = self._fetch_year(code, year, topline)
+                if df is not None and not df.empty:
+                    frames.append(df)
+                time.sleep(0.3)  # 轻微限流，避免触发风控
+            if not frames:
+                return pd.DataFrame(
+                    columns=['quarter', 'report_date', 'seq', 'code', 'name',
+                             'weight', 'shares', 'market_value']
+                )
+            result = pd.concat(frames, ignore_index=True)
+            result = result.drop_duplicates(subset=['quarter', 'code'], keep='first')
+            return result.sort_values(['report_date', 'seq'],
+                                      ascending=[False, True]).reset_index(drop=True)
+
+        guarded = guarded_fetch(_collect, timeout=20.0, name=f'etf.{code}')
+        if guarded is None:
+            logger.warning(f"[FundHoldings] {code} 抓取超时或失败，返回空表")
             return pd.DataFrame(
                 columns=['quarter', 'report_date', 'seq', 'code', 'name',
                          'weight', 'shares', 'market_value']
             )
-        result = pd.concat(frames, ignore_index=True)
-        result = result.drop_duplicates(subset=['quarter', 'code'], keep='first')
-        return result.sort_values(['report_date', 'seq'],
-                                  ascending=[False, True]).reset_index(drop=True)
+        return guarded
 
     def get_available_years(self, code: str) -> list[int]:
         """获取该基金有持仓数据的年份列表（降序）"""

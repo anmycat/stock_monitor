@@ -21,6 +21,14 @@ fi
 echo "== 0/6 连通性与现网状态"
 ssh $SSH_OPTS $ECS "echo CONNECTED; systemctl is-active quant-api quant-worker quant-beat; cd $REMOTE/quant_engine 2>/dev/null && (git rev-parse --short HEAD 2>/dev/null || echo 'no-git-repo')"
 
+echo "== 0.5/6 P1-1 安全检查：API_AUTH_TOKEN 配置探测"
+if ssh $SSH_OPTS $ECS "cd $REMOTE/quant_engine && grep -E '^API_AUTH_TOKEN=.+' .env 2>/dev/null | grep -vE '^API_AUTH_TOKEN=\s*$'" | grep -q .; then
+    echo "  API_AUTH_TOKEN 已配置 ✅"
+else
+    echo "  ⚠️ [SECURITY] API_AUTH_TOKEN 未配置——ECS 所有 API/WS 端点无认证开放。"
+    echo "     内网可信环境可忽略；公网暴露请在 $REMOTE/quant_engine/.env 配置后重启 quant-api。"
+fi
+
 echo "== 1/6 备份 ECS 现有生产代码（本次迭代前备份）"
 ssh $SSH_OPTS $ECS "tar czf /root/backup_pre_refactor_$TS.tar.gz --exclude='__pycache__' --exclude='.ruff_cache' -C $REMOTE quant_engine UX 2>/dev/null; ls -lh /root/backup_pre_refactor_$TS.tar.gz; (cd $REMOTE/quant_engine && git rev-parse HEAD 2>/dev/null || echo no-git) > /root/ecs_version_$TS.txt; cat /root/ecs_version_$TS.txt"
 

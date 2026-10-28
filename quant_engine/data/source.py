@@ -8,6 +8,7 @@ from .sources.eastmoney import EastMoneySource
 from .sources.sina import SinaSource
 from .sources.tdx import TdxSource
 from .sources.tencent import TencentSource
+from .sources.tushare import TushareSource
 
 # 数据源优先级配置（2026-10-20 按用户决策调整：东财出口 IP 经常被风控，
 # ECS 实测 22 连败，降为备路；腾讯第一、新浪第二互为配合）
@@ -21,10 +22,12 @@ from .sources.tencent import TencentSource
 #   minute    通达信 pytdx（TCP 7709，实测 5/15/30/60 分钟K 完整，
 #             2026-10-20 落地补 gates 分钟断链；akshare 兜底 2026-10-22 切除，
 #             依赖未安装恒返 None，见 prd/15 §P0）
+# B7：tushare 为积分制兜底线，排全部免费源之后；未装包/未配 token 时
+# 各方法恒返 None，由 SourceManager 无缝跳过（不炸主链）。
 _PRIORITY = {
-    'stock_list': ['sina', 'eastmoney'],
+    'stock_list': ['sina', 'eastmoney', 'tushare'],
     'realtime': ['tencent', 'sina', 'eastmoney'],
-    'daily': ['tencent', 'sina', 'eastmoney'],
+    'daily': ['tencent', 'sina', 'eastmoney', 'tushare'],
     'minute': ['tdx'],
 }
 
@@ -32,12 +35,16 @@ _PRIORITY = {
 class CompositeSource:
     """组合数据源 - 通过 SourceManager 统一调度"""
 
+    # P1-2：小批量实时报价直查阈值（板块监控等轮询场景避免全市场拉取）
+    DIRECT_QUOTE_MAX_CODES = 50
+
     def __init__(self, datacenter=None):
         # 注册数据源
         source_manager.register_source('eastmoney')
         source_manager.register_source('tencent')
         source_manager.register_source('sina')
         source_manager.register_source('tdx')
+        source_manager.register_source('tushare')  # B7 兜底线
 
         # 初始化数据源
         self.sources = {
@@ -45,6 +52,7 @@ class CompositeSource:
             'tencent': TencentSource(),
             'sina': SinaSource(),
             'tdx': TdxSource(),
+            'tushare': TushareSource(),
         }
         self.datacenter = datacenter
         logger.info("CompositeSource initialized (via SourceManager)")
@@ -65,7 +73,23 @@ class CompositeSource:
         })
 
     def get_realtime_quote(self, codes: list[str]) -> pd.DataFrame:
-        """获取实时行情 - 复用全量行情缓存"""
+        """获取实时行情
+
+        P1-2 优化：小批量（≤DIRECT_QUOTE_MAX_CODES 只）走腾讯原生命中直查，
+        不再触发全市场拉取（板块监控等轮询场景源请求数大幅下降）；
+        大批量或直查 miss 回退全量行情缓存过滤。
+        """
+        if codes and len(codes) <= self.DIRECT_QUOTE_MAX_CODES:
+            direct = source_manager.execute_with_fallback(
+                _PRIORITY['realtime'], self.sources, 'get_realtime_quote',
+                codes, skip_delay=True,
+            )
+            if direct is not None and not direct.empty:
+                got = set(direct['code'])
+                missing = [c for c in codes if c not in got]
+                if not missing:
+                    return direct
+                # 部分缺失：补齐（miss 可能是源侧缺票），仍走全量兜底
         all_quotes = self.get_all_realtime_quotes()
         if not all_quotes.empty and codes:
             return all_quotes[all_quotes['code'].isin(codes)]

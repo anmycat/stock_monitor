@@ -36,17 +36,36 @@ mkdir -p $PROJECT_DIR/quant_engine
 
 # 4. 创建环境配置
 echo "[4/6] 创建环境配置..."
-cat > $PROJECT_DIR/quant_engine/.env << 'EOF'
+# G14 修复：原 heredoc 内 DINGTALK_WEBHOOK=<redacted> / DINGTALK_SECRET=REDACTED
+# 为字面占位符，一旦执行会把现网 .env 写成废值导致钉钉推送全废。
+# 现规则：已存在 .env 则不覆盖（保护凭据）；敏感字段一律留空 + 注释，
+# 由运维手工填写。取数路径由 SourceManager 多源降级链决定（prd/02 §3），
+# 不依赖 DATA_SOURCE——该字段为遗留零引用项（见 prd/02 §4 注），此处不写入。
+if [ -f "$PROJECT_DIR/quant_engine/.env" ]; then
+    echo "  .env 已存在，保留不动（保护现网凭据）"
+else
+    cat > $PROJECT_DIR/quant_engine/.env << 'EOF'
+# ===== 基础 =====
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
 API_HOST=0.0.0.0
 API_PORT=8000
-DATA_SOURCE=tushare
+
+# ===== 可选凭据（留空则对应功能关闭，勿填占位符）=====
+# Tushare token（兜底线，免费源全不可用时才轮到）：https://tushare.pro 注册获取
 TUSHARE_TOKEN=
-DINGTALK_WEBHOOK=<redacted>
-DINGTALK_SECRET=REDACTED
+# 钉钉机器人 webhook + 加签 secret：机器人管理页获取，两者需成对
+DINGTALK_WEBHOOK=
+DINGTALK_SECRET=
+# API 认证 token（P1-1）：留空则所有端点无认证开放，公网暴露必须配置
+API_AUTH_TOKEN=
+# AI 摘要（DeepSeek）：留空则 AI 摘要关闭，不影响主链
+DEEPSEEK_API_KEY=
+OPENAI_BASE_URL=https://api.deepseek.com/v1
 EOF
+    echo "  已生成 .env 模板（敏感字段留空，请按需填写后重启服务）"
+fi
 
 # 5. 安装Python依赖
 echo "[5/6] 安装Python依赖..."

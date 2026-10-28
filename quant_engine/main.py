@@ -107,7 +107,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(export_router())
 app.include_router(ws_router)
 
-static_dir = Path(__file__).parent / "static"
+# B8：UI 静态资源挂载。优先 quant_engine/static（代码包内），
+# 回退项目根 UX/static（Apple UI 原型，部署脚本已同步）。
+# 路径基于 __file__，不依赖 CWD。
+_APP_DIR = Path(__file__).parent
+static_dir = _APP_DIR / "static"
+if not static_dir.exists():
+    static_dir = _APP_DIR.parent / "UX" / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
