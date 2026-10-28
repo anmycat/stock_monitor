@@ -503,11 +503,16 @@
     },
     "docs_sync": "06 v2.4（§3.1 执行值口径 + §7.5 注记转 ✅）；14 §5.10 调整③转已落库；12 v2.9（§3.20 B1 行 + §6 复查清单 + 净结果）；README ⑭ 结案 + 版本线/模块表 + 规则库版本 v1.7",
     "remaining": [
-      "降仓条款（连续两月≤0）仍待用户裁定（12 §6）",
+      "降仓条款（连续两月≤0）：用户 2026-10-28 明确决定暂时不管——维持待裁定状态、不主动执行（12 §6）",
       "首交易日三日志点验收（今日 15:20 自动化）",
       "月度复验 11-01",
       "M5 系列待裁定"
     ],
-    "verification": "JSON 1425 行合法；消费方路径冒烟通过（capital_range/backtest_engine/kelly_analysis 三脚本的 RULES 键完好：capital_rules 5 条、R07/R08 conditions、kelly.params fraction/max_pos 不变）；13 条 trade_rules 键位完整"
+    "verification": "JSON 1425 行合法；消费方路径冒烟通过（capital_range/backtest_engine/kelly_analysis 三脚本的 RULES 键完好：capital_rules 5 条、R07/R08 conditions、kelly.params fraction/max_pos 不变）；13 条 trade_rules 键位完整",
+    "position_reduction_clause_deferred_2026_10_28": {
+      "decision": "用户 2026-10-28 明示『降仓条款 暂时不管』",
+      "status": "维持待裁定，不主动执行；月度复验报告仍照常输出触发状态（9 月 -1.71%/10 月 -4.64%），作为后续裁定的数据基础",
+      "note": "规则组合第三窗口整体 +0.68% 为正是当时背景之一；条款本身不删除，仅延后执行"
+    }
   }
 }
