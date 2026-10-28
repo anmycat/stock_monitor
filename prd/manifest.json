@@ -1,6 +1,6 @@
 {
   "name": "股票机器人（量化扫描系统 V5）方案文档集",
-  "version": "4.8",
+  "version": "4.9",
   "date": "2026-10-28",
   "structure_reference": "按功能模块组织（用户指定命名体系，文件名对应功能模块）",
   "reorg_note": "2026-10-16 模块化重组：合并重组前 prd/ 19 份文件 + 调研成果（system/00-12、docs/14、docs/15、rules v1.4）为 15 个模块文件；旧文件已删除（内容全部并入，避免信息冲突）；完整性与差异审计见 12_审计清单.md；2026-10-18 E 线新增：代码一致性守护（CodeGuard，01 §7.5 / 08 §12 / 10 G28-G30 / 02 §5.1）；2026-10-21 rules 升 v1.6（R06 avoidance / R12 默认 / Kelly v1.6，用户确认）",
@@ -472,9 +472,8 @@
     "kelly_v17_status": "文档中间态维持（docs/23 + 12 §3.20 有建议记录），rules JSON 未动——D28 纪律：待用户确认才合入配置",
     "security_fix_plan_deploy_guide": "两份遗留源文件已不在库（早期清理移除，未入 git）；主题由同源文档覆盖（安全→SECURITY_FIX_REPORT/QUICK_START_SECURITY；部署→DEPLOYMENT_SUMMARY/TEST_REPORT/QUICK_ACCESS/OPTIMIZATION/REDIS），核心事实无缺失",
     "remaining_after_d50": [
-      "首交易日三日志点验收（D50 部署后首个完整交易日 2026-10-28，收盘后跑 first_day_check.py 全量含 SSH 日志点）",
+      "早间新闻推送复验（2026-10-29 9:15，D52 修复部署后首推：worker 日志应有 Morning news pushed 且 redis news:check_date=2026-10-29）",
       "月度复验首跑（11-01，monthly_recheck.py）",
-      "首交易日三日志点验收（D50 部署后首个完整交易日，first_day_check.py）",
       "C/D/E/F 阈值调优评审（首月末/首季末）",
       "M5 系列待用户裁定（docs/27）：M5-1 龙虎榜日报/M5-2 资金流排障/M5-4 板块资金流/M5-5 逆势流入近似",
       "THS daily 第三线 + 涨停池（P2 待确认）"
@@ -504,7 +503,7 @@
     "docs_sync": "06 v2.4（§3.1 执行值口径 + §7.5 注记转 ✅）；14 §5.10 调整③转已落库；12 v2.9（§3.20 B1 行 + §6 复查清单 + 净结果）；README ⑭ 结案 + 版本线/模块表 + 规则库版本 v1.7",
     "remaining": [
       "降仓条款（连续两月≤0）：用户 2026-10-28 明确决定暂时不管——维持待裁定状态、不主动执行（12 §6）",
-      "首交易日三日志点验收（今日 15:20 自动化）",
+      "早间新闻推送复验（2026-10-29 9:15，D52 修复部署后首推）",
       "月度复验 11-01",
       "M5 系列待裁定"
     ],
@@ -514,5 +513,16 @@
       "status": "维持待裁定，不主动执行；月度复验报告仍照常输出触发状态（9 月 -1.71%/10 月 -4.64%），作为后续裁定的数据基础",
       "note": "规则组合第三窗口整体 +0.68% 为正是当时背景之一；条款本身不删除，仅延后执行"
     }
+  },
+  "d52_first_day_acceptance_2026_10_28": {
+    "scope": "D50 部署（08:38，M4 抓取子进程隔离 + B2/B3/B6 ECS 加固）后首个完整交易日三日志点验收（prd/09 §6-1 出口条件 / 08 §13 F-A6），21:24 自动化执行 first_day_check.py --date 2026-10-28",
+    "result_1_codeguard": "✅ PASS——9:00:51 static all 5592 targets OK / 9:15:51 auction 5592 targets / 9:16:13 auction all OK；redis code_guard:check_date_static=2026-10-28",
+    "result_2_morning_news": "❌ FAIL（当日未推送，已修复待复验）——worker 日志 09:14:51 与 09:16:13 两条 Morning news check error: No module named 'quant_engine.data.utils'；redis news:check_date 停留 2026-10-27；无 Morning news pushed 日志",
+    "result_3_market_coverage": "✅ PASS——/api/market total=5575（≥5000），/api/sectors=16 个板块",
+    "root_cause": "D50 commit 22e95768（自称 py3.9 导入修复）在 quant_engine/data/sources/ 下的 news_sources.py:555 与 fund_holdings.py:63 写入 from ..utils.fetch_guard import guarded_fetch——少一层点，'..' 解析到不存在的 quant_engine.data.utils。懒加载位于函数内：import 冒烟（quant_engine.main）不触发；既有测试以 _StubSourceManager / 桩掉 source.get_holdings 绕开真实方法，28 文件全绿仍漏网。ETF 路径当日因缓存命中未实际抓取，同款潜伏",
+    "fix": "4fc855a6：两处 ..utils → ...utils；test_morning_news.py / test_etf_holdings.py 各补 1 例真实方法懒加载导入回归；first_day_check.py ①② 改 redis 日期精确匹配（原 date in out 子串匹配会被 journalctl 日志行时间戳误判为 PASS——本次首跑即因此假 PASS）",
+    "deploy_verify": "22:00 deploy/update_ecs.sh 全流程（备份 189K → rsync → 冒烟 → 三服务重启 active → 端点 200×3）；ECS 复现路径：东财 150 + 同花顺 50 + 新浪 50 = FETCHED_OK 250，M4 fork 子进程隔离生产环境正常；worker 重启后 AFTER_HOURS 无错误",
+    "verification": "全量 262 测试 OK（3 skip 环境依赖）；ruff 零问题；修复后重跑 first_day_check：①③ PASS、② FAIL（如实反映当日漏推，待 10-29 复验）",
+    "followup": "2026-10-29 9:15 复验第②点（news:check_date=2026-10-29 + Morning news pushed 日志）；ETF 抓取路径同款修复已部署，下次实际抓取（新季度披露/缓存失效）时验证"
   }
 }
