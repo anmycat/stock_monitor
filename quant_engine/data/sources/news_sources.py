@@ -551,13 +551,18 @@ class NewsSourceManager:
                     f"({[s.NAME if hasattr(s, 'NAME') else s.name for s in self.sources]})")
 
     def fetch_all(self) -> list[NewsItem]:
-        """抓取所有源，单源异常不影响其他源"""
+        """抓取所有源，单源异常/卡死不影响其他源（M4：硬超时 kill）"""
+        from ..utils.fetch_guard import guarded_fetch
+
         items: list[NewsItem] = []
         for src in self.sources:
+            src_name = getattr(src, 'NAME', getattr(src, 'name', type(src).__name__))
             try:
-                items.extend(src.fetch())
+                fetched = guarded_fetch(src.fetch, timeout=10.0, name=f'news.{src_name}')
+                if fetched:
+                    items.extend(fetched)
             except Exception as e:
-                logger.error(f"News source {getattr(src, 'NAME', src)} failed: {e}")
+                logger.error(f"News source {src_name} failed: {e}")
         # 按时间倒序（无时间的排最后）
         items.sort(key=lambda x: x.published_at or datetime.min, reverse=True)
         return items

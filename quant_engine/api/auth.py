@@ -14,6 +14,16 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 _auth_warned = False
 
 
+def _mask(token: str | None) -> str:
+    """Token 脱敏：只露前 4 后 2，供运维比对变体不泄露全串（P1-1）"""
+    if not token:
+        return '<empty>'
+    t = str(token)
+    if len(t) <= 6:
+        return t[:2] + '***'
+    return f'{t[:4]}***{t[-2:]}'
+
+
 def _warn_no_auth():
     """启动时警告：未配置认证Token"""
     global _auth_warned
@@ -21,7 +31,10 @@ def _warn_no_auth():
         return
     settings = get_settings()
     if not settings.API_AUTH_TOKEN:
-        logger.warning("⚠️ API_AUTH_TOKEN未配置，所有API端点无需认证（生产环境建议配置）")
+        logger.warning(
+            "🔓 [SECURITY] API_AUTH_TOKEN 未配置——所有 API/WS 端点无认证开放。"
+            "生产环境请在 .env 配置 API_AUTH_TOKEN（deploy 脚本启动前有空值检查）"
+        )
         _auth_warned = True
 
 
@@ -73,8 +86,8 @@ def verify_websocket_token(token: str | None = None) -> bool:
 
     # 验证token
     if token != settings.API_AUTH_TOKEN:
-        logger.warning("WebSocket: 无效的Token尝试")
+        logger.warning(f"WebSocket: 无效的Token尝试 (提供={_mask(token)})")
         return False
-    
+
     logger.debug("WebSocket: Token验证成功")
     return True
