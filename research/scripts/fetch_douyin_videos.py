@@ -47,7 +47,7 @@ def _probe() -> int:
     """CDP 端口自检"""
     try:
         tabs = list_tabs()
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         print(f'❌ CDP 不通：{type(e).__name__}: {e}')
         print('   启动："Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/dy_chrome')
         return 1
