@@ -128,7 +128,13 @@ class TencentSource:
         - 返回结构 data[{qt_code}]['qfqday']，数组顺序
           [day, open, close, high, low, volume]
         - 北交所 key 为 'day' 而非 'qfqday'，需兼容
-        - volume 单位为手，统一 ×100 转股（与新浪日线一致）
+        - **volume 单位按板块分裂**（D53 baostock 交叉校验实测，2026-11-01）：
+          688/689（科创板）返回「股」，其余板返回「手」——与 qt 实时报价
+          接口（v_xxx parts[6]）**同一规则**。原实现无条件 ×100 →
+          科创板日 K 成交量被放大 100 倍（量比/量增/成交额类因子全面失真，
+          也正是 D45「burst 推送全是科创板」的第二条根因）。
+          实测样本：688981/688552/689009/688111 腾讯值 = baostock(股) × 100；
+          600036/000001/000651/002594/300750/300059 腾讯值 = baostock(股)。
         返回列：date/open/high/low/close/volume
         """
         try:
@@ -155,6 +161,9 @@ class TencentSource:
             bars = node.get('qfqday') or node.get('day') or []
             if not bars:
                 return pd.DataFrame()
+            # 科创板返回「股」，其余板返回「手」→ 只对后者 ×100
+            symbol = str(code or '').split('.')[0]
+            volume_factor = 1.0 if symbol.startswith(('688', '689')) else 100.0
             records = []
             for bar in bars:
                 if len(bar) < 6:
@@ -165,8 +174,8 @@ class TencentSource:
                     'close': float(bar[2] or 0),
                     'high': float(bar[3] or 0),
                     'low': float(bar[4] or 0),
-                    # 手 → 股（与新浪日线单位一致）
-                    'volume': float(bar[5] or 0) * 100,
+                    # 手 → 股（科创板本就是股，不换算）
+                    'volume': float(bar[5] or 0) * volume_factor,
                 })
             df = pd.DataFrame(records)
             df = df[df['close'] > 0].sort_values('date').reset_index(drop=True)
