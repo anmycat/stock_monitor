@@ -8,6 +8,7 @@ from .sources.eastmoney import EastMoneySource
 from .sources.sina import SinaSource
 from .sources.tdx import TdxSource
 from .sources.tencent import TencentSource
+from .sources.ths_web import ThsWebSource
 from .sources.tushare import TushareSource
 
 # 数据源优先级配置（2026-10-20 按用户决策调整：东财出口 IP 经常被风控，
@@ -27,7 +28,10 @@ from .sources.tushare import TushareSource
 _PRIORITY = {
     'stock_list': ['sina', 'eastmoney', 'tushare'],
     'realtime': ['tencent', 'sina', 'eastmoney'],
-    'daily': ['tencent', 'sina', 'eastmoney', 'tushare'],
+    # D53：新增同花顺网页端备源（免费免 Key，逐字段与腾讯对齐且 volume 直接是「股」）。
+    # 位置：腾讯 → 新浪 → 同花顺 → 东财 → tushare
+    # 不接 realtime/stock_list：同花顺是单标的单请求，全市场 5000+ 请求不可接受。
+    'daily': ['tencent', 'sina', 'ths_web', 'eastmoney', 'tushare'],
     'minute': ['tdx'],
 }
 
@@ -45,6 +49,7 @@ class CompositeSource:
         source_manager.register_source('sina')
         source_manager.register_source('tdx')
         source_manager.register_source('tushare')  # B7 兜底线
+        source_manager.register_source('ths_web')  # D53 同花顺网页端备源
 
         # 初始化数据源
         self.sources = {
@@ -53,6 +58,7 @@ class CompositeSource:
             'sina': SinaSource(),
             'tdx': TdxSource(),
             'tushare': TushareSource(),
+            'ths_web': ThsWebSource(),
         }
         self.datacenter = datacenter
         logger.info("CompositeSource initialized (via SourceManager)")
