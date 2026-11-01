@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -46,10 +47,9 @@ def _probe() -> int:
     """CDP 端口自检"""
     try:
         tabs = list_tabs()
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f'❌ CDP 不通：{type(e).__name__}: {e}')
         print('   启动："Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/dy_chrome')
-        print('        --remote-debugging-port=9222 --user-data-dir=/tmp/dy_chrome')
         return 1
     print(f'✅ CDP 可用，当前标签页 {len(tabs)} 个')
     return 0
@@ -101,7 +101,7 @@ def fetch_one(url: str, wait: int = 10) -> dict:
             landed = mtab.cmd('Runtime.evaluate', {
                 'expression': 'location.href', 'returnByValue': True}) \
                 .get('result', {}).get('value', '')
-        except Exception:
+        except (RuntimeError, OSError, ValueError, KeyError):
             landed = ''
         result = None
         for entry in mtab.net:
@@ -129,11 +129,9 @@ def fetch_one(url: str, wait: int = 10) -> dict:
         result['captured_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
         return result
     finally:
-        try:
+        with contextlib.suppress(Exception):
             mtab.cmd('Page.close')
             mtab.ws.close()
-        except Exception:  # noqa: BLE001
-            pass
 
 
 def main():
