@@ -63,7 +63,13 @@ class DataCenterAuditTests(unittest.TestCase):
         self.assertEqual(dc.cache.get("quote:000001.SZ")["code"], "000001.SZ")
         self.assertEqual(dc.cache.get("quote:600000.SH")["name"], "Pufa")
 
-    def test_source_manager_rejects_empty_dataframe(self):
+    def test_source_manager_empty_dataframe_is_not_source_error(self):
+        """空 DataFrame 不算源故障（D53）
+
+        原契约：空结果 raise ValueError → error_count++ → 连续 3 次让整个源
+        进 5 分钟冷却（主源被无谓误伤：单只票无数据是常态）。
+        D53 起空结果单独计数，不触发冷却；真实异常才计错误。
+        """
         manager = SourceManager()
         manager.register_source("test")
 
@@ -73,7 +79,23 @@ class DataCenterAuditTests(unittest.TestCase):
         result = manager.execute_with_retry("test", empty_func, max_retries=1, skip_delay=True)
 
         self.assertIsNone(result)
-        self.assertEqual(manager.sources["test"].error_count, 1)
+        self.assertEqual(manager.sources["test"].error_count, 0)
+        self.assertEqual(manager.sources["test"].empty_count, 1)
+        self.assertTrue(manager.sources["test"].is_available())
+
+    def test_source_manager_real_error_counts_as_error(self):
+        """真实异常仍计入错误并最终触发冷却"""
+        manager = SourceManager()
+        manager.register_source("test")
+
+        def boom():
+            raise RuntimeError("network down")
+
+        for _ in range(3):
+            manager.execute_with_retry("test", boom, max_retries=1, skip_delay=True)
+
+        self.assertGreaterEqual(manager.sources["test"].error_count, 3)
+        self.assertFalse(manager.sources["test"].is_available())
 
 
 class BacktestEngineAuditTests(unittest.TestCase):

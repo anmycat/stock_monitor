@@ -14,6 +14,7 @@ from .services.monitors.burst_monitor import BurstMonitor
 from .services.notifications.manager import NotificationManager
 from .services.signals.signal_generator import SignalGenerator, warm_api_signals_cache
 from .utils.calendar import is_trading_day
+from .utils.session_gate import in_snapshot_window, next_wakeup, seconds_until
 
 
 def get_current_phase() -> str:
@@ -108,14 +109,24 @@ def get_sector_data(datacenter):
 
 
 def check_etf_holdings(datacenter, notifier):
-    """盘后ETF持仓变化检查（每日一次，含周末；季报披露日不固定）
+    """ETF持仓变化检查（交易日盘前一次；季报披露日不固定）
 
     抓取热门ETF季度持仓，与已存快照比对，发现新季度且变化过阈值时推送。
     Redis键 etf_holdings:check_date 保证每日只跑一次。
+
+    D53：原实现在盘后/周末的 else 分支里被每分钟唤醒调用——既触网
+    （ETF 持仓是行情服务器数据）又不属于交易时段。现限定在交易日
+    9:00-9:30 盘前窗口执行（季报变更最迟次日盘前即可发现）。
     """
     try:
+        now = datetime.now()
+        if not is_trading_day(now):
+            return
+        t = now.hour * 60 + now.minute
+        if not (9 * 60 <= t < 9 * 60 + 30):
+            return
         from .services.monitors.etf_holdings_monitor import ETFHoldingsMonitor
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = now.strftime('%Y-%m-%d')
         if datacenter.cache.get('etf_holdings:check_date') == today:
             return
         monitor = ETFHoldingsMonitor(datacenter)
@@ -267,6 +278,8 @@ def main():
     post_eval = PostEvaluation(datacenter.cache, datacenter)
     last_phase = None
     active_pool = []
+    # D53：总结快照（交易时段内采集，12:10/18:10 推送时只读快照不触网）
+    snapshots: dict = {'morning': None, 'daily': None}
 
     while True:
         try:
@@ -285,6 +298,7 @@ def main():
                 # 保险：若 PRE_MARKET 错过 9:14 窗口，此处补跑
                 # （check_date 幂等去重，不会重复推送）
                 check_morning_news(datacenter, notifier)
+                # ETF 持仓变化检查（D53：移入交易时段盘前窗口）
                 check_etf_holdings(datacenter, notifier)
                 # 睡到竞价结束（9:25）进入 CALL_AUCTION；不用硬编码 600s——
                 # worker 晚启动/重启时不会睡过头错过集合竞价播报
@@ -328,14 +342,29 @@ def main():
                             notifier.send_signal(s)
                 warm_api_signals_cache(datacenter.cache, signals)
 
+                # D53：总结所需数据在交易时段内采集（快照），避免 12:10/18:10
+                # 的推送阶段访问行情服务器（非交易时间静默原则）
+                if phase == "MORNING_SESSION" and in_snapshot_window('morning'):
+                    snapshots['morning'] = (market, signals, get_sector_data(datacenter))
+                    logger.info("早盘总结快照已采集（交易时段内）")
+                elif phase == "AFTERNOON_SESSION" and in_snapshot_window('daily'):
+                    snapshots['daily'] = (market, signals, get_sector_data(datacenter))
+                    logger.info("全日总结快照已采集（交易时段内）")
+
                 time.sleep(300)
 
             elif phase == "MORNING_REVIEW":
                 # 12:15 推送【早盘总结】（避开DS 12:00-13:00涨价时段）
-                market = analyzer.analyze_market()
-                signals = generator.scan_all(max_signals=3)
+                snap = snapshots.get('morning')
+                if snap:
+                    market, signals, sectors = snap
+                    logger.info("早盘总结使用交易时段快照（不访问行情服务器）")
+                else:
+                    logger.warning("早盘总结快照缺失，降级实时拉取（非交易时段触网）")
+                    market = analyzer.analyze_market()
+                    signals = generator.scan_all(max_signals=3)
+                    sectors = get_sector_data(datacenter)
                 warm_api_signals_cache(datacenter.cache, signals)
-                sectors = get_sector_data(datacenter)
                 summary = ai_summary.generate_summary(
                     market, signals, sectors,
                     summary_type="morning_review"
@@ -351,12 +380,18 @@ def main():
 
             elif phase == "DAILY_REVIEW":
                 # 18:15 推送【全日总结】（避开DS 18:00-19:00涨价时段）
-                market = analyzer.analyze_market()
-                signals = generator.scan_all(max_signals=3)
+                snap = snapshots.get('daily')
+                if snap:
+                    market, signals, sectors = snap
+                    logger.info("全日总结使用交易时段快照（不访问行情服务器）")
+                else:
+                    logger.warning("全日总结快照缺失，降级实时拉取（非交易时段触网）")
+                    market = analyzer.analyze_market()
+                    signals = generator.scan_all(max_signals=3)
+                    sectors = get_sector_data(datacenter)
                 warm_api_signals_cache(datacenter.cache, signals)
                 alerts_history = alert_detector.get_history(10)
                 alert_summary = f"今日异动{len(alerts_history)}次" if alerts_history else "今日无异动"
-                sectors = get_sector_data(datacenter)
                 summary = ai_summary.generate_summary(
                     market, signals, sectors,
                     summary_type="daily_review",
@@ -379,14 +414,14 @@ def main():
             else:
                 # 盘前（交易日9:00-9:15）代码一致性静态校验，拦截错码/改名/退市
                 check_code_guard_static(datacenter, notifier)
-                # 盘后/非交易时段：每日一次ETF持仓变化检查（含周末，季报披露日不固定）
-                check_etf_holdings(datacenter, notifier)
                 # 每日9:15早间财经要闻（按板块，含周末；窗口9:14-9:35，日期去重）
                 check_morning_news(datacenter, notifier)
-                sleep_sec = get_sleep_seconds(phase)
-                if sleep_sec > 60:
-                    logger.info(f"Phase {phase}, sleeping {sleep_sec}s")
-                time.sleep(min(sleep_sec, 60))
+                # D53：整块睡眠到下一事件点——原实现 min(sleep,60) 每分钟空唤醒，
+                # 整夜约 720 次；现按阶段边界精确睡到下一事件（交易前唤起）。
+                target = next_wakeup(phase)
+                sleep_sec = seconds_until(target)
+                logger.info(f"Phase {phase}, sleeping {sleep_sec}s (下次唤醒 {target:%m-%d %H:%M})")
+                time.sleep(sleep_sec)
 
         except Exception as e:  # noqa: BLE001 任务兜底
             logger.error(f"Worker error: {e}")

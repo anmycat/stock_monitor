@@ -1,7 +1,9 @@
 """东方财富数据源"""
 from __future__ import annotations
 
+import random
 import re
+import threading
 import time
 
 import pandas as pd
@@ -9,6 +11,40 @@ import requests
 from loguru import logger
 
 from ...utils.code_utils import market_by_symbol, to_secid
+
+
+class _Throttle:
+    """东财"三招"之一：限速 + 随机抖动（对东财，慢，就是快）
+
+    东财对高频同源请求敏感：从生产 ECS 访问 push2his / push2 曾因
+    IP 级风控被 Connection abort（capital_flow_5d 仅 3/33 非空）。
+    对策（用户 2026-11-01 指示）：
+      ① 限速：两次请求至少间隔 MIN_INTERVAL 秒
+      ② 随机抖动：每次请求额外加随机延迟，避免固定节奏像机器人
+      ③ 连接复用：所有请求共用一个 Session（keep-alive，见 _SESSION）
+
+    抖动叠加在限速之上（而非替代），保证间隔 ≥1s 且节奏不可预测。
+    """
+
+    MIN_INTERVAL = 1.0            # 两次请求最小间隔（秒）
+    JITTER_RANGE = (0.15, 0.6)    # 额外随机抖动区间（秒）
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._last = 0.0
+
+    def wait(self) -> None:
+        with self._lock:
+            elapsed = time.monotonic() - self._last
+            base = max(0.0, self.MIN_INTERVAL - elapsed)
+            time.sleep(base + random.uniform(*self.JITTER_RANGE))
+            self._last = time.monotonic()
+
+
+_THROTTLE = _Throttle()
+
+# 三招之二/之三：所有东财请求共用一个 Session（连接复用 + keep-alive）
+_SESSION = requests.Session()
 
 
 class EastMoneySource:
@@ -19,6 +55,9 @@ class EastMoneySource:
     HEADERS = {  # noqa: RUF012 类级只读常量，运行期无原地修改
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': 'https://quote.eastmoney.com/',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Connection': 'keep-alive',
     }
 
     # 全市场列表 fs 过滤（深主板+创业板+沪主板+科创）
@@ -54,15 +93,25 @@ class EastMoneySource:
         return by_prefix
 
     @staticmethod
+    def _get(url: str, params: dict, headers: dict | None = None, timeout: int = 15):
+        """统一请求入口：限速 + 随机抖动 + 连接复用
+
+        三招合一——所有东财请求必须经此函数，不得直接 requests.get。
+        """
+        _THROTTLE.wait()
+        merged = dict(EastMoneySource.HEADERS)
+        if headers:
+            merged.update(headers)
+        return _SESSION.get(url, params=params, headers=merged, timeout=timeout)
+
+    @staticmethod
     def _get_json(url: str, params: dict, tries: int = 3, headers: dict | None = None):
         """带重试的 GET+JSON 解析（代理下 push2 偶发 RemoteDisconnected，
         实测重试 1-2 次即恢复；M2' 备路依赖本方法稳定性）"""
         last_err = None
         for i in range(tries):
             try:
-                response = requests.get(
-                    url, params=params,
-                    headers=headers or EastMoneySource.HEADERS, timeout=15)
+                response = EastMoneySource._get(url, params, headers=headers)
                 if response.status_code == 200:
                     return response.json()
                 last_err = f"HTTP {response.status_code}"
@@ -134,7 +183,7 @@ class EastMoneySource:
                 "fields": "f2,f3,f4,f5,f6,f12,f13,f14",
                 "secids": ",".join(em_codes),
             }
-            response = requests.get(url, params=params, headers=EastMoneySource.HEADERS, timeout=15)
+            response = EastMoneySource._get(url, params)
             if response.status_code == 200:
                 data = response.json()
                 if 'data' in data and data['data'] is not None:

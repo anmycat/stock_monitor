@@ -128,13 +128,13 @@ class AISummary:
                 logger.debug(f"使用缓存的AI总结: {cache_key}")
                 return cached
 
-        if not self.models:
+        if not self._enabled_models():
             logger.warning("无可用AI模型，使用本地生成")
             return self._generate_local(market, signals, sectors)
 
         try:
             # 重要总结使用ensemble融合，通用总结使用cascade
-            if summary_type in ("morning_review", "daily_review") and len(self.models) >= 2:
+            if summary_type in ("morning_review", "daily_review") and len(self._enabled_models()) >= 2:
                 result = self._generate_ensemble(market, signals, sectors, summary_type, alerts, etf_data, news)
             else:
                 result = self._generate_cascade(market, signals, sectors, summary_type, alerts, etf_data, news)
@@ -330,10 +330,11 @@ class AISummary:
                        max_tokens: int = 1500) -> list[ModelResponse]:
         """并行调用所有可用模型"""
         results = []
+        enabled = self._enabled_models()
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.models)) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, len(enabled))) as executor:
             futures = {}
-            for name, cfg in self.models.items():
+            for name, cfg in enabled.items():
                 if not cfg.enabled:
                     continue
                 future = executor.submit(
@@ -411,6 +412,18 @@ class AISummary:
                         model_name=cfg.name, text="", success=False,
                         error="限流(429)", latency_ms=latency
                     )
+                elif response.status_code in (401, 403):
+                    # D53：密钥无效/被拒 —— 进程内禁用该模型，不再重复白等。
+                    # 原实现每次摘要都发一次请求吃 401（生产 10-30 记录
+                    # "MiMo v2.5调用失败: HTTP 401 Invalid API Key"）。
+                    # 注意：401 也可能是额度/权限问题，重试无意义——需运维更新
+                    # .env 中的密钥后重启服务。
+                    self._disable_model(cfg, response.status_code)
+                    return ModelResponse(
+                        model_name=cfg.name, text="", success=False,
+                        error=f"鉴权失败({response.status_code})，模型已禁用待更新密钥",
+                        latency_ms=latency,
+                    )
                 else:
                     return ModelResponse(
                         model_name=cfg.name, text="", success=False,
@@ -432,6 +445,23 @@ class AISummary:
             )
 
     # === 结果构建 ===
+
+    def _disable_model(self, cfg: ModelConfig, status_code: int = 401) -> None:
+        """禁用鉴权失败的模型（进程内生效，不再重复请求）
+
+        D53：生产日志 "MiMo v2.5调用失败: HTTP 401 Invalid API Key" —— 密钥
+        已失效但每次摘要仍发一次请求白等。禁用后仅用剩余模型生成，
+        待运维更新 .env 密钥并重启服务后自动恢复。
+        """
+        if not cfg.enabled:
+            return
+        cfg.enabled = False
+        logger.error(
+            f"🚫 模型 {cfg.name} 鉴权失败(HTTP {status_code})，已禁用（需更新密钥后重启服务）")
+
+    def _enabled_models(self) -> dict:
+        """当前启用的模型集合"""
+        return {k: v for k, v in self.models.items() if v.enabled}
 
     def _build_result(self, text: str, market_info: str, signal_info: str,
                       sector_info: str, alert_info: str, summary_type: str,

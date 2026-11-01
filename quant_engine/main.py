@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 import uuid
@@ -40,9 +41,30 @@ app.add_middleware(
 )
 
 
+# D53（2026-11-01）：公网扫描器路径过滤。
+# 生产实测 10-28~10-31：/api 收到 1084 个请求，其中 881 个是扫描器打的
+# 404（备份/日志/配置文件探测，单 IP 47.109.145.65 占 763 次）。命中即
+# 404 且不记 access 日志——既降日志噪音，也避免扫描流量挤占 journald
+# 配额（现上限 450M）与 worker 处理时间。
+_SCANNER_PATH_RE = re.compile(
+    r"(\.(?:zip|rar|tar|gz|tgz|7z|sql|bak|env|git|svn|ini|yml|yaml|conf|db|sqlite)(?:$|[/?])"
+    r"|error_log|phpmyadmin|/wp-|/\.git|/wp-admin|/vendor/|/cgi-bin|/actuator"
+    r"|/(?:api|gateway)/error(?:/|$)|^/error(?:/|$))",
+    re.IGNORECASE,
+)
+
+
+def _is_scanner_path(path: str) -> bool:
+    """判断是否为已知扫描器探测路径"""
+    return bool(_SCANNER_PATH_RE.search(path))
+
+
 @app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
     """请求ID中间件: 每个请求分配唯一ID，用于日志关联追踪"""
+    if _is_scanner_path(request.url.path):
+        return JSONResponse(status_code=404, content={"success": False, "error": "Not Found"})
+
     request_id = str(uuid.uuid4())[:8]
     request.state.request_id = request_id
     start = time.time()

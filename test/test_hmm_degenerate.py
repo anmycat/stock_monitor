@@ -19,11 +19,18 @@ from quant_engine.models.hmm_detector import HMM_AVAILABLE, MarketRegimeDetector
 def _df(closes, volumes=None, highs=None, lows=None) -> pd.DataFrame:
     n = len(closes)
     if volumes is None:
-        volumes = [1_000_000.0] * n
+        # D53：成交量也必须随行变化——恒定成交量让 vol_chg 特征方差为 0，
+        # 同样触发"退化方差"跳过分支（同 range 的问题）。
+        volumes = [1_000_000.0 + (i % 9) * 50_000.0 for i in range(n)]
     if highs is None:
-        highs = [c * 1.01 for c in closes]
+        # D53：振幅必须随行变化——高低价固定比例会让 (high-low)/close 恒定，
+        # range 特征方差为 0 触发"退化方差"跳过分支，'正常数据应训练成功'
+        # 断言永远无法成立（该用例因本地缺 hmmlearn 长期被跳过而未暴露）。
+        span = [0.005 + 0.01 * ((i % 7) / 7.0) for i in range(n)]
+        highs = [c * (1 + s) for c, s in zip(closes, span)]
     if lows is None:
-        lows = [c * 0.99 for c in closes]
+        span = [0.005 + 0.01 * ((i % 7) / 7.0) for i in range(n)]
+        lows = [c * (1 - s) for c, s in zip(closes, span)]
     return pd.DataFrame({
         'date': pd.date_range('2026-08-01', periods=n),
         'open': closes, 'high': highs, 'low': lows,

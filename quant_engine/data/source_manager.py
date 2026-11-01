@@ -13,15 +13,20 @@ class SourceStatus:
     def __init__(self, name: str):
         self.name = name
         self.error_count = 0
+        self.empty_count = 0  # 空结果次数（与真实错误分开计，见 record_empty）
         self.last_error_time = 0
         self.last_request_time = 0
         self.request_count = 0
         self.success_count = 0
         self.cooldown_until = 0
+        self.quarantined_until = 0  # 熔断截止时间（D53）
+        self._cooldown_streak = 0  # 连续进入冷却的轮次
 
     def is_available(self, cooldown_seconds: int = 300) -> bool:
-        """检查数据源是否可用"""
+        """检查数据源是否可用（冷却中或熔断中均不可用）"""
         now = time.time()
+        if now < self.quarantined_until:
+            return False
         return not now < self.cooldown_until
 
     def record_success(self):
@@ -30,20 +35,55 @@ class SourceStatus:
         self.success_count += 1
         self.last_request_time = time.time()
         self.error_count = 0
+        self.empty_count = 0
+        self._cooldown_streak = 0
 
-    def record_error(self, cooldown_seconds: int = 300):
-        """记录错误，进入冷却"""
+    def record_empty(self, empty_threshold: int = 10):
+        """记录空结果（D53）
+
+        空结果≠源故障：单只票无数据（新股/停牌/腾讯 501）是常态。原实现把
+        空 DataFrame 当异常抛出 → 计入 error_count → 连续 3 次即让整个源
+        进入 5 分钟冷却，主源（腾讯）被无谓误伤。
+
+        现在空结果单独计数，连续 empty_threshold 次才升级为故障冷却。
+        """
+        self.empty_count += 1
+        self.request_count += 1
+        self.last_request_time = time.time()
+        if self.empty_count >= empty_threshold:
+            self.error_count += 1
+            self.empty_count = 0
+            self.cooldown_until = time.time() + 300
+            logger.warning(
+                f"Source {self.name} entering cooldown (连续 {empty_threshold} 次空结果)")
+
+    def record_error(self, cooldown_seconds: int = 300, quarantine_seconds: int = 1800):
+        """记录错误，进入冷却；连续多轮冷却未恢复则熔断"""
         self.error_count += 1
+        self.empty_count = 0
         self.last_error_time = time.time()
         self.last_request_time = time.time()
         if self.error_count >= 3:
             self.cooldown_until = time.time() + cooldown_seconds
-            logger.warning(f"Source {self.name} entering cooldown for {cooldown_seconds}s")
+            self._cooldown_streak += 1
+            if self._cooldown_streak >= 3:
+                # 连续 3 轮冷却仍未恢复 → 熔断：期间彻底跳过该源，
+                # 省掉每次请求的网络超时（TDX 网关不可达 / 东财风控场景）
+                self.quarantined_until = time.time() + quarantine_seconds
+                self._cooldown_streak = 0
+                logger.warning(
+                    f"Source {self.name} quarantined for {quarantine_seconds}s"
+                    "（连续 3 轮冷却未恢复）")
+            else:
+                logger.warning(f"Source {self.name} entering cooldown for {cooldown_seconds}s")
 
     def reset(self):
         """重置状态"""
         self.error_count = 0
+        self.empty_count = 0
         self.cooldown_until = 0
+        self.quarantined_until = 0
+        self._cooldown_streak = 0
 
 
 class SourceManager:
@@ -145,7 +185,10 @@ class SourceManager:
                 result = func(*args, **kwargs)
                 if result is not None:
                     if hasattr(result, "empty") and result.empty:
-                        raise ValueError(f"{source_name} returned empty dataframe")
+                        # D53：空结果不是源故障（单票无数据是常态）——
+                        # 不重试、不计错误，只记空结果计数；继续下一个源。
+                        source.record_empty()
+                        return None
                     source.record_success()
                     return result
             except TimeoutError as e:
@@ -210,13 +253,17 @@ class SourceManager:
     def get_status_report(self) -> dict:
         """获取数据源状态报告"""
         report = {}
+        now = time.time()
         for name, source in self.sources.items():
             report[name] = {
                 'available': source.is_available(self.cooldown_seconds),
                 'error_count': source.error_count,
+                'empty_count': source.empty_count,
                 'request_count': source.request_count,
                 'success_count': source.success_count,
                 'cooldown_until': source.cooldown_until,
+                'quarantined_until': source.quarantined_until,
+                'quarantined': now < source.quarantined_until,
             }
         return report
 

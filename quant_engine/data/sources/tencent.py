@@ -140,8 +140,14 @@ class TencentSource:
                 TencentSource.DAILY_URL, params=params,
                 headers=TencentSource._get_headers(), timeout=15)
             if response.status_code != 200:
-                logger.warning(
-                    f"Tencent daily {code} HTTP {response.status_code}")
+                # D53：501 = 该代码在腾讯无复权日线（新股/次新上市不足），
+                # 属"该票无数据"而非网络故障——降级为 debug，避免刷屏且
+                # 不触发源冷却（空结果由 SourceManager 单独计数）。
+                if response.status_code == 501:
+                    logger.debug(f"Tencent daily {code}: HTTP 501 (无复权日线)")
+                else:
+                    logger.warning(
+                        f"Tencent daily {code} HTTP {response.status_code}")
                 return pd.DataFrame()
             data = response.json().get('data') or {}
             node = data.get(qt_code) or {}

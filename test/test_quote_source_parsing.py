@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+from quant_engine.data.sources import eastmoney as _em_mod
 from quant_engine.data.sources.eastmoney import EastMoneySource
 from quant_engine.data.sources.sina import SinaSource
 from quant_engine.data.sources.tencent import TencentSource
@@ -152,9 +153,18 @@ class TestSinaParsing(unittest.TestCase):
 
 
 class TestEastMoneyParsing(unittest.TestCase):
+
+    def setUp(self):
+        # D53：东财请求已统一走 _get（限速+抖动+连接复用），
+        # 测试层关闭节流保证速度；mock 点改为 EastMoneySource._get
+        self._orig_wait = _em_mod._THROTTLE.wait
+        _em_mod._THROTTLE.wait = lambda: None
+
+    def tearDown(self):
+        _em_mod._THROTTLE.wait = self._orig_wait
     """东财源：f13+前缀组合规则 + secid 适配"""
 
-    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    @patch('quant_engine.data.sources.eastmoney.EastMoneySource._get')
     def test_ulist_market_from_f13_and_prefix(self, mock_get):
         """510300(ETF/f13=1)→SH；920819(北交所/f13=0)→BJ"""
         with open(os.path.join(FIXTURES, 'quote_em_ulist.json'),
@@ -176,13 +186,13 @@ class TestEastMoneyParsing(unittest.TestCase):
 
     def test_secid_conversion(self):
         """to_secid：沪市 1. / 深北 0.（经 requests URL 参数验证）"""
-        with patch('quant_engine.data.sources.eastmoney.requests.get') as mock_get:
+        with patch('quant_engine.data.sources.eastmoney.EastMoneySource._get') as mock_get:
             resp = MagicMock(status_code=200)
             resp.json.return_value = {'data': None}
             mock_get.return_value = resp
             EastMoneySource.get_realtime_quote(['510300.SH', '920819.BJ'])
-            _, kwargs = mock_get.call_args
-            secids = kwargs['params']['secids']
+            args, _ = mock_get.call_args
+            secids = args[1]['secids']
             self.assertEqual(secids, '1.510300,0.920819')
 
     def test_market_from_em_helper(self):
@@ -196,7 +206,7 @@ class TestEastMoneyParsing(unittest.TestCase):
         self.assertEqual(f('510300', None), 'SH')  # f13 缺失兜底
         self.assertIsNone(f('abc', 1))
 
-    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    @patch('quant_engine.data.sources.eastmoney.EastMoneySource._get')
     def test_clist_get_all_stocks_parsing(self, mock_get):
         """get_all_stocks（clist 全市场列表，M2' 备路依赖）fixture 解析回归"""
         with open(os.path.join(FIXTURES, 'quote_em_clist.json'),
@@ -214,11 +224,13 @@ class TestEastMoneyParsing(unittest.TestCase):
         self.assertAlmostEqual(df.iloc[0]['price'], 4.236, places=3)
         self.assertAlmostEqual(df.iloc[0]['change_pct'], -0.14, places=2)
         # 请求参数带重试封装后不变（fs/pz 关键项）
-        _, kwargs = mock_get.call_args
-        self.assertEqual(kwargs['params']['pz'], '5000')
-        self.assertEqual(kwargs['params']['fs'], EastMoneySource.CLIST_FS)
+        # D53：统一走 EastMoneySource._get(url, params, headers=...)，
+        # params 是第 2 个位置参数
+        args, _ = mock_get.call_args
+        self.assertEqual(args[1]['pz'], '5000')
+        self.assertEqual(args[1]['fs'], EastMoneySource.CLIST_FS)
 
-    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    @patch('quant_engine.data.sources.eastmoney.EastMoneySource._get')
     def test_clist_retry_then_success(self, mock_get):
         """_get_json 重试：前两次 RemoteDisconnected，第三次成功"""
         with open(os.path.join(FIXTURES, 'quote_em_clist.json'),
@@ -232,7 +244,7 @@ class TestEastMoneyParsing(unittest.TestCase):
         self.assertEqual(len(df), 6)
         self.assertEqual(mock_get.call_count, 3)
 
-    @patch('quant_engine.data.sources.eastmoney.requests.get')
+    @patch('quant_engine.data.sources.eastmoney.EastMoneySource._get')
     def test_clist_all_retries_fail_returns_empty(self, mock_get):
         """重试耗尽不抛异常，返回空 df（上层自然降级）"""
         mock_get.side_effect = ConnectionError('down')

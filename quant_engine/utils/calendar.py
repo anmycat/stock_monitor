@@ -14,31 +14,78 @@ except ImportError:
     logger.warning("exchange-calendars not installed, using simple weekend check")
 
 
+# 沪深北休市日（工作日部分）——exchange_calendars 的 XSHG 日历仅覆盖到
+# 2025-12-31，2026 年起必须用本表，否则法定节假日会被当成交易日，
+# 系统会在休市日空跑扫描并访问行情服务器（D53 实测：日历越界每次调用
+# 都抛异常并刷 WARNING）。
+#
+# 来源：上交所公告〔2025〕45 号《关于上海证券交易所2026年部分节假日休市
+# 安排的通知》（2025-12-22 发布，沪深北三所同步）：
+#   元旦 1/1-1/3 · 春节 2/15-2/23 · 清明 4/4-4/6 · 劳动节 5/1-5/5
+#   端午 6/19-6/21 · 中秋 9/25-9/27 · 国庆 10/1-10/7
+CN_MARKET_HOLIDAYS: set[str] = {
+    # 元旦
+    '2026-01-01', '2026-01-02',
+    # 春节（2/14、2/28 为周末）
+    '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-23',
+    # 清明
+    '2026-04-06',
+    # 劳动节（5/9 为周末）
+    '2026-05-01', '2026-05-04', '2026-05-05',
+    # 端午
+    '2026-06-19',
+    # 中秋
+    '2026-09-25',
+    # 国庆（9/20、10/10 为周末）
+    '2026-10-01', '2026-10-02', '2026-10-05', '2026-10-06', '2026-10-07',
+}
+
+_WARNED: set[str] = set()  # 已告警过的标签（日历越界只告警一次，避免刷屏）
+
+
+def _warn_once(tag: str, msg: str) -> None:
+    """同一类告警只输出一次（日历越界每次调用都会失败，会刷屏）"""
+    if tag in _WARNED:
+        return
+    _WARNED.add(tag)
+    logger.warning(msg)
+
+
+def _is_holiday(date: datetime) -> bool:
+    """是否在沪深北休市日表内"""
+    return date.strftime('%Y-%m-%d') in CN_MARKET_HOLIDAYS
+
+
 def is_trading_day(date: datetime | None = None, market: str = 'XSHG') -> bool:
     """
     判断是否为交易日
-    
+
     Args:
         date: 日期，默认为今天
         market: 市场代码，XSHG=上交所, XSHE=深交所
-    
+
     Returns:
         bool: 是否为交易日
     """
     if date is None:
         date = datetime.now()
-    
+
     # 周末肯定不是交易日
     if date.weekday() >= 5:
         return False
-    
+
+    # 静态休市日表优先（覆盖 exchange_calendars 的 horizon 之外）
+    if _is_holiday(date):
+        return False
+
     if HAS_CALENDAR:
         try:
             cal = xcals.get_calendar(market)
             ts = pd.Timestamp(date).normalize()
             return cal.is_session(ts)
         except Exception as e:
-            logger.warning(f"Calendar check failed: {e}")
+            _warn_once('is_session',
+                       f"Calendar check failed (fallback to weekend+holiday table): {e}")
             # 降级到简单判断
             return date.weekday() < 5
     else:
@@ -67,11 +114,14 @@ def get_next_trading_day(date: datetime | None = None, market: str = 'XSHG') -> 
             next_day = cal.next_session(ts)
             return next_day.to_pydatetime()
         except Exception as e:
-            logger.warning(f"Calendar next day failed: {e}")
+            _warn_once('next_session',
+                       f"Calendar next day failed (fallback to weekend+holiday table): {e}")
     
-    # 降级逻辑
+    # 降级逻辑：跳过周末 + 静态休市日表（exchange_calendars 越界时）
     next_day = date + timedelta(days=1)
-    while next_day.weekday() >= 5:
+    for _ in range(30):
+        if next_day.weekday() < 5 and not _is_holiday(next_day):
+            break
         next_day += timedelta(days=1)
     return next_day
 
