@@ -32,7 +32,9 @@ _PRIORITY = {
     # 位置：腾讯 → 新浪 → 同花顺 → 东财 → tushare
     # 不接 realtime/stock_list：同花顺是单标的单请求，全市场 5000+ 请求不可接受。
     'daily': ['tencent', 'sina', 'ths_web', 'eastmoney', 'tushare'],
-    'minute': ['tdx'],
+    # D53：分钟线新增新浪（getKLineData scale=5/15/30/60）——TDX 公共节点
+    # 已停供行情（协议级探测：quotes/bars 全空），新浪为生产实测可用替代
+    'minute': ['sina', 'tdx'],
 }
 
 

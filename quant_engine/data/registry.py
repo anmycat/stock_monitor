@@ -41,13 +41,16 @@ SOURCES: dict[str, SourceSpec] = {
         class_name='SinaSource',
         capabilities=frozenset({
             Capability.DAILY, Capability.REALTIME, Capability.LIST,
+            Capability.MINUTE,
         }),
-        priority={'daily': 1, 'realtime': 1, 'list': 0},
+        priority={'daily': 1, 'realtime': 1, 'list': 0, 'minute': 0},
         needs_key=False,
         volume_unit=UNIT_SHARES,
         adjust=ADJUST_NONE,
         notes='股票池主路（hs_a 实测 5574 只含北交所）；'
-               '新浪 qfq.js 提供原始复权因子（零鉴权）',
+               '新浪 qfq.js 提供原始复权因子（零鉴权）；'
+               'D53：新增分钟 K（getKLineData scale=5/15/30/60），'
+               '接替已停供行情的 TDX 分钟线通道',
     ),
     'ths_web': SourceSpec(
         name='ths_web',
@@ -99,6 +102,45 @@ SOURCES: dict[str, SourceSpec] = {
         adjust=ADJUST_NONE,
         notes='pytdx TCP 7709；生产 ECS→117.34.114.x 不可达（自动降级）；'
                'mootdx bestip 探测可解决（待接入）',
+    ),
+    'akshare': SourceSpec(
+        name='akshare',
+        module='quant_engine.data.sources.akshare_source',
+        class_name='AkshareSource',
+        capabilities=frozenset({Capability.POOL, Capability.LIST}),
+        priority={'pool': 2, 'list': 4},
+        needs_key=False,
+        volume_unit=UNIT_UNKNOWN,
+        adjust=ADJUST_NONE,
+        notes='D53：可选依赖（生产 ECS 已装 1.18.64）；按调研纪律**不进盘中主循环**，'
+               '只做夜间批量与补充能力（涨停/跌停池、指数成分、行业分类、交易日历）；'
+               '底层多为爬虫接口（_em 与现有源同源、_sina/_ths 封 IP 风险高）',
+    ),
+    'cninfo': SourceSpec(
+        name='cninfo',
+        module='quant_engine.data.sources.cninfo_source',
+        class_name='CninfoSource',
+        capabilities=frozenset({Capability.FUNDAMENTAL}),
+        priority={'fundamental': 0},
+        needs_key=False,
+        volume_unit=UNIT_UNKNOWN,
+        adjust=ADJUST_NONE,
+        notes='D53：巨潮公告/事件源（非行情）；stock 参数必须 "代码,orgId"'
+               '（只传代码返回 0 条）；限速 1.6s + 抖动 + 连接复用；用于 ST/退市/风险警示扫描',
+    ),
+    'iwencai': SourceSpec(
+        name='iwencai',
+        module='quant_engine.data.sources.iwencai_source',
+        class_name='IwencaiSource',
+        capabilities=frozenset({Capability.LIST}),
+        priority={'list': 5},
+        needs_key=True,
+        key_env='HEXIN_V',
+        volume_unit=UNIT_UNKNOWN,
+        adjust=ADJUST_NONE,
+        notes='D53：问财自然语言选股；需 HEXIN_V + IWENCAI_COOKIE 两个凭据'
+               '（pywencai 的 hexin-v.js 生成 + 浏览器 Cookie）；'
+               '定位盘后一次性选股，限速 2s，不进盘中主循环',
     ),
     'tushare': SourceSpec(
         name='tushare',

@@ -193,6 +193,71 @@ class SinaSource:
         return out
 
     @staticmethod
+    def get_minute_data(code: str, period: str = '5') -> pd.DataFrame:
+        """获取分钟K线（getKLineData，scale=5/15/30/60）
+
+        D53 遗留修复：TDX 分钟线通道自 2026-10 起长期不可用——生产 ECS
+        对 117.34.114.x 是 No route to host，而 mootdx 内置的 38 个公共
+        节点经**协议级**探测（research/scripts/probe_tdx_nodes.py）：
+        TCP 可达 14 个，但 get_security_quotes / get_security_bars 全部
+        返回空（只有 get_security_list 有数据）→ 公共节点已停止对外提供
+        行情服务，mootdx bestip 也解决不了。
+
+        替代方案（2026-11-03 生产实测全部 200 有数据）：
+          新浪 quotes.sina.cn getKLineData（scale=5/15/30/60）——本方法
+          腾讯 web.ifzq minute/query（分时，仅当日）
+          东财 push2his trends2（1 分钟，风控敏感，仅备路）
+
+        返回列与 TdxSource.get_minute_data 完全对齐：
+            date/open/high/low/close/volume/amount
+        volume 单位为「股」（实测 amount = volume × close 精确成立）。
+
+        Args:
+            code: 标准代码，如 '600000.SH'
+            period: '5'/'15'/'30'/'60'
+        """
+        try:
+            symbol = SinaSource._convert_code(code)
+            scale = int(period)
+            if scale not in (5, 15, 30, 60):
+                logger.debug(f"Sina minute: 不支持的周期 {period}（可用 5/15/30/60）")
+                return pd.DataFrame()
+            params = {
+                'symbol': symbol,
+                'scale': scale,
+                'ma': 'no',
+                # 240 根（5 分钟 × 48 根/天 = 5 个交易日）——与 TDX 的
+                # DEFAULT_BAR_COUNT=240 对齐；gates 只用最近 10 根，
+                # 拉全量 1023 根纯属浪费带宽
+                'datalen': 240,
+            }
+            response = requests.get(
+                SinaSource.DAILY_URL, params=params,
+                headers=SinaSource.HEADERS, timeout=15)
+            if response.status_code != 200:
+                logger.debug(f"Sina minute {code} HTTP {response.status_code}")
+                return pd.DataFrame()
+            items = json.loads(response.text)
+            if not items:
+                return pd.DataFrame()
+            records = []
+            for it in items:
+                records.append({
+                    'date': str(it.get('day') or ''),
+                    'open': float(it.get('open') or 0),
+                    'high': float(it.get('high') or 0),
+                    'low': float(it.get('low') or 0),
+                    'close': float(it.get('close') or 0),
+                    'volume': float(it.get('volume') or 0),   # 股
+                    'amount': float(it.get('amount') or 0),   # 元
+                })
+            df = pd.DataFrame(records)
+            df = df[df['close'] > 0].sort_values('date').reset_index(drop=True)
+            return df
+        except Exception as e:
+            logger.warning(f"Sina get minute data error [{code}/{period}m]: {e}")
+            return pd.DataFrame()
+
     def get_daily_data(code: str, days: int = 120) -> pd.DataFrame:
         """获取日线数据（getKLineData，scale=240 日线）
 
