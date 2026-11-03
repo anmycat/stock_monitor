@@ -9,6 +9,7 @@
 """
 import os
 import sys
+import time
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -195,6 +196,97 @@ class TestRequestConstruction(unittest.TestCase):
         out, _, _ = self._capture(cfg, status=401)
         self.assertFalse(out.success)
         self.assertFalse(cfg.enabled)
+
+
+class TestRateLimitAndRetry(unittest.TestCase):
+    """D57：客户端限速 + 429 退避重试（云知声 RPM 100 / TPM 10M）"""
+
+    def test_rate_limiter_allows_under_limit(self):
+        from quant_engine.services.ai.ai_summary import _RateLimiter
+        rl = _RateLimiter(max_rpm=5)
+        t0 = time.monotonic()
+        for _ in range(5):
+            rl.acquire()
+        # 5 次在限额内 → 不应等待
+        self.assertLess(time.monotonic() - t0, 1.0)
+
+    def test_rate_limiter_blocks_over_limit(self):
+        from quant_engine.services.ai.ai_summary import _RateLimiter
+        rl = _RateLimiter(max_rpm=2)
+        rl.acquire()
+        rl.acquire()
+        # 第 3 次应阻塞（但我们只验证它确实等待，不真等 60s）
+        # 用线程 + 短超时验证阻塞
+        import threading
+        fired = threading.Event()
+
+        def _third():
+            rl.acquire()
+            fired.set()
+
+        th = threading.Thread(target=_third, daemon=True)
+        th.start()
+        blocked = not fired.wait(timeout=1.0)
+        self.assertTrue(blocked, '超限请求应被阻塞')
+
+    def test_429_retries_with_backoff(self):
+        """429 应重试；重试耗尽后返回失败"""
+        cfg = _make()
+        s = AISummary.__new__(AISummary)
+        s.models = {cfg.name: cfg}
+        s.primary_model = cfg.name
+
+        calls = {'n': 0}
+
+        def _fake_once(self, c, sp, up, mt):
+            calls['n'] += 1
+            if calls['n'] <= 2:
+                return ModelResponse(model_name=c.name, text='', success=False,
+                                     error='限流(429)')
+            return ModelResponse(model_name=c.name, text='成功正文',
+                                 tokens_used=10, success=True)
+
+        with patch.object(AISummary, '_call_once', _fake_once), \
+                patch('quant_engine.services.ai.ai_summary.time.sleep'):
+            out = s._call_single_model(cfg, 'sys', 'user')
+        self.assertTrue(out.success)
+        self.assertEqual(calls['n'], 3, '应在第 3 次成功')
+
+    def test_429_gives_up_after_max_retries(self):
+        cfg = _make()
+        s = AISummary.__new__(AISummary)
+        s.models = {cfg.name: cfg}
+        s.primary_model = cfg.name
+
+        def _always_429(self, c, sp, up, mt):
+            return ModelResponse(model_name=c.name, text='', success=False,
+                                 error='限流(429)')
+
+        with patch.object(AISummary, '_call_once', _always_429), \
+                patch('quant_engine.services.ai.ai_summary.time.sleep'):
+            out = s._call_single_model(cfg, 'sys', 'user', max_retries=2)
+        self.assertFalse(out.success)
+        self.assertIn('限流', out.error)
+
+    def test_non_429_error_not_retried(self):
+        """非限流错误不应重试（避免无谓等待）"""
+        cfg = _make()
+        s = AISummary.__new__(AISummary)
+        s.models = {cfg.name: cfg}
+        s.primary_model = cfg.name
+
+        calls = {'n': 0}
+
+        def _fail(self, c, sp, up, mt):
+            calls['n'] += 1
+            return ModelResponse(model_name=c.name, text='', success=False,
+                                 error='HTTP 500: boom')
+
+        with patch.object(AISummary, '_call_once', _fail), \
+                patch('quant_engine.services.ai.ai_summary.time.sleep'):
+            out = s._call_single_model(cfg, 'sys', 'user')
+        self.assertFalse(out.success)
+        self.assertEqual(calls['n'], 1, '非 429 错误不应重试')
 
 
 class TestMergeFallback(unittest.TestCase):

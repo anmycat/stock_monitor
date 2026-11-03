@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import concurrent.futures
 import json
+import threading
 import time
 from dataclasses import dataclass
 
@@ -67,6 +68,41 @@ class ModelConfig:
             self.api_url = f"{self.base_url.rstrip('/')}/messages"
         else:
             self.api_url = f"{self.base_url.rstrip('/')}/chat/completions"
+
+
+class _RateLimiter:
+    """客户端请求限速器（云知声平台限额 RPM 100 / TPM 10,000,000）
+
+    D57 实测：项目当前每日 AI 调用仅 3 轮（集合竞价/早盘/全日），
+    ensemble 展开后瞬时峰值 ≈ 3 RPM —— 占限额 3%，安全边际极大。
+    但若将来加"盘中实时总结"之类的高频调用，可能撞上 100 RPM。
+
+    双保险：
+    1. 滑动窗口限速：限制本进程发起的最大请求速率（默认 20 RPM）
+    2. 429 退避重试：平台真限流时指数退避重试，而不是直接失败
+    """
+
+    def __init__(self, max_rpm: int = 20):
+        self.max_rpm = max(1, max_rpm)
+        self._lock = threading.Lock()
+        self._times: list[float] = []
+
+    def acquire(self) -> None:
+        """阻塞直到可以发出下一个请求"""
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                cutoff = now - 60.0
+                self._times = [t for t in self._times if t > cutoff]
+                if len(self._times) < self.max_rpm:
+                    self._times.append(now)
+                    return
+                wait = self._times[0] + 60.0 - now
+            time.sleep(max(0.1, wait))
+
+
+# 全进程共享的限速器（云知声与 DeepSeek 共用，避免各自打满）
+_RATE_LIMITER = _RateLimiter(max_rpm=20)
 
 
 @dataclass
@@ -396,8 +432,31 @@ class AISummary:
         return results
 
     def _call_single_model(self, cfg: ModelConfig, system_prompt: str,
-                           user_prompt: str, max_tokens: int = 1500) -> ModelResponse:
-        """调用单个模型（支持 OpenAI 兼容与 Anthropic 原生两种协议）"""
+                           user_prompt: str, max_tokens: int = 1500,
+                           max_retries: int = 2) -> ModelResponse:
+        """调用单个模型（支持 OpenAI 兼容与 Anthropic 原生两种协议）
+
+        D57：429 平台限流时指数退避重试（云知声限额 RPM 100 / TPM 10M）。
+        当前项目用量峰值仅 3 RPM（占限额 3%），重试只是兜底——
+        防止将来加高频调用时整轮总结被限流打断。
+        """
+        attempt = 0
+        while True:
+            resp = self._call_once(cfg, system_prompt, user_prompt, max_tokens)
+            if resp.success or not resp.error.startswith("限流(429)"):
+                return resp
+            if attempt >= max_retries:
+                return resp
+            delay = 2.0 * (2 ** attempt)
+            attempt += 1
+            logger.warning(
+                f"{cfg.name} 触发限流(429)，{delay:.0f}s 后重试"
+                f"（{attempt}/{max_retries}）")
+            time.sleep(delay)
+
+    def _call_once(self, cfg: ModelConfig, system_prompt: str,
+                   user_prompt: str, max_tokens: int = 1500) -> ModelResponse:
+        """发起一次模型请求（不重试；重试逻辑在 _call_single_model）"""
         start = time.time()
 
         # 该模型自身的 max_tokens 上限优先（D56：思考型模型需更大预算）
@@ -441,6 +500,7 @@ class AISummary:
             payload["thinking"] = {"type": "disabled"}  # 总结场景不需要深度思考，加速响应
 
         try:
+            _RATE_LIMITER.acquire()  # 客户端限速（远低于平台 RPM 100）
             with httpx.Client(timeout=cfg.timeout) as client:
                 response = client.post(cfg.api_url, json=payload, headers=headers)
 
@@ -478,6 +538,7 @@ class AISummary:
                         success=True,
                     )
                 elif response.status_code == 429:
+                    # D57：平台限流（RPM 100 / TPM 10M）→ 交由上层退避重试
                     return ModelResponse(
                         model_name=cfg.name, text="", success=False,
                         error="限流(429)", latency_ms=latency
