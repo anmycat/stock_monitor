@@ -39,7 +39,14 @@ REMOTE_PASSWORD='<服务器密码>' python3 deploy_with_python.py
 bash deploy.sh
 ```
 
-目标服务器：`root@DEPLOY_HOST_PLACEHOLDER`，目录 `/stock_monitor`，端口 8000。
+目标服务器经环境变量传入（地址与凭据均不入库）：
+
+```bash
+export DEPLOY_HOST=<目标主机>
+export DEPLOY_USER=<登录用户>      # 可选，默认 root
+export DEPLOY_PATH=<部署目录>      # 可选
+export DEPLOY_API_PORT=<服务端口>  # 可选，默认 8000
+```
 
 ## 本次修复（2026-10-16）
 

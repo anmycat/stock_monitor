@@ -1,13 +1,19 @@
 #!/bin/bash
-# ECS 生产更新脚本（SSH 密钥认证，无需密码交互）
-# 用法（仓库根）：bash deploy/update_ecs.sh
+# 生产服务器更新脚本（SSH 密钥认证，无需密码交互）
+# 用法（仓库根）：export DEPLOY_HOST=<host>; bash deploy/update_ecs.sh
 # 流程：备份现网 → 上传代码（排除 .env/缓存/日志）→ 装依赖 → 导入冒烟 → 重启三服务 → 端点验证
 # 注意：.env 永不上传（gitignore 凭据，ECS 保留自身配置）；--delete 受 --exclude 保护不会删 ECS 侧日志/配置
 # 认证：显式 -i ~/.ssh/id_ed25519 + BatchMode（agent 不可见时仍走密钥，失败即报错不挂起等密码）
 set -euo pipefail
 
-ECS=root@DEPLOY_HOST_PLACEHOLDER
-REMOTE=/stock_monitor
+# ===== 目标主机（凭据与地址一律经环境变量传入，不入库）=====
+# 用法：export DEPLOY_HOST=<host> DEPLOY_PATH=<path> DEPLOY_USER=<user>
+#      未设置 DEPLOY_HOST 时直接报错退出 —— 避免误连默认主机
+: "${DEPLOY_HOST:?必须设置 DEPLOY_HOST 环境变量（目标主机地址）}"
+DEPLOY_USER="${DEPLOY_USER:-root}"
+DEPLOY_PATH="${DEPLOY_PATH:-/stock_monitor}"
+ECS="${DEPLOY_USER}@${DEPLOY_HOST}"
+REMOTE="$DEPLOY_PATH"
 TS=$(date +%Y%m%d_%H%M%S)
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes"
 # 显式指定身份文件：沙箱/CI 环境下 ssh-agent 可能不可见，默认身份探测会被拦导致回退密码交互挂起

@@ -1,13 +1,19 @@
 #!/bin/bash
-# B9：本地 vs ECS 代码漂移巡检（每周一次）
-# 用法（仓库根）：bash deploy/inspect_drift.sh
+# B9：本地 vs 生产服务器代码漂移巡检（每周一次）
+# 用法（仓库根）：export DEPLOY_HOST=<host>; bash deploy/inspect_drift.sh
 # 产出：逐文件 md5 对比，漂移清单打印到 stdout；无漂移 exit 0，有漂移 exit 2
 # 说明：排除 __pycache__/.pyc/.env/logs（与 update_ecs.rsync 排除规则一致），
 #       只巡检会上传到 ECS 的文件，避免噪声。
 set -uo pipefail
 
-ECS=root@DEPLOY_HOST_PLACEHOLDER
-REMOTE=/stock_monitor
+# ===== 目标主机（凭据与地址一律经环境变量传入，不入库）=====
+# 用法：export DEPLOY_HOST=<host> DEPLOY_PATH=<path> DEPLOY_USER=<user>
+#      未设置 DEPLOY_HOST 时直接报错退出 —— 避免误连默认主机
+: "${DEPLOY_HOST:?必须设置 DEPLOY_HOST 环境变量（目标主机地址）}"
+DEPLOY_USER="${DEPLOY_USER:-root}"
+DEPLOY_PATH="${DEPLOY_PATH:-/stock_monitor}"
+ECS="${DEPLOY_USER}@${DEPLOY_HOST}"
+REMOTE="$DEPLOY_PATH"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes"
 if [ -f "${HOME}/.ssh/id_ed25519" ]; then
     SSH_OPTS="$SSH_OPTS -i ${HOME}/.ssh/id_ed25519"

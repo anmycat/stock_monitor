@@ -12,10 +12,13 @@ from pathlib import Path
 import paramiko
 
 # 配置
-REMOTE_USER = "root"
-REMOTE_HOST = "DEPLOY_HOST_PLACEHOLDER"
+# 目标主机与凭据一律经环境变量传入（地址/密码不入库）
+REMOTE_USER = os.getenv("DEPLOY_USER", "root")
+REMOTE_HOST = os.getenv("DEPLOY_HOST", "")
 REMOTE_PASSWORD = os.getenv("REMOTE_PASSWORD", "")
-REMOTE_DIR = "/stock_monitor"
+REMOTE_DIR = os.getenv("DEPLOY_PATH", "/stock_monitor")
+if not REMOTE_HOST:
+    sys.exit("请先设置 DEPLOY_HOST 环境变量（目标主机地址）")
 LOCAL_DIR = Path(__file__).resolve().parent.parent
 
 def print_header(text):

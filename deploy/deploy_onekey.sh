@@ -3,9 +3,12 @@
 
 : "${SSHPASS:?请先设置SSHPASS环境变量}"
 
-REMOTE_USER="root"
-REMOTE_HOST="DEPLOY_HOST_PLACEHOLDER"
-REMOTE_DIR="/stock_monitor"
+# 目标主机与部署目录经环境变量传入（地址不入库）
+: "${DEPLOY_HOST:?请先设置 DEPLOY_HOST 环境变量（目标主机地址）}"
+REMOTE_USER="${DEPLOY_USER:-root}"
+REMOTE_HOST="$DEPLOY_HOST"
+REMOTE_DIR="${DEPLOY_PATH:-/stock_monitor}"
+API_PORT="${DEPLOY_API_PORT:-8000}"
 LOCAL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "======================================"
@@ -53,7 +56,7 @@ echo ""
 # Step 3: 安装依赖
 echo "🔧 步骤 3/6: 安装Python依赖..."
 sshpass -p "${SSHPASS}" ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
-cd /stock_monitor
+cd ${REMOTE_DIR}
 echo "Python版本:"
 python3 --version
 echo ""
@@ -69,7 +72,7 @@ echo ""
 # Step 4: 创建配置文件
 echo "⚙️ 步骤 4/6: 创建配置文件..."
 sshpass -p "${SSHPASS}" ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
-cd /stock_monitor
+cd ${REMOTE_DIR}
 if [ ! -f .env ]; then
 cat > .env << 'EOF'
 # 基础配置
@@ -129,7 +132,7 @@ echo ""
 # Step 6: 验证部署
 echo "🔍 步骤 6/6: 验证部署状态..."
 sshpass -p "${SSHPASS}" ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
-cd /stock_monitor
+cd ${REMOTE_DIR}
 
 echo "📁 文件检查:"
 ls -la | head -15
@@ -157,34 +160,34 @@ echo ""
 echo "1️⃣  启动服务（请选择一种方式）:"
 echo ""
 echo "   方式A - systemd服务（推荐）:"
-echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@DEPLOY_HOST_PLACEHOLDER"
+echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST}"
 echo "   systemctl start quant-engine"
 echo "   systemctl status quant-engine"
 echo ""
 echo "   方式B - 直接运行（调试用）:"
-echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@DEPLOY_HOST_PLACEHOLDER"
-echo "   cd /stock_monitor"
+echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST}"
+echo "   cd ${REMOTE_DIR}"
 echo "   python3 -m uvicorn quant_engine.main:app --host 0.0.0.0 --port 8000"
 echo ""
 echo "2️⃣  访问服务:"
-echo "   🌐 Web界面: http://DEPLOY_HOST_PLACEHOLDER:8000"
-echo "   📖 API文档: http://DEPLOY_HOST_PLACEHOLDER:8000/docs"
-echo "   💚 健康检查: http://DEPLOY_HOST_PLACEHOLDER:8000/health"
+echo "   🌐 Web界面: http://${REMOTE_HOST}:${API_PORT}"
+echo "   📖 API文档: http://${REMOTE_HOST}:${API_PORT}/docs"
+echo "   💚 健康检查: http://${REMOTE_HOST}:${API_PORT}/health"
 echo ""
 echo "3️⃣  测试API（启动服务后执行）:"
-echo "   curl http://DEPLOY_HOST_PLACEHOLDER:8000/health"
-echo "   curl http://DEPLOY_HOST_PLACEHOLDER:8000/api/signals"
+echo "   curl http://${REMOTE_HOST}:${API_PORT}/health"
+echo "   curl http://${REMOTE_HOST}:${API_PORT}/api/signals"
 echo ""
 echo "4️⃣  查看日志:"
-echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@DEPLOY_HOST_PLACEHOLDER"
+echo "   sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST}"
 echo "   journalctl -u quant-engine -f"
 echo "   # 或"
-echo "   tail -f /stock_monitor/logs/quant-engine.log"
+echo "   tail -f ${REMOTE_DIR}/logs/quant-engine.log"
 echo ""
 echo "5️⃣  配置API认证（推荐）:"
 echo "   # 生成安全token"
 echo "   openssl rand -hex 32"
-echo "   # 编辑 /stock_monitor/.env"
+echo "   # 编辑 ${REMOTE_DIR}/.env"
 echo "   # 添加: API_AUTH_TOKEN=生成的token"
 echo "   # 重启: systemctl restart quant-engine"
 echo ""
@@ -193,12 +196,12 @@ echo "💡 快速启动命令:"
 echo "======================================"
 echo ""
 echo "# 启动服务"
-echo "sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@DEPLOY_HOST_PLACEHOLDER 'systemctl start quant-engine'"
+echo "sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST} 'systemctl start quant-engine'"
 echo ""
 echo "# 检查状态"
-echo "sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@DEPLOY_HOST_PLACEHOLDER 'systemctl status quant-engine'"
+echo "sshpass -p \"\$SSHPASS\" ssh -o StrictHostKeyChecking=no root@${REMOTE_HOST} 'systemctl status quant-engine'"
 echo ""
 echo "# 测试访问"
-echo "curl http://DEPLOY_HOST_PLACEHOLDER:8000/health"
+echo "curl http://${REMOTE_HOST}:${API_PORT}/health"
 echo ""
 echo "======================================"

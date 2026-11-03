@@ -11,7 +11,7 @@
 
 用法：
   # ① 从 ECS 拉取 signals 归档（本地无 history.db 时）
-  ssh -i ~/.ssh/id_ed25519 root@DEPLOY_HOST_PLACEHOLDER \
+  ssh -i ~/.ssh/id_ed25519 root@$DEPLOY_HOST \
     "sqlite3 -header -csv /stock_monitor/data/history.db \
      'SELECT signal_date,code,name,action,level,score,strategy,price \
       FROM signals ORDER BY signal_date'" \

@@ -18,11 +18,14 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import os
 import sys
 
-ECS = 'root@DEPLOY_HOST_PLACEHOLDER'
+# 目标主机与地址经环境变量传入（不入库）
+ECS = os.environ.get('DEPLOY_SSH', 'root@' + os.environ.get('DEPLOY_HOST', ''))
+API_BASE = os.environ.get('DEPLOY_API_BASE', 'http://' + os.environ.get('DEPLOY_HOST', 'localhost') + ':8000')
 SSH_KEY = '~/.ssh/id_ed25519'
-API_BASE = 'http://DEPLOY_HOST_PLACEHOLDER:8000'
+
 MARKET_MIN = 5000
 
 
