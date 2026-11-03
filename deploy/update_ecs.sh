@@ -29,6 +29,17 @@ else
     echo "     内网可信环境可忽略；公网暴露请在 $REMOTE/quant_engine/.env 配置后重启 quant-api。"
 fi
 
+echo "== 0.7/6 敏感信息扫描（D59：防止密钥误入 git / 部署包）"
+if [ -f research/scripts/scan_secrets.py ]; then
+  if python3 research/scripts/scan_secrets.py; then
+    echo "  ✅ 未发现敏感信息"
+  else
+    echo "  ❌ 检测到敏感信息 —— 部署中止！"
+    echo "     请先吊销该密钥并清理（详见 research/scripts/scan_secrets.py 输出）"
+    exit 1
+  fi
+fi
+
 echo "== 1/6 备份 ECS 现有生产代码（本次迭代前备份）"
 ssh $SSH_OPTS $ECS "tar czf /root/backup_pre_refactor_$TS.tar.gz --exclude='__pycache__' --exclude='.ruff_cache' -C $REMOTE quant_engine UX 2>/dev/null; ls -lh /root/backup_pre_refactor_$TS.tar.gz; (cd $REMOTE/quant_engine && git rev-parse HEAD 2>/dev/null || echo no-git) > /root/ecs_version_$TS.txt; cat /root/ecs_version_$TS.txt"
 
