@@ -32,8 +32,7 @@ coding/.venv/bin/python -m uvicorn quant_engine.main:app --reload --port 8000
 cd test && ../coding/.venv/bin/python -m unittest discover -v
 ```
 
-### 部署（ECS：root@DEPLOY_HOST_PLACEHOLDER，/stock_monitor，端口 8000）
-
+### 部署
 ```bash
 cd deploy
 SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 sshpass）
