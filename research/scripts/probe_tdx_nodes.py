@@ -23,6 +23,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import socket
@@ -105,10 +106,8 @@ def pytdx_probe(host: tuple[str, str, int], timeout: float = 5.0) -> dict:
         out['err'] = f'{type(e).__name__}: {e}'
     finally:
         if api is not None:
-            try:
+            with contextlib.suppress(Exception):
                 api.disconnect()
-            except Exception:
-                pass
     return out
 
 
@@ -134,7 +133,7 @@ def main():
             try:
                 if fut.result():
                     tcp_ok.append(c)
-            except Exception:
+            except (OSError, ValueError, RuntimeError):
                 pass
     tcp_ok.sort(key=lambda c: c[1])
     print(f'① TCP 可达 {len(tcp_ok)}/{len(cands)}（{time.time() - t0:.1f}s）')
