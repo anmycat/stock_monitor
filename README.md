@@ -53,7 +53,7 @@ SSHPASS='<服务器密码>' bash deploy_onekey.sh     # bash 版上传（需 ssh
 
 ## 当前状态（2026-10-21）
 
-- **生产**：ECS DEPLOY_HOST_PLACEHOLDER:8000 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**git 侧已结（21 个提交已推送、本地与 origin/main 同步），剩余 ECS 一键部署 + 首日验收（部署债 = 战略第一待办 M1）**
+- **生产**：ECS 在线，Redis healthy，三服务运行中；数据源优先级已重组（腾讯/新浪一线、东财备路，akshare 移出主路）——**git 侧已结（21 个提交已推送、本地与 origin/main 同步），剩余 ECS 一键部署 + 首日验收（部署债 = 战略第一待办 M1）**
 - **策略**：trend / dip / defense + 三个 YAML 策略（trend_breakout_v1 / dip_reversal_v1 / balanced_alpha_v1）+ 八因子评分 + 三层漏斗
 - **F 线·数据源重组（10-20）**：修复两条断裂链路——stock_list（原仅 akshare 未安装 → 退化为 5 只兜底；新浪 `get_all_stocks` 实测 5574 只，含科创 617/北交所 351/创业板 936）、daily（原仅 akshare 实现 → signals 恒空；腾讯 fqkline + 新浪 getKLineData 双第一线）；ETF 监控改按目标代码直查实时路。详见 `prd/02 §3.8`
 - **TDX minute（10-20）**：通达信 pytdx 分钟线接入（`sources/tdx.py`，`minute` 第一线）——补齐 gates 分钟断链（接入前无任何源实现 `get_minute_data`，gates 恒放行降级）；5/15/30/60 分钟K，服务器池探活 + 掉线重试 + 全失败降级不断链。详见 `prd/02 §3.9`
