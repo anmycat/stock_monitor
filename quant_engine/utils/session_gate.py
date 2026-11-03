@@ -35,8 +35,23 @@ T_CLOSE = 15 * 60                  # 收盘
 T_DAILY_REVIEW = 18 * 60 + 10      # 全日总结
 
 # 快照采集窗口（会话内，提前把总结所需数据备好）
-T_MORNING_SNAPSHOT = (11 * 60 + 25, 11 * 60 + 30)
-T_DAILY_SNAPSHOT = (14 * 60 + 55, 15 * 60 + 5)
+#
+# D58 修正（D53 遗留缺陷，生产日志实证）：
+# 原窗口 morning=(11:25,11:30) / daily=(14:55,15:05) 各只有 5~10 分钟，
+# 而 worker 交易时段是「time.sleep(300) + 一轮扫描耗时」循环（实际周期
+# 6~7 分钟，TDX 不可达时更慢）——**纯靠轮询碰运气命中窗口**，实测 11-03
+# 两个窗口全部错过 → 12:10 早盘总结与 18:10 全日总结都走了"快照缺失"
+# 降级路径，在非交易时段触发 get_sector_data（16 板块 × 16 只 = 256 个
+# 实时报价请求），直接违反 D53 的"非交易时间不访问行情服务器"原则。
+#
+# 修正三要素：
+# ① 窗口放宽到 10 分钟且**完全落在交易时段内**（daily 上界收到 15:00，
+#    因为 15:00 后 phase 转 AFTER_HOURS，不再走交易时段分支）
+# ② 交易时段每轮都保存 market+signals（本来就每轮算，零额外成本），
+#    sectors 因需 256 个请求只在窗口内采一次
+# ③ 睡眠时长夹到"下一个窗口起点"，保证必然醒来采集（不再碰运气）
+T_MORNING_SNAPSHOT = (11 * 60 + 20, 11 * 60 + 30)
+T_DAILY_SNAPSHOT = (14 * 60 + 50, 15 * 60)
 
 
 def _now(now: datetime | None = None) -> datetime:
@@ -118,3 +133,25 @@ def in_snapshot_window(kind: str, now: datetime | None = None) -> bool:
     t = now.hour * 60 + now.minute
     window = T_MORNING_SNAPSHOT if kind == "morning" else T_DAILY_SNAPSHOT
     return window[0] <= t <= window[1]
+
+
+def next_snapshot_at(kind: str, now: datetime | None = None) -> datetime | None:
+    """下一个快照窗口的起点时刻（用于强制唤醒，不靠轮询碰运气）
+
+    Returns:
+        datetime | None — 该窗口今天已过则返回 None（等下一交易日）
+    """
+    now = _now(now)
+    t = now.hour * 60 + now.minute
+    window = T_MORNING_SNAPSHOT if kind == "morning" else T_DAILY_SNAPSHOT
+    if t >= window[1]:
+        return None
+    return now.replace(hour=window[0] // 60, minute=window[0] % 60,
+                       second=0, microsecond=0)
+
+
+def snapshot_pending(kind: str, collected: bool, now: datetime | None = None) -> bool:
+    """快照是否待采集（未采到 且 已进入窗口）"""
+    if collected:
+        return False
+    return in_snapshot_window(kind, now)

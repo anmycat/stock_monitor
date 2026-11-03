@@ -14,7 +14,12 @@ from .services.monitors.burst_monitor import BurstMonitor
 from .services.notifications.manager import NotificationManager
 from .services.signals.signal_generator import SignalGenerator, warm_api_signals_cache
 from .utils.calendar import is_trading_day
-from .utils.session_gate import in_snapshot_window, next_wakeup, seconds_until
+from .utils.session_gate import (
+    in_snapshot_window,
+    next_snapshot_at,
+    next_wakeup,
+    seconds_until,
+)
 
 
 def get_current_phase() -> str:
@@ -279,7 +284,12 @@ def main():
     last_phase = None
     active_pool = []
     # D53：总结快照（交易时段内采集，12:10/18:10 推送时只读快照不触网）
-    snapshots: dict = {'morning': None, 'daily': None}
+    # D58：拆成两部分——market+signals 每轮都存（本来就每轮算，零成本），
+    # sectors 因需 256 个实时报价请求，只在快照窗口内采一次。
+    snapshots: dict = {
+        'morning': None, 'daily': None,          # (market, signals, sectors)
+        'morning_market': None, 'daily_market': None,  # (market, signals) 兜底
+    }
 
     while True:
         try:
@@ -344,14 +354,27 @@ def main():
 
                 # D53：总结所需数据在交易时段内采集（快照），避免 12:10/18:10
                 # 的推送阶段访问行情服务器（非交易时间静默原则）
-                if phase == "MORNING_SESSION" and in_snapshot_window('morning'):
-                    snapshots['morning'] = (market, signals, get_sector_data(datacenter))
-                    logger.info("早盘总结快照已采集（交易时段内）")
-                elif phase == "AFTERNOON_SESSION" and in_snapshot_window('daily'):
-                    snapshots['daily'] = (market, signals, get_sector_data(datacenter))
-                    logger.info("全日总结快照已采集（交易时段内）")
+                # D58：market+signals 每轮都存（本来就每轮算，零额外成本）；
+                # sectors 需 256 个实时报价，只在窗口内采一次（幂等）。
+                snap_kind = ('morning' if phase == "MORNING_SESSION"
+                             else 'daily')
+                snapshots[f'{snap_kind}_market'] = (market, signals)
+                if (snapshots[snap_kind] is None
+                        and in_snapshot_window(snap_kind)):
+                    sectors_snapshot = get_sector_data(datacenter)
+                    snapshots[snap_kind] = (market, signals, sectors_snapshot)
+                    logger.info(
+                        f"{'早盘' if snap_kind == 'morning' else '全日'}"
+                        f"总结快照已采集（交易时段内，板块 {len(sectors_snapshot)} 个）")
 
-                time.sleep(300)
+                # D58：睡眠夹到"下一个快照窗口起点"，保证必然醒来采集，
+                # 不再靠 300s 轮询碰运气命中窄窗口（D53 的实测缺陷）。
+                sleep_sec = 300
+                for kind in ('morning', 'daily'):
+                    target = next_snapshot_at(kind)
+                    if target is not None:
+                        sleep_sec = min(sleep_sec, max(1, seconds_until(target)))
+                time.sleep(sleep_sec)
 
             elif phase == "MORNING_REVIEW":
                 # 12:15 推送【早盘总结】（避开DS 12:00-13:00涨价时段）
@@ -359,6 +382,14 @@ def main():
                 if snap:
                     market, signals, sectors = snap
                     logger.info("早盘总结使用交易时段快照（不访问行情服务器）")
+                elif snapshots.get('morning_market'):
+                    # D58：板块快照缺失但 market+signals 有 → 用它们，
+                    # sectors 留空。**不实时拉取**（非交易时段触网）。
+                    market, signals = snapshots['morning_market']
+                    sectors = []
+                    logger.warning(
+                        "早盘总结板块快照缺失，使用交易时段 market+signals 兜底"
+                        "（不访问行情服务器）")
                 else:
                     logger.warning("早盘总结快照缺失，降级实时拉取（非交易时段触网）")
                     market = analyzer.analyze_market()
@@ -384,6 +415,14 @@ def main():
                 if snap:
                     market, signals, sectors = snap
                     logger.info("全日总结使用交易时段快照（不访问行情服务器）")
+                elif snapshots.get('daily_market'):
+                    # D58：板块快照缺失但 market+signals 有 → 用它们，
+                    # sectors 留空。**不实时拉取**（非交易时段触网）。
+                    market, signals = snapshots['daily_market']
+                    sectors = []
+                    logger.warning(
+                        "全日总结板块快照缺失，使用交易时段 market+signals 兜底"
+                        "（不访问行情服务器）")
                 else:
                     logger.warning("全日总结快照缺失，降级实时拉取（非交易时段触网）")
                     market = analyzer.analyze_market()
