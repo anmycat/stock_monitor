@@ -53,8 +53,13 @@ class TestSecretDetection(unittest.TestCase):
         self.assertTrue(scan_text(text))
 
     def test_detects_aws_key(self):
-        text = 'AKIAIOSFODNN7EXAMPLE'
+        """真实形态的 AWS Key 必须检出（用假值但非官方示例）"""
+        text = 'AKIAZZZZZZZZZZZZZZZZ'
         self.assertTrue(scan_text(text))
+
+    def test_aws_official_example_not_flagged(self):
+        """AWS 官方文档示例密钥（AKIA...EXAMPLE）不算泄露"""
+        self.assertFalse(scan_text('AKIAIOSFODNN7EXAMPLE'))
 
     def test_detects_ssh_private_key(self):
         text = '-----BEGIN RSA PRIVATE KEY-----'

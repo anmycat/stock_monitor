@@ -64,6 +64,11 @@ _PLACEHOLDER_FULL = re.compile(
 # 明确的测试用假密钥（整串完全匹配）
 EXACT_TEST_KEYS = {'sk-test', 'sk-u', 'sk-d', 'sk-m', 'sk-test-key'}
 
+# AWS 官方文档里的示例密钥（结尾 EXAMPLE，非真实凭据）
+KNOWN_FAKE_KEYS = {
+    'AKIAIOSFODNN7EXAMPLE',      # AWS 官方文档示例
+}
+
 # 已核实的公开参数白名单（网页抓包可见，非凭据）
 KNOWN_PUBLIC_UT = {
     '7eea3edcaed734bea9cbfc24409ed989',   # 东财 push2/push2ex 公共 ut
@@ -97,7 +102,9 @@ def scan_text(text: str) -> list[tuple[str, str]]:
     for name, pat in _COMPILED:
         for m in pat.finditer(text):
             raw = m.group(0)
-            if raw in EXACT_TEST_KEYS or _is_placeholder(raw):
+            if raw in EXACT_TEST_KEYS or raw in KNOWN_FAKE_KEYS:
+                continue
+            if _is_placeholder(raw):
                 continue
             hits.append((name, raw[:8] + '…' + raw[-4:]))
     for m in _HEX_PAT.finditer(text):
