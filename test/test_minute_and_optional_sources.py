@@ -148,7 +148,7 @@ class TestOptionalSourcesDegrade(unittest.TestCase):
         self.assertEqual(codes, ['600519.SH', '000001.SZ', '920819.BJ'])
 
 
-import pandas as pd  # noqa: E402  （供上面的 fixture 使用）
+import pandas as pd
 
 
 class TestRegistryUpdates(unittest.TestCase):

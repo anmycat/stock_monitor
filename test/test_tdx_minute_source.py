@@ -241,7 +241,8 @@ class TdxRegistrationTest(unittest.TestCase):
     def test_priority_and_registration(self):
         from quant_engine.data.source import _PRIORITY, CompositeSource
         # minute 第一线且唯一线为 tdx（akshare 遗留链已于 P0 切除，见 prd/15）
-        self.assertEqual(_PRIORITY['minute'], ['tdx'])
+        # D53：TDX 公共节点已停供行情（协议级探活全失败）→ 新浪分钟线接替为首选
+        self.assertEqual(_PRIORITY['minute'], ['sina', 'tdx'])
         cs = CompositeSource()
         self.assertIn('tdx', cs.sources)
         self.assertTrue(hasattr(cs.sources['tdx'], 'get_minute_data'))

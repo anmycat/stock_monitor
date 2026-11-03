@@ -73,9 +73,11 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(names[0], 'tencent')
         self.assertLess(daily[0].rank(Capability.DAILY), daily[-1].rank(Capability.DAILY))
 
-    def test_pool_only_from_em_pool(self):
+    def test_pool_sources_ordered(self):
+        """盘面池源：东财 push2ex 优先，AKShare 备路（D53 新增）"""
         pool = [s.name for s in sources_for(Capability.POOL)]
-        self.assertEqual(pool, ['em_pool'])
+        self.assertEqual(pool[0], 'em_pool')
+        self.assertIn('akshare', pool)
 
     def test_tushare_requires_key(self):
         self.assertTrue(get_spec('tushare').needs_key)
