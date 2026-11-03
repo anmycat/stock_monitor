@@ -125,20 +125,59 @@ class TestOptionalSourcesDegrade(unittest.TestCase):
         self.assertEqual(df.iloc[0]['title'], '关于回购公司股份的进展公告')
         self.assertTrue(df.iloc[0]['pdf_url'].endswith('123.PDF'))
 
-    def test_iwencai_missing_credentials_degrades(self):
-        """缺 HEXIN_V / IWENCAI_COOKIE → 空 DataFrame + 一次性告警"""
+    def test_iwencai_needs_no_browser_cookie(self):
+        """D55：Hexin-V 可自动生成 → 无需浏览器 Cookie 也应可用
+
+        D53 原设计要求 HEXIN_V + IWENCAI_COOKIE 两者缺一即降级。
+        D55 生产实测四组对照证明：Hexin-V **或** Cookie 任意一个即可过
+        Nginx 风控，而 Hexin-V 能用 node 自动生成（pywencai 的
+        hexin-v.bundle.js，<1s）→ Cookie 降级为可选增强。
+        """
         import os
         old_v, old_c = os.environ.pop('HEXIN_V', None), os.environ.pop('IWENCAI_COOKIE', None)
         try:
-            self.assertFalse(IwencaiSource.available())
-            df = IwencaiSource.select('今日涨停')
-            self.assertEqual(len(df), 0)
-            self.assertEqual(len(IwencaiSource.select_codes('今日涨停')), 0)
+            # 可用性由 node + bundle 决定，与两个环境变量无关
+            self.assertTrue(
+                IwencaiSource.available(),
+                '有 node + hexin-v.bundle.js 时应可用（无需任何浏览器凭据）')
+            # 显式清空环境变量后仍可用 → 证明走的是自动生成路径
+            self.assertEqual(os.environ.get('HEXIN_V'), None)
+            self.assertEqual(os.environ.get('IWENCAI_COOKIE'), None)
         finally:
             if old_v:
                 os.environ['HEXIN_V'] = old_v
             if old_c:
                 os.environ['IWENCAI_COOKIE'] = old_c
+
+    def test_iwencai_generates_hexin_v_locally(self):
+        """node 能跑通 hexin-v.bundle.js 生成 60 字符 token"""
+        from quant_engine.data.sources.iwencai_source import generate_hexin_v
+        token = generate_hexin_v()
+        self.assertTrue(token, 'node 生成 Hexin-V 失败（node 未装或 bundle 缺失）')
+        self.assertGreaterEqual(len(token), 40)
+
+    def test_iwencai_payload_uses_form_encoding_fields(self):
+        """D55 踩坑：必须 form 编码 + iwcpro/add_info/log_info/version
+
+        传 JSON 会返回 200 但 status_code=-302「缺少必要参数」，
+        极易被误判为凭据问题。
+        """
+        payload = IwencaiSource._payload('今日涨停', 10)
+        for key in ('iwcpro', 'add_info', 'log_info', 'version',
+                    'source', 'question', 'perpage', 'page'):
+            self.assertIn(key, payload, f'payload 缺必需字段 {key}')
+        self.assertEqual(payload['iwcpro'], '1')
+
+    def test_iwencai_extracts_nested_datas(self):
+        """响应结构极深：data.answer[0].txt[0].content.components[0].data.datas"""
+        body = {
+            'status_code': 0,
+            'data': {'answer': [{'txt': [{'content': {'components': [
+                {'data': {'datas': [{'股票代码': '600519', '股票简称': '贵州茅台'}]}}]}}]}]},
+        }
+        datas = IwencaiSource._extract_datas(body)
+        self.assertEqual(len(datas), 1)
+        self.assertEqual(datas[0]['股票代码'], '600519')
 
     def test_iwencai_select_codes_normalizes_suffix(self):
         """问财返回裸代码 → 归一化为标准代码"""
@@ -168,7 +207,12 @@ class TestRegistryUpdates(unittest.TestCase):
         self.assertTrue(SOURCES['iwencai'].supports(Capability.LIST))
 
     def test_iwencai_declares_key_requirement(self):
-        self.assertTrue(SOURCES['iwencai'].needs_key)
+        """D55：问财不再需要人工凭据 → needs_key=False
+
+        D53 时 needs_key=True（要 HEXIN_V + 浏览器 Cookie）。
+        D55 生产实测证明 Hexin-V 可自动生成 → 无需人工提供任何凭据。
+        """
+        self.assertFalse(SOURCES['iwencai'].needs_key)
         self.assertEqual(SOURCES['iwencai'].key_env, 'HEXIN_V')
 
     def test_pool_sources_ordered(self):

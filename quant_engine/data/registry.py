@@ -134,12 +134,16 @@ SOURCES: dict[str, SourceSpec] = {
         class_name='IwencaiSource',
         capabilities=frozenset({Capability.LIST}),
         priority={'list': 5},
-        needs_key=True,
-        key_env='HEXIN_V',
+        needs_key=False,
+        key_env='HEXIN_V',  # 可选：环境变量优先，否则 node 自动生成
         volume_unit=UNIT_UNKNOWN,
         adjust=ADJUST_NONE,
-        notes='D53：问财自然语言选股；需 HEXIN_V + IWENCAI_COOKIE 两个凭据'
-               '（pywencai 的 hexin-v.js 生成 + 浏览器 Cookie）；'
+        notes='D53/D55：问财自然语言选股。D55 生产四组对照实测：'
+               '**Hexin-V 或 Cookie 任意一个即可过 Nginx 风控**，而 Hexin-V '
+               '可由 node 跑 hexin-v.bundle.js 自动生成（<1s，无需登录态）'
+               '→ **零人工凭据**；Cookie（IWENCAI_COOKIE）仅作可选增强。'
+               '必须 form 编码 + iwcpro/add_info/log_info/version 字段，'
+               '否则报 status_code=-302「缺少必要参数」（易误判为凭据问题）。'
                '定位盘后一次性选股，限速 2s，不进盘中主循环',
     ),
     'tushare': SourceSpec(

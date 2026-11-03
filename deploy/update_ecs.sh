@@ -58,6 +58,9 @@ else:
     print('all deps present -> skip install (现网版本优先，不按钉版降级)')
 PY"
 
+echo "== 3.5/6 node 探针（问财 Hexin-V 自动生成需要；可选依赖，缺失不阻塞部署）"
+ssh $SSH_OPTS $ECS "if command -v node >/dev/null 2>&1; then echo '  node 已装：\$(node -v)'; else echo '  node 缺失 → 安装（问财选股需要）'; DEBIAN_FRONTEND=noninteractive apt-get install -y -q nodejs >/dev/null 2>&1 && echo '  node 安装完成：\$(node -v)' || echo '  ⚠️ node 安装失败（问财功能将降级，其余服务不受影响）'; fi"
+
 echo "== 4/6 ECS 侧导入冒烟"
 ssh $SSH_OPTS $ECS "cd $REMOTE && python3 -c 'import quant_engine.main; print(\"import OK\")'"
 
