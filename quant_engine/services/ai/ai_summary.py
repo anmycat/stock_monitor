@@ -138,8 +138,8 @@ class AISummary:
                 auth_header="Authorization",  # 实测 x-api-key 与 Bearer 都接受
                 weight=0.7,  # 主力权重
                 supports_thinking=True,
-                max_tokens=int(settings.UNISOUND_MAX_TOKENS or 1500),
-                timeout=60,  # 思考型模型响应偏慢，给足超时
+                max_tokens=int(settings.UNISOUND_MAX_TOKENS or 2500),
+                timeout=90,  # 思考型模型响应偏慢（实测 11~16s），给足超时
             )
 
         # DeepSeek V4（D56：降级为备用模型）
@@ -443,14 +443,21 @@ class AISummary:
         attempt = 0
         while True:
             resp = self._call_once(cfg, system_prompt, user_prompt, max_tokens)
-            if resp.success or not resp.error.startswith("限流(429)"):
+            if resp.success:
                 return resp
-            if attempt >= max_retries:
+            # 可重试的两类瞬时问题：
+            # ① 限流(429) —— 平台 RPM/TPM 限制
+            # ② 空响应(finish_reason=length) —— 思考型模型偶发思考超出
+            #    max_tokens 预算（实测约 1/10 概率），重试一次即可拿到正文。
+            #    这不是模型故障，不能禁用模型（否则整轮总结直接废掉）。
+            retryable = (resp.error.startswith("限流(429)")
+                         or resp.error.startswith("空响应"))
+            if not retryable or attempt >= max_retries:
                 return resp
             delay = 2.0 * (2 ** attempt)
             attempt += 1
             logger.warning(
-                f"{cfg.name} 触发限流(429)，{delay:.0f}s 后重试"
+                f"{cfg.name} {resp.error}，{delay:.0f}s 后重试"
                 f"（{attempt}/{max_retries}）")
             time.sleep(delay)
 

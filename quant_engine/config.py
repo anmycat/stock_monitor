@@ -41,8 +41,11 @@ class Settings(BaseSettings):
     UNISOUND_BASE_URL: str = "https://maas-api.unisound.com/v1"
     UNISOUND_MODEL: str = "u2"          # 可选：u2 / u2-flash / u2-med
     # 思考型模型（u2 系列）思考 token 也会计入 max_tokens；
-    # max_tokens 过小会导致 content=null + finish_reason=length
-    UNISOUND_MAX_TOKENS: int = 1500
+    # max_tokens 过小会导致 content=null + finish_reason=length。
+    # D57 实测：典型 output 261~1256 tokens，但**偶发**思考超预算
+    # （生产 morning_review 出现过一次 finish_reason=length 空正文）。
+    # 取 2500 留足余量（实测延迟 11~16s，余量充足）。
+    UNISOUND_MAX_TOKENS: int = 2500
 
     # 小米MiMo配置（D56：已下线，保留字段以兼容旧 .env，不再注册模型）
     MIMO_API_KEY: str = ""

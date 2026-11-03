@@ -268,6 +268,45 @@ class TestRateLimitAndRetry(unittest.TestCase):
         self.assertFalse(out.success)
         self.assertIn('限流', out.error)
 
+    def test_empty_response_retried(self):
+        """D57：思考超预算（空响应）应重试 —— 不是模型故障，不能禁用"""
+        cfg = _make()
+        s = AISummary.__new__(AISummary)
+        s.models = {cfg.name: cfg}
+        s.primary_model = cfg.name
+
+        calls = {'n': 0}
+
+        def _flaky(self, c, sp, up, mt):
+            calls['n'] += 1
+            if calls['n'] == 1:
+                return ModelResponse(model_name=c.name, text='', success=False,
+                                     error='空响应(finish_reason=length)')
+            return ModelResponse(model_name=c.name, text='正文拿到了',
+                                 tokens_used=20, success=True)
+
+        with patch.object(AISummary, '_call_once', _flaky), \
+                patch('quant_engine.services.ai.ai_summary.time.sleep'):
+            out = s._call_single_model(cfg, 'sys', 'user')
+        self.assertTrue(out.success)
+        self.assertEqual(calls['n'], 2)
+
+    def test_empty_response_not_disables_model(self):
+        """空响应不应禁用模型（禁用会导致整轮总结永久退化）"""
+        cfg = _make()
+        s = AISummary.__new__(AISummary)
+        s.models = {cfg.name: cfg}
+        s.primary_model = cfg.name
+
+        def _always_empty(self, c, sp, up, mt):
+            return ModelResponse(model_name=c.name, text='', success=False,
+                                 error='空响应(finish_reason=length)')
+
+        with patch.object(AISummary, '_call_once', _always_empty), \
+                patch('quant_engine.services.ai.ai_summary.time.sleep'):
+            s._call_single_model(cfg, 'sys', 'user')
+        self.assertTrue(cfg.enabled, '空响应不应禁用模型')
+
     def test_non_429_error_not_retried(self):
         """非限流错误不应重试（避免无谓等待）"""
         cfg = _make()

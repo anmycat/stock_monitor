@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -67,10 +68,28 @@ def _sectors() -> list[dict]:
     ]
 
 
+def _load_env() -> None:
+    """从仓库根 .env 加载（生产 .env 在 /stock_monitor/.env）"""
+    root = Path(__file__).resolve().parents[2]
+    env_path = root / '.env'
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        k, v = line.split('=', 1)
+        k = k.strip()
+        v = v.strip().strip('"').strip("'")
+        if k and k not in os.environ:
+            os.environ[k] = v
+
+
 def main() -> None:
+    _load_env()
     key = os.environ.get('UNISOUND_API_KEY', '')
     if not key:
-        print('需 UNISOUND_API_KEY 环境变量')
+        print('需 UNISOUND_API_KEY（环境变量或仓库根 .env）')
         sys.exit(1)
 
     s = AISummary()
