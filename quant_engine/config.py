@@ -32,8 +32,19 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = ""
-    
-    # 小米MiMo配置
+
+    # 云知声 U2 配置（D56：替代小米 MiMo，作为第一主力模型）
+    # 端点：OpenAI 兼容 https://maas-api.unisound.com/v1
+    #       Anthropic 原生 https://maas-api.unisound.com/anthropic/v1
+    #       两者实测均可用，鉴权头 x-api-key 或 Authorization: Bearer 都接受
+    UNISOUND_API_KEY: str = ""
+    UNISOUND_BASE_URL: str = "https://maas-api.unisound.com/v1"
+    UNISOUND_MODEL: str = "u2"          # 可选：u2 / u2-flash / u2-med
+    # 思考型模型（u2 系列）思考 token 也会计入 max_tokens；
+    # max_tokens 过小会导致 content=null + finish_reason=length
+    UNISOUND_MAX_TOKENS: int = 1500
+
+    # 小米MiMo配置（D56：已下线，保留字段以兼容旧 .env，不再注册模型）
     MIMO_API_KEY: str = ""
     MIMO_BASE_URL: str = "https://api.xiaomimimo.com/v1"
     

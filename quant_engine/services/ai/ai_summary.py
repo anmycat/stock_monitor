@@ -1,14 +1,27 @@
 """
 AI智能分析总结服务 - 多模型融合架构
 
-模型组合：
-1. DeepSeek V4 (主力模型) - 擅长金融分析和结构化输出
-2. Xiaomi MiMo v2.5-pro (辅助模型) - 擅长深度推理和多角度分析
+模型组合（D56 起）：
+1. 云知声 U2 (主力模型) - 原生智能体大模型，长上下文（160k）+ 深度推理
+2. DeepSeek V4 (备用模型) - 金融分析见长，作为 U2 不可用时的备份
 
 融合策略：
 - ensemble: 双模型并行生成 → 智能合并（用于重要总结）
 - cascade: 主模型优先 → 失败降级备用模型 → 本地规则（用于通用分析）
 - primary_only: 仅使用主模型（用于快速响应）
+
+协议说明（D56 实测）：
+- 云知声同时提供 OpenAI 兼容（/v1/chat/completions）与 Anthropic 原生
+  （/anthropic/v1/messages）两套端点。本项目默认用 **OpenAI 兼容**端点
+  （响应结构与既有代码一致，改动最小），但保留 Anthropic 原生支持
+  （protocol='anthropic'），便于将来切到 thinking 块等 Anthropic 特性。
+- 云知声鉴权头 `x-api-key` 与 `Authorization: Bearer` 两者都接受。
+- **重要**：u2 系列是思考型模型，思考 token 计入 max_tokens；
+  max_tokens 过小 → content=null + finish_reason=length（正文全丢）。
+  项目默认 UNISOUND_MAX_TOKENS=1500，实测足够覆盖 500 字总结。
+- 注意：请求 model="u2" 时服务端实际路由到 u2-flash（响应 model 字段回显
+  u2-flash）；显式写 "u2-flash" 亦可，但 max_tokens 需更大（实测 100 会
+  content=null）。项目用 "u2" + 1500。
 
 分析模式：
 1. 早盘总结（12:15）: 上午市场回顾 + 板块热点 + 下午展望
@@ -40,14 +53,20 @@ class ModelConfig:
     api_key: str
     base_url: str
     api_url: str = ""
-    auth_header: str = "Authorization"  # "Authorization" or "api-key"
+    auth_header: str = "Authorization"  # "Authorization" 或 "api-key"
     timeout: int = 45
-    weight: float = 1.0  # 融合权重
+    weight: float = 1.0  # 融合权重（同时决定 cascade 优先级：越大越先用）
     supports_thinking: bool = False
     enabled: bool = True
+    protocol: str = "openai"  # "openai" | "anthropic"
+    max_tokens: int = 1500  # 该模型的 max_tokens（思考型模型需留足）
 
     def __post_init__(self):
-        self.api_url = f"{self.base_url}/chat/completions"
+        if self.protocol == "anthropic":
+            # Anthropic 原生：base_url 形如 .../anthropic/v1 → 追加 /messages
+            self.api_url = f"{self.base_url.rstrip('/')}/messages"
+        else:
+            self.api_url = f"{self.base_url.rstrip('/')}/chat/completions"
 
 
 @dataclass
@@ -70,7 +89,24 @@ class AISummary:
         # 注册模型
         self.models: dict[str, ModelConfig] = {}
 
-        # DeepSeek V4
+        # 云知声 U2（D56：主力模型，第一优先）
+        # 权重最高 → cascade 优先尝试、ensemble 合并时用它做合并者
+        uni_key = settings.UNISOUND_API_KEY
+        if uni_key:
+            self.models["unisound"] = ModelConfig(
+                name="云知声 U2",
+                model_id=settings.UNISOUND_MODEL or "u2",
+                api_key=uni_key,
+                base_url=settings.UNISOUND_BASE_URL
+                or "https://maas-api.unisound.com/v1",
+                auth_header="Authorization",  # 实测 x-api-key 与 Bearer 都接受
+                weight=0.7,  # 主力权重
+                supports_thinking=True,
+                max_tokens=int(settings.UNISOUND_MAX_TOKENS or 1500),
+                timeout=60,  # 思考型模型响应偏慢，给足超时
+            )
+
+        # DeepSeek V4（D56：降级为备用模型）
         ds_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
         if ds_key:
             self.models["deepseek"] = ModelConfig(
@@ -78,24 +114,17 @@ class AISummary:
                 model_id="deepseek-chat",
                 api_key=ds_key,
                 base_url=settings.OPENAI_BASE_URL or "https://api.deepseek.com/v1",
-                weight=0.6,  # 主力权重
+                weight=0.3,  # 备用权重（低于 U2）
             )
 
-        # Xiaomi MiMo
-        mimo_key = settings.MIMO_API_KEY
-        if mimo_key:
-            self.models["mimo"] = ModelConfig(
-                name="MiMo v2.5",
-                model_id="mimo-v2.5-pro",
-                api_key=mimo_key,
-                base_url=settings.MIMO_BASE_URL or "https://api.xiaomimimo.com/v1",
-                auth_header="api-key",
-                weight=0.4,  # 辅助权重
-                supports_thinking=True,
-            )
+        # 小米 MiMo（D56 已下线）：密钥存在也不再注册。
+        # 原因：生产日志持续 "MiMo v2.5调用失败: HTTP 401 Invalid API Key"
+        # —— 密钥已失效，保留只会每次摘要白等一次 401（D53 已加进程内禁用，
+        # 但那是治标）。若要恢复，改回注册即可（配置字段仍在）。
 
-        self.primary_model = "deepseek" if "deepseek" in self.models else (
-            "mimo" if "mimo" in self.models else None
+        self.primary_model = (
+            "unisound" if "unisound" in self.models
+            else ("deepseek" if "deepseek" in self.models else None)
         )
 
         # 缓存
@@ -155,8 +184,8 @@ class AISummary:
 
         流程：
         1. 构建统一的Prompt
-        2. 并行调用DeepSeek和MiMo
-        3. 使用主模型合并两份分析结果
+        2. 并行调用全部已启用模型（U2 主力 + DeepSeek 备用）
+        3. 使用主模型合并多份分析结果
         4. 输出融合后的总结
         """
         market_info = self._format_market_info(market)
@@ -219,17 +248,19 @@ class AISummary:
         """
         # 构建合并Prompt
         parts = []
-        for r in responses:
-            parts.append(f"### 分析师A（{r.model_name}）的分析：\n{r.text}")
+        for idx, r in enumerate(responses):
+            label = chr(65 + idx)  # A / B / C...
+            parts.append(f"### 分析师{label}（{r.model_name}）的分析：\n{r.text}")
 
-        merge_prompt = f"""以下是两位AI分析师对同一市场数据的独立分析。请合并两份分析，取长补短，生成一份更准确、更全面的最终报告。
+        n = len(responses)
+        merge_prompt = f"""以下是{n}位AI分析师对同一市场数据的独立分析。请合并这些分析，取长补短，生成一份更准确、更全面的最终报告。
 
 合并要求：
-- 保留两位分析师都认同的观点（高置信度）
+- 保留多位分析师都认同的观点（高置信度）
 - 对于分歧点，给出综合判断或标注"存在分歧"
 - 补充任一方遗漏的重要信息
 - 最终输出格式与原始分析格式一致
-- 不要提及"分析师A/B"，直接输出合并后的分析
+- 不要提及"分析师A/B/C"，直接输出合并后的分析
 
 市场数据：{market_info}
 
@@ -265,13 +296,19 @@ class AISummary:
         except Exception as e:
             logger.warning(f"合并失败，使用加权选择: {e}")
 
-        # 合并失败 → 使用权重最高的模型结果
-        best = max(responses, key=lambda r: self.models.get(
-            r.model_name.lower().split()[0].lower(), ModelConfig("", '', '', '')
-        ).weight if hasattr(r, 'model_name') else 0)
+        # 合并失败 → 回退：优先选权重最高的模型（U2 > DeepSeek），
+        # 权重相同时选正文更长的那个。
+        # D56 修正：原实现先按权重算出 best，紧接着又被"选最长"覆盖，
+        # 权重排序形同虚设。
+        def _rank(r: ModelResponse) -> tuple[float, int]:
+            weight = max(
+                (cfg.weight for cfg in self.models.values()
+                 if cfg.name == r.model_name),
+                default=0.0,
+            )
+            return (weight, len(r.text))
 
-        # 简单回退：选最长的那个
-        best = max(responses, key=lambda r: len(r.text))
+        best = max(responses, key=_rank)
         return {
             "text": best.text,
             "model": best.model_name,
@@ -360,32 +397,47 @@ class AISummary:
 
     def _call_single_model(self, cfg: ModelConfig, system_prompt: str,
                            user_prompt: str, max_tokens: int = 1500) -> ModelResponse:
-        """调用单个模型"""
+        """调用单个模型（支持 OpenAI 兼容与 Anthropic 原生两种协议）"""
         start = time.time()
+
+        # 该模型自身的 max_tokens 上限优先（D56：思考型模型需更大预算）
+        max_tokens = min(max_tokens, cfg.max_tokens)
 
         # 构建请求头
         if cfg.auth_header == "api-key":
             headers = {"api-key": cfg.api_key, "Content-Type": "application/json"}
         else:
             headers = {"Authorization": f"Bearer {cfg.api_key}", "Content-Type": "application/json"}
+        if cfg.protocol == "anthropic":
+            headers["anthropic-version"] = "2023-06-01"
 
-        # 构建payload
-        payload = {
-            "model": cfg.model_id,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": max_tokens,
-            "top_p": 0.9,
-            "frequency_penalty": 0.3,
-            "presence_penalty": 0.3,
-            "stream": False,
-        }
+        # 构建payload（两种协议的字段布局不同）
+        if cfg.protocol == "anthropic":
+            payload = {
+                "model": cfg.model_id,
+                "system": system_prompt,
+                "messages": [{"role": "user", "content": user_prompt}],
+                "temperature": 0.7,
+                "max_tokens": max_tokens,
+                "stream": False,
+            }
+        else:
+            payload = {
+                "model": cfg.model_id,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.7,
+                "max_tokens": max_tokens,
+                "top_p": 0.9,
+                "frequency_penalty": 0.3,
+                "presence_penalty": 0.3,
+                "stream": False,
+            }
 
-        # MiMo支持深度思考模式
-        if cfg.supports_thinking:
+        # MiMo 支持深度思考模式（D56：MiMo 已下线，此分支保留兼容）
+        if cfg.supports_thinking and cfg.model_id.startswith("mimo"):
             payload["thinking"] = {"type": "disabled"}  # 总结场景不需要深度思考，加速响应
 
         try:
@@ -396,9 +448,27 @@ class AISummary:
 
                 if response.status_code == 200:
                     data = response.json()
-                    text = data['choices'][0]['message']['content']
-                    usage = data.get('usage', {})
-                    tokens = usage.get('total_tokens', 0)
+                    text, tokens = self._parse_response(cfg, data)
+
+                    if not text:
+                        # 思考型模型在 max_tokens 内思考不完时，
+                        # content=null + finish_reason=length（正文全丢）。
+                        # 这不是网络/鉴权问题，不应禁用模型——但必须报失败，
+                        # 否则会把空正文当成有效总结推送到钉钉。
+                        reason = ""
+                        if cfg.protocol == "openai":
+                            choice = (data.get('choices') or [{}])[0]
+                            reason = choice.get('finish_reason', '') or ''
+                        else:
+                            reason = data.get('stop_reason', '') or ''
+                        logger.warning(
+                            f"{cfg.name} 返回空正文（finish_reason={reason}），"
+                            f"疑似 max_tokens={max_tokens} 不足以容纳思考过程")
+                        return ModelResponse(
+                            model_name=cfg.name, text="", success=False,
+                            error=f"空响应(finish_reason={reason})",
+                            latency_ms=latency,
+                        )
 
                     return ModelResponse(
                         model_name=cfg.name,
@@ -416,6 +486,7 @@ class AISummary:
                     # D53：密钥无效/被拒 —— 进程内禁用该模型，不再重复白等。
                     # 原实现每次摘要都发一次请求吃 401（生产 10-30 记录
                     # "MiMo v2.5调用失败: HTTP 401 Invalid API Key"）。
+                    # D56：MiMo 已下线，云知声 U2 密钥若失效同样走此路径。
                     # 注意：401 也可能是额度/权限问题，重试无意义——需运维更新
                     # .env 中的密钥后重启服务。
                     self._disable_model(cfg, response.status_code)
@@ -443,6 +514,32 @@ class AISummary:
                 model_name=cfg.name, text="", success=False,
                 error=str(e), latency_ms=latency,
             )
+
+    @staticmethod
+    def _parse_response(cfg: ModelConfig, data: dict) -> tuple[str, int]:
+        """解析响应 → (正文, tokens)
+
+        OpenAI 兼容：data.choices[0].message.content
+          —— 思考型模型另有 reasoning_content 字段（不含正文，忽略）
+        Anthropic 原生：data.content[] 逐块，type=='text' 才是正文，
+          type=='thinking' 是思考过程（不含正文，忽略）
+        """
+        if cfg.protocol == "anthropic":
+            blocks = data.get('content') or []
+            text = ''.join(b.get('text', '') for b in blocks
+                           if isinstance(b, dict) and b.get('type') == 'text')
+            usage = data.get('usage') or {}
+            tokens = usage.get('input_tokens', 0) + usage.get('output_tokens', 0)
+            return text.strip(), tokens
+
+        choices = data.get('choices') or []
+        if not choices:
+            return '', 0
+        message = choices[0].get('message') or {}
+        text = message.get('content') or ''
+        usage = data.get('usage') or {}
+        tokens = usage.get('total_tokens', 0)
+        return text.strip(), tokens
 
     # === 结果构建 ===
 
