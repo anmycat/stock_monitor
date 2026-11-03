@@ -37,6 +37,9 @@ dist/
 research/raw/pattern_pool_klines.json
 research/raw/pattern_pool_klines_2y.json
 
+# ===== 本地工具工作区（memory 留痕，不入库）=====
+.workbuddy/
+
 # ===== 私有研究文档（prd/ 属自我研究成果，不公开）=====
 # 需求/数据源/数据模型/执行/验收/风险/审计等 16 份模块文档 + manifest
 # 保留在本地与生产服务器（部署时 rsync 排除，不上传 GitHub）
