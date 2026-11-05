@@ -28,11 +28,13 @@ echo "== 0/6 连通性与现网状态"
 ssh $SSH_OPTS $ECS "echo CONNECTED; systemctl is-active quant-api quant-worker quant-beat; cd $REMOTE/quant_engine 2>/dev/null && (git rev-parse --short HEAD 2>/dev/null || echo 'no-git-repo')"
 
 echo "== 0.5/6 P1-1 安全检查：API_AUTH_TOKEN 配置探测"
-if ssh $SSH_OPTS $ECS "cd $REMOTE/quant_engine && grep -E '^API_AUTH_TOKEN=.+' .env 2>/dev/null | grep -vE '^API_AUTH_TOKEN=\s*$'" | grep -q .; then
+# D61：.env 实际位于部署根目录（systemd WorkingDirectory），不是 quant_engine/ 下。
+# 旧路径导致该检查恒失败（假阴性），已修正；两处路径都探测，兼容不同部署布局。
+if ssh $SSH_OPTS $ECS "grep -E '^API_AUTH_TOKEN=.+' $REMOTE/.env $REMOTE/quant_engine/.env 2>/dev/null | grep -vE '^API_AUTH_TOKEN=\s*$'" | grep -q .; then
     echo "  API_AUTH_TOKEN 已配置 ✅"
 else
     echo "  ⚠️ [SECURITY] API_AUTH_TOKEN 未配置——ECS 所有 API/WS 端点无认证开放。"
-    echo "     内网可信环境可忽略；公网暴露请在 $REMOTE/quant_engine/.env 配置后重启 quant-api。"
+    echo "     内网可信环境可忽略；公网暴露请在 $REMOTE/.env 配置后重启 quant-api。"
 fi
 
 echo "== 0.7/6 敏感信息扫描（D59：防止密钥误入 git / 部署包）"

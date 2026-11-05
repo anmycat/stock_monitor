@@ -41,10 +41,13 @@ echo "[4/6] 创建环境配置..."
 # 现规则：已存在 .env 则不覆盖（保护凭据）；敏感字段一律留空 + 注释，
 # 由运维手工填写。取数路径由 SourceManager 多源降级链决定（prd/02 §3），
 # 不依赖 DATA_SOURCE——该字段为遗留零引用项（见 prd/02 §4 注），此处不写入。
-if [ -f "$PROJECT_DIR/quant_engine/.env" ]; then
+# D61：.env 位于**部署根目录**（systemd WorkingDirectory=$PROJECT_DIR，
+# config.py 的 env_file=".env" 按 cwd 解析）。旧版写在 quant_engine/.env，
+# 与 systemd 实际读取位置不一致 → 凭据"写好了却不生效"。
+if [ -f "$PROJECT_DIR/.env" ]; then
     echo "  .env 已存在，保留不动（保护现网凭据）"
 else
-    cat > $PROJECT_DIR/quant_engine/.env << 'EOF'
+    cat > $PROJECT_DIR/.env << 'EOF'
 # ===== 基础 =====
 REDIS_HOST=localhost
 REDIS_PORT=6379
