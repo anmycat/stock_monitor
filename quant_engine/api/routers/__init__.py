@@ -11,6 +11,7 @@ from .market import router as market_router
 from .misc import router as misc_router
 from .news import router as news_router
 from .portfolio import router as portfolio_router
+from .report import router as report_router
 from .sectors import router as sectors_router
 from .signals import router as signals_router
 from .summary import router as summary_router
@@ -28,6 +29,7 @@ def export_router() -> APIRouter:
     combined.include_router(misc_router)
     combined.include_router(news_router)
     combined.include_router(portfolio_router)
+    combined.include_router(report_router)
     combined.include_router(sectors_router)
     combined.include_router(signals_router)
     combined.include_router(summary_router)

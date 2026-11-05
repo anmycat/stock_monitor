@@ -153,6 +153,55 @@
         /* AI */
         .ai-text { font-size: 13px; line-height: 1.6; white-space: pre-wrap; max-height: 220px; overflow-y: auto; color: var(--ink); }
 
+        /* ===== 首席分析师日报（D61）===== */
+        .report-page { max-width: 900px; margin: 0 auto; padding: 8px 4px 40px; }
+        .rp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+        .rp-head .ico { font-size: 20px; }
+        .rp-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; }
+        .rp-controls { margin-bottom: 20px; }
+        .rp-controls label { display: block; font-size: 12px; color: var(--ink-2); margin-bottom: 6px; }
+        .rp-controls select { width: 100%; padding: 9px 12px; font-size: 13px; color: var(--ink);
+            background: var(--surface); border: 1px solid var(--divider); border-radius: var(--r-sm);
+            outline: none; appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2386868b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; }
+        .rp-controls select:focus { border-color: var(--primary); }
+        .rp-model { font-size: 11px; color: var(--ink-3); margin: 8px 0 22px; }
+        .rp-model b { color: var(--ink-2); font-weight: 600; }
+
+        .rp-section { margin-bottom: 26px; }
+        .rp-section-hd { display: flex; align-items: center; gap: 8px; cursor: pointer;
+            user-select: none; margin-bottom: 12px; }
+        .rp-section-hd h3 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+        .rp-section-hd .chev { font-size: 10px; color: var(--ink-3); transition: transform 0.2s; }
+        .rp-section.collapsed .chev { transform: rotate(-90deg); }
+        .rp-section.collapsed .rp-section-body { display: none; }
+        .rp-field { display: flex; gap: 10px; padding: 7px 0; align-items: flex-start; line-height: 1.62; }
+        .rp-field + .rp-field { border-top: 1px solid rgba(0,0,0,0.04); }
+        .rp-field .lbl { flex: 0 0 62px; font-size: 12px; font-weight: 600; color: var(--ink);
+            padding-top: 1px; letter-spacing: 0.2px; }
+        .rp-field .val { flex: 1; font-size: 13px; color: var(--ink-2); min-width: 0; }
+        .rp-field.critical .val { color: var(--red); }
+        .rp-field.warning .val { color: var(--ink-2); }
+        .rp-field.positive .val { color: var(--green); }
+        .rp-field.neutral .val { color: var(--ink-2); }
+        .rp-field.info .val { color: var(--ink-3); }
+        .rp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+            margin-right: 6px; vertical-align: 1px; flex: 0 0 auto; }
+        .rp-dot.critical { background: var(--red); }
+        .rp-dot.warning { background: var(--orange); }
+        .rp-dot.positive { background: var(--green); }
+        .rp-dot.neutral { background: var(--blue); }
+        .rp-dot.info { background: var(--ink-3); }
+        .rp-body { font-size: 13px; line-height: 1.72; color: var(--ink-2); padding: 6px 0 2px 72px; }
+        .rp-body p { margin-bottom: 8px; }
+        .rp-body strong { color: var(--ink); font-weight: 600; }
+        .rp-body ul { margin: 4px 0 8px 18px; }
+        .rp-body li { margin-bottom: 3px; }
+        .rp-empty { text-align: center; padding: 60px 20px; color: var(--ink-3); font-size: 13px; }
+        .rp-empty .big { font-size: 34px; margin-bottom: 12px; }
+        .rp-loading { text-align: center; padding: 40px; color: var(--ink-3); font-size: 12px; }
+
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px);
                         display: none; z-index: 200; align-items: center; justify-content: center; }
@@ -209,7 +258,8 @@
 <nav class="nav">
     <div class="nav-brand"><span class="dot"></span>量化引擎</div>
     <div class="nav-tabs">
-        <button class="nav-tab active" onclick="showPage('dashboard')">仪表盘</button>
+        <button class="nav-tab active" onclick="showPage('report')">分析师日报</button>
+        <button class="nav-tab" onclick="showPage('dashboard')">仪表盘</button>
         <button class="nav-tab" onclick="showPage('hotspots')">热点板块</button>
         <button class="nav-tab" onclick="showPage('strategies')">策略选股</button>
         <button class="nav-tab" onclick="showPage('chat')">智能问答</button>
@@ -220,8 +270,26 @@
     </div>
 </nav>
 
+<!-- REPORT PAGE（首席分析师日报，D61）-->
+<div class="page active" id="page-report">
+    <div class="report-page">
+        <div class="rp-head">
+            <span class="ico">📋</span>
+            <h2>首席分析师日报</h2>
+        </div>
+        <div class="rp-controls">
+            <label for="rpDateSelect">选择日期</label>
+            <select id="rpDateSelect" onchange="loadReport(this.value)">
+                <option value="">加载中...</option>
+            </select>
+        </div>
+        <div class="rp-model" id="rpModel"></div>
+        <div id="rpBody"><div class="rp-loading">加载中...</div></div>
+    </div>
+</div>
+
 <!-- DASHBOARD -->
-<div class="page active" id="page-dashboard">
+<div class="page" id="page-dashboard">
     <div class="dash-grid">
         <!-- COL 1: 市场概况 + Kelly + AI总结 -->
         <div>
@@ -355,7 +423,10 @@ function showPage(p) {
     document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active');});
     document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.remove('active');});
     $('page-'+p).classList.add('active');
-    document.querySelectorAll('.nav-tab')[['dashboard','hotspots','strategies','chat'].indexOf(p)].classList.add('active');
+    var order = ['report','dashboard','hotspots','strategies','chat'];
+    var idx = order.indexOf(p);
+    if (idx >= 0) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+    if(p==='report') loadReportDates();
     if(p==='hotspots') loadHotspotsFull();
     if(p==='strategies') loadStrategies();
     if(p==='chat' && !ws) connectWS();
@@ -575,6 +646,107 @@ function loadEval() {
     });
 }
 
+/* ===== 首席分析师日报（D61）===== */
+var rpDatesLoaded = false;
+
+function escapeHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* 轻量 Markdown 渲染：**bold** / 段落 / 列表（AI 叙述字段用） */
+function renderMd(text) {
+    if (!text) return '';
+    var lines = escapeHtml(text).split(/\r?\n/);
+    var html = '', inList = false;
+    function inline(s) {
+        return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/`(.+?)`/g, '<code>$1</code>');
+    }
+    lines.forEach(function(line) {
+        var li = line.match(/^\s*[-*·]\s+(.*)$/);
+        if (li) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += '<li>' + inline(li[1]) + '</li>';
+            return;
+        }
+        if (inList) { html += '</ul>'; inList = false; }
+        if (line.trim()) html += '<p>' + inline(line) + '</p>';
+    });
+    if (inList) html += '</ul>';
+    return html;
+}
+
+/* 日期选择器：拉取可用日报日期 */
+function loadReportDates() {
+    var sel = $('rpDateSelect');
+    if (rpDatesLoaded && sel.options.length > 1) return;
+    fetchAPI('/api/report/dates').then(function(items) {
+        rpDatesLoaded = true;
+        if (!items || !items.length) {
+            sel.innerHTML = '<option value="">暂无日报</option>';
+            $('rpBody').innerHTML = '<div class="rp-empty"><div class="big">📭</div>' +
+                '暂无日报数据<br><span style="font-size:12px">日报将在每日 18:15 全日总结后生成</span></div>';
+            return;
+        }
+        var opts = '';
+        items.forEach(function(it) {
+            var label = it.date;
+            if (it.gate_label) label += '  ·  ' + it.gate_label + ' (' + (it.gate_score||0) + '/5)';
+            opts += '<option value="' + escapeHtml(it.date) + '">' + escapeHtml(label) + '</option>';
+        });
+        sel.innerHTML = opts;
+        loadReport(items[0].date);
+    });
+}
+
+/* 渲染日报 */
+function loadReport(date) {
+    var body = $('rpBody');
+    body.innerHTML = '<div class="rp-loading">加载中...</div>';
+    var url = '/api/report' + (date ? '?date=' + encodeURIComponent(date) : '');
+    fetchAPI(url).then(function(r) {
+        if (!r) {
+            body.innerHTML = '<div class="rp-empty"><div class="big">📭</div>暂无该日期的日报</div>';
+            $('rpModel').textContent = '';
+            return;
+        }
+        renderReport(r);
+    });
+}
+
+function renderReport(r) {
+    $('rpModel').innerHTML = '模型: <b>' + escapeHtml(r.model || '未知') + '</b>' +
+        (r.generated_at ? '  ·  生成于 ' + escapeHtml(String(r.generated_at).replace('T',' ').slice(0,16)) : '');
+    var body = $('rpBody');
+    if (!r.sections || !r.sections.length) {
+        body.innerHTML = '<div class="rp-empty"><div class="big">📄</div>该日报暂无结构化内容</div>';
+        return;
+    }
+    var CN = ['一','二','三','四','五','六','七','八','九','十'];
+    var html = '';
+    r.sections.forEach(function(sec) {
+        var idx = CN[Math.min((sec.index||1)-1, 9)];
+        var cls = sec.collapsed ? ' collapsed' : '';
+        html += '<div class="rp-section' + cls + '">';
+        html += '<div class="rp-section-hd" onclick="this.parentNode.classList.toggle(\'collapsed\')">';
+        html += '<span class="chev">▼</span><h3>' + idx + '、' + escapeHtml(sec.title) + '</h3></div>';
+        html += '<div class="rp-section-body">';
+        (sec.fields || []).forEach(function(f) {
+            var sev = f.severity || 'neutral';
+            html += '<div class="rp-field ' + sev + '">';
+            html += '<div class="lbl">' + escapeHtml(f.label) + '</div>';
+            html += '<div class="val">';
+            if (f.dot) html += '<span class="rp-dot ' + sev + '"></span>';
+            html += escapeHtml(f.value) + '</div></div>';
+        });
+        if (sec.body) html += '<div class="rp-body">' + renderMd(sec.body) + '</div>';
+        html += '</div></div>';
+    });
+    body.innerHTML = html;
+}
+
 /* === AI === */
 function loadSummary() {
     fetchAPI('/api/summary').then(function(d) {
@@ -764,6 +936,7 @@ function refreshAll() {
     loadMarket(); loadSignals(); loadAlerts(); loadSectors(); loadHotspots();
     loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary();
 }
+loadReportDates();
 refreshAll();
 setInterval(refreshAll, 300000);
 setInterval(function(){ if(!marketClosed) loadMarket(); }, 60000);

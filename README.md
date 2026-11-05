@@ -63,6 +63,16 @@ bash deploy/update_ecs.sh
 - **多源降级链**：每个能力声明优先级，逐级降级；源级冷却与熔断，空结果与真实错误分离计数
 - **数据源契约层**（`quant_engine/data/spec.py`）：统一能力声明 + 字段对齐 + 源口径声明（成交量单位/复权方式），失败以结构化结果返回而非抛异常
 - **策略与提示分层**：`strategies/`（打分与漏斗）与 `services/ai/`（多模型融合总结）互不耦合
+- **客观判定与主观叙述分离**：结构化日报的**门控状态 / 综合分 / 仓位建议由代码从真实数据算出**（`strategies/defense.py`），只有叙述部分交给模型，避免模型"编"出与系统实际行为不符的结论
+
+## 核心能力
+
+| 能力 | 位置 |
+|---|---|
+| 结构化日报（首席分析师日报）：门控状态 + 5 维综合分 + 仓位建议 + AI 分区叙述，按日期归档可回看 | `models/report.py`、`services/ai/daily_report.py`、`api/routers/report.py` |
+| 盘中信号扫描（三层漏斗 + 风控 + Kelly 仓位） | `services/signals/`、`strategies/` |
+| 多模型 AI 总结（主模型 + 备用模型自动降级） | `services/ai/ai_summary.py` |
+| 交易时段门控调度（非交易时段不访问行情服务器） | `utils/session_gate.py` |
 
 ## 双轨说明（重要）
 

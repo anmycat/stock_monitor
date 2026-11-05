@@ -400,3 +400,57 @@ class HotspotResponse(BaseModel):
     total: int
     up_ratio: float
 
+
+
+# === 结构化日报（D61）===
+
+class ReportFieldSchema(BaseModel):
+    """日报字段（标签 + 正文 + 语义等级）"""
+    label: str
+    value: str
+    severity: str = 'neutral'
+    dot: bool = False
+
+
+class GateStatusSchema(BaseModel):
+    """门控状态（🔴 弱市门控收紧 · 综合分 1/5）"""
+    action: str = 'NORMAL'
+    label: str = ''
+    score: int = 0
+    total: int = 5
+    reasons: list[str] = []
+
+
+class ReportSectionSchema(BaseModel):
+    """一级分区（如「一、大盘研判」）"""
+    index: int = 1
+    title: str = ''
+    fields: list[ReportFieldSchema] = []
+    body: str = ''
+    collapsed: bool = False
+
+
+class DailyReportResponse(BaseModel):
+    """结构化日报响应（/api/report）"""
+    date: str
+    title: str = '首席分析师日报'
+    model: str | None = None
+    generated_at: str | None = None
+    report_type: str = 'daily_review'
+    sections: list[ReportSectionSchema] = []
+    gate: GateStatusSchema | None = None
+    position_advice: str = ''
+    position_ratio: float | None = None
+    full_text: str = ''
+
+
+class ReportListItemSchema(BaseModel):
+    """日报列表项（日期选择器数据源，/api/report/dates）"""
+    date: str
+    report_type: str = 'daily_review'
+    model: str | None = None
+    generated_at: str | None = None
+    gate_action: str | None = None
+    gate_label: str | None = None
+    gate_score: int | None = None
+    position_advice: str = ''

@@ -235,6 +235,47 @@ def check_morning_news(datacenter, notifier):
         logger.error(f"Morning news check error: {e}")
 
 
+def generate_daily_report(datacenter, market, signals, sectors,
+                           alerts=None, summary=None, news=None, ai=None):
+    """生成结构化日报（D61）——客观门控 + AI 叙述
+
+    客观部分（门控状态/综合分/仓位建议）由代码从真实数据判定，
+    主观部分（核心矛盾/资金面/AI诊断）由 AI 按 JSON schema 提炼。
+    生成失败不影响主流程（自由文本总结已推送）。
+    """
+    try:
+        from .services.ai.daily_report import DailyReportBuilder
+        builder = DailyReportBuilder(ai_summary=ai)
+        report = builder.build(
+            market, signals, sectors,
+            alerts=alerts, news=news,
+            full_text=(summary or {}).get('full_text', ''),
+            model=(summary or {}).get('model'),
+        )
+        payload = report.to_dict()
+        # Redis（前端实时读）+ SQLite 归档（按日期回看）
+        datacenter.cache.set("daily_report:daily_report", payload, ttl=86400)
+        try:
+            from .data.store import get_history_store
+            get_history_store().save_summary(
+                "daily_report",
+                {"report": payload, "market": (summary or {}).get('market', ''),
+                 "model": report.model, "full_text": report.full_text},
+                signals_count=len(signals or []),
+                sectors_count=len(sectors or []),
+            )
+        except Exception as e:  # noqa: BLE001 归档降级不影响主流程
+            logger.error(f"日报归档失败: {e}")
+        logger.info(
+            f"✅ 结构化日报已生成 ({report.date}) | 门控 {report.gate.label} "
+            f"{report.gate.score_text if report.gate else '-'} | "
+            f"仓位 {report.position_advice}")
+        return payload
+    except Exception as e:  # noqa: BLE001 日报失败不影响总结主流程
+        logger.error(f"结构化日报生成失败: {type(e).__name__}: {e}")
+        return None
+
+
 def save_summary_to_cache(datacenter, summary_type: str, summary_data: dict,
                           signals_count: int | None = None,
                           sectors_count: int | None = None):
@@ -443,6 +484,11 @@ def main():
                                       signals_count=len(signals),
                                       sectors_count=len(sectors))
                 push_summary_to_web("daily_review", "全日总结", summary)
+
+                # D61：生成结构化日报（首席分析师日报）
+                generate_daily_report(datacenter, market, signals, sectors,
+                                      alerts=alerts_history, summary=summary,
+                                      ai=ai_summary)
 
                 # 保存运行结果供 T+N 后验评估
                 _save_post_evaluation(post_eval, signals, market)
