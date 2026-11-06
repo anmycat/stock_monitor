@@ -253,14 +253,30 @@ class NotificationManager:
         if signal.capital_flow_5d is not None:
             sign = "+" if signal.capital_flow_5d >= 0 else ""
             flow_line = f"- **资金**: 5日主力净流入 {sign}{format_number(signal.capital_flow_5d)}\n"
+        # D64：信号价 = 日K最后一根收盘（D47 语义，与 signals 表 price 列一致）；
+        # 现价 = 信号产生时刻的实时报价。降级源（新浪）盘中日K不含当日未完成 bar 时，
+        # 信号价 = 昨收，与现价可差很多（如 2026-11-06 大晟文化 5.14 vs 4.63 跌停）
+        # → 两者不一致时并列给出，并在大幅偏离时提示跳空风险。
+        price_line = f"- **信号价**: {signal.price:.2f}\n"
+        current_price = getattr(signal, 'current_price', None)
+        gap_note = ''
+        if current_price and current_price > 0:
+            try:
+                deviation = current_price / signal.price - 1 if signal.price else 0
+            except ZeroDivisionError:
+                deviation = 0
+            if abs(deviation) > 0.005:
+                price_line += f"- **现价**: {current_price:.2f}（较信号参考价 {deviation:+.1%}）\n"
+                if deviation <= -0.03:
+                    gap_note = (f"- ⚠️ **跳空提示**: 现价较信号参考价低 {abs(deviation):.1%}，"
+                                f"信号基于 T-1 日K 指标，注意追高风险\n")
         content = f"""
 - **股票**: {signal.name} ({signal.code})
 - **操作**: {signal.action.value}
 - **评分/级别**: {signal.score:.1f} / {signal.level.value if signal.level else 'N/A'}
 - **仓位**: {signal.position:.1%}
-- **信号价**: {signal.price:.2f}
-- **策略**: {signal.strategy}
-{flow_line}- **原因**: {', '.join(signal.reason)}
+{price_line}- **策略**: {signal.strategy}
+{gap_note}{flow_line}- **原因**: {', '.join(signal.reason)}
         """
         with self._lock:
             if self._can_send_now() and time.monotonic() - self._last_sent_at() >= self._min_interval:

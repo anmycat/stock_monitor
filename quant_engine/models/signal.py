@@ -34,6 +34,12 @@ class Signal(BaseModel):
     context: dict | None = None
     # 资金流字段（东财 fflow，近5日主力净流入累计，元；None=降级不展示）
     capital_flow_5d: float | None = None
+    # D64：现价与日K参考价（新增字段，不改 price 语义 → signals 表无需迁移）
+    # current_price: 信号产生时刻的**实时报价**（scan_all 已取全市场行情，零额外请求）
+    # price_ref:     日K最后一根收盘价（信号计算所用的参考基准）
+    # 差值 > 0.5% 说明日K未含当日未完成 bar（降级源特征），卡片需同时给出两者
+    current_price: float | None = None
+    price_ref: float | None = None
     # Kelly公式字段
     kelly_position: float | None = None        # Kelly建议仓位
     kelly_confidence: float | None = None      # Kelly信心指数(0-100)

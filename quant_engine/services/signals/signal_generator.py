@@ -49,6 +49,7 @@ class SignalGenerator:
 
         # 预排序: 用实时行情的涨幅排序，优先分析活跃股
         # 避免数据源顺序导致错过优质标的
+        quotes = None
         try:
             quotes = self.datacenter.get_realtime_quote(stocks['code'].tolist())
             if not quotes.empty and 'change_pct' in quotes.columns:
@@ -61,6 +62,8 @@ class SignalGenerator:
         except Exception as e:  # noqa: BLE001 降级默认
             logger.warning(f"Pre-ranking failed, using default order: {e}")
             scan_list = list(stocks.itertuples(index=False, name=None))
+        # D64：本轮实时报价留作「信号现价」来源（零额外请求——上面已取全市场）
+        self._round_quote_prices = self._extract_prices(quotes)
 
         signals = []
         for stock in scan_list:
@@ -153,8 +156,57 @@ class SignalGenerator:
         if signal.action == SignalAction.BUY:
             self.cooldown_manager.set_cooldown(code)
             self._fill_capital_flow(signal)
+            self._fill_current_price(signal)   # D64：现价 + 日K参考价
             self.notifier.send_signal(signal)
         return signal
+
+    @staticmethod
+    def _extract_prices(quotes) -> dict:
+        """从本轮全市场实时报价提取 {code: price}（D64：信号现价来源）"""
+        if quotes is None or getattr(quotes, 'empty', True):
+            return {}
+        if 'code' not in quotes.columns or 'price' not in quotes.columns:
+            return {}
+        out = {}
+        for code, price in zip(quotes['code'], quotes['price']):
+            try:
+                p = float(price)
+            except (TypeError, ValueError):
+                continue
+            if p > 0:
+                out[str(code)] = p
+        return out
+
+    def _fill_current_price(self, signal: Signal) -> None:
+        """D64：填充「信号现价」与「日K参考价」
+
+        背景（2026-11-06 实测）：日K 主源（腾讯）盘中返回**含当日未完成 bar**，
+        `df['close'].iloc[-1]` 即盘中实时价；但腾讯 501（限流，实测 15+ 只/日）时降级到
+        新浪，而**新浪的 240 分钟日K 盘中不含当日未完成 bar** → 最后一根是昨日 →
+        信号价变成昨收（实测 600892 大晟文化：卡片显示 5.14，当日实际最高仅 4.88、
+        收盘跌停 4.63）。这不是数据错，是**降级源口径与主源不一致**。
+
+        本方法不改动信号计算（日K 口径保持不变 → 信号逻辑零改动），只把**现价**
+        单独取出来供展示与审计：
+          - current_price：本轮扫描已取全市场实时报价（零额外请求）
+          - price_ref：日K 最后一根收盘价（信号计算所用基准）
+        两者偏离 > 0.5% 即说明日K 未含当日 bar → 卡片同时给出并提示。
+        """
+        signal.price_ref = signal.price
+        cur = 0.0
+        prices = getattr(self, '_round_quote_prices', None) or {}
+        if signal.code in prices:
+            cur = float(prices[signal.code])
+        else:
+            # 兜底：按票 Redis 缓存（TTL 60s，本轮扫描刚被全市场请求预热）
+            try:
+                quote = self.datacenter.get_cached_quote(signal.code)
+                if quote:
+                    cur = float(quote.get('price') or 0)
+            except Exception as e:  # noqa: BLE001 取价失败不影响信号主流程
+                logger.debug(f"Get current price for {signal.code} failed: {e}")
+        if cur > 0:
+            signal.current_price = cur
 
     def _fill_capital_flow(self, signal: Signal) -> None:
         """填充近5日主力资金净流入（推送前 enrichment）
