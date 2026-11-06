@@ -18,6 +18,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from quant_engine.data.repositories import MarketDataRepository
 
 
+class _StaleStockInfo:
+    """静态表替身：一律判「不新鲜」→ 强制走源路径
+
+    D63 修测试隔离缺陷：D49 的 `_fetch_stock_list` 在本地静态表
+    （`data/stock_info.json`，7 天新鲜窗口）fresh 时会**本地构建并短路源**，
+    于是这两个测试的 FakeSource 根本不被调用 → 断言 `list_calls == 1` 失败。
+    现象与代码改动无关：基线 HEAD + 同一份本地静态表同样失败。
+    """
+
+    def is_fresh(self, max_age_days: float = 7.0) -> bool:
+        return False
+
+    def to_dataframe(self, exclude_st: bool = False):
+        return pd.DataFrame()
+
+    def ingest(self, df):
+        return None
+
+
+def setUpModule():
+    from unittest import mock
+    from quant_engine.data.repositories import market_data as _md
+    global _info_patcher
+    _info_patcher = mock.patch.object(_md, 'get_stock_info_table',
+                                       lambda: _StaleStockInfo())
+    _info_patcher.start()
+
+
+def tearDownModule():
+    _info_patcher.stop()
+
+
 class FakeCache:
     def __init__(self, initial=None):
         self._data = dict(initial or {})

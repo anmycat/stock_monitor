@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from datetime import datetime
 
@@ -28,7 +30,7 @@ class MarketAlert:
 
     def detect_alerts(self, market: MarketState) -> list[dict]:
         alerts = []
-        alerts.extend(self._check_limit_alerts())
+        alerts.extend(self._check_limit_alerts(market))
         alerts.extend(self._check_volume_alerts())
         alerts.extend(self._check_index_alerts(market))
         alerts.extend(self._check_breadth_alerts(market))
@@ -39,21 +41,38 @@ class MarketAlert:
             self.history = self.history[-100:]
         return alerts
 
-    def _check_limit_alerts(self) -> list[dict]:
+    def _check_limit_alerts(self, market: MarketState | None = None) -> list[dict]:
+        """涨跌停家数异动（D63 口径修正）
+
+        D63 修两个缺陷：
+        ① **口径**：原用统一 `>= 9.9` 判涨停 → 创业板/科创板（名义 20%）的
+           10~19% 涨幅被误算为涨停，北交所（名义 30%）同理。改为按
+           `utils/limit_rules` 的**逐股名义幅度**判定。
+        ② **措辞**：原逻辑只看涨停家数就给「市场情绪极度亢奋」，不校验市场宽度，
+           与同屏的「市场普跌」自相矛盾（2026-11-06 实测：83% 下跌 + 32 只涨停
+           同时出现在一条消息里）。改为**用市场宽度交叉判定**：
+           宽度不支持时不给出情绪结论，改为陈述「结构性分化」这一事实。
+        """
         alerts = []
         try:
             stocks = self.datacenter.get_stock_list()
             quotes = self.datacenter.get_realtime_quote(stocks['code'].tolist())
             if quotes.empty:
                 return alerts
-            limit_up = len(quotes[quotes['change_pct'] >= 9.9])
-            limit_down = len(quotes[quotes['change_pct'] <= -9.9])
+            # D63：与 breadth 同一数据卫生口径（sanitize），否则两个数字样本不同
+            from ...utils.market_sanity import sanitize_quotes
+            quotes, _stats = sanitize_quotes(quotes)
+            if quotes.empty:
+                return alerts
+            limit_up = self._count_at_limit(quotes, up=True)
+            limit_down = self._count_at_limit(quotes, up=False)
+            breadth = market.breadth if market is not None else None
             if limit_up >= 10:
                 alerts.append({
                     'type': 'LIMIT_UP',
                     'level': 'HIGH',
                     'title': f'涨停潮：{limit_up}只股票涨停',
-                    'detail': f'当前{limit_up}只股票涨停，市场情绪极度亢奋',
+                    'detail': self._limit_up_detail(limit_up, breadth),
                     'icon': '🔥',
                     'timestamp': datetime.now().isoformat(),
                 })
@@ -62,7 +81,7 @@ class MarketAlert:
                     'type': 'LIMIT_UP',
                     'level': 'MEDIUM',
                     'title': f'涨停家数增加：{limit_up}只',
-                    'detail': f'当前{limit_up}只股票涨停',
+                    'detail': self._limit_up_detail(limit_up, breadth),
                     'icon': '📈',
                     'timestamp': datetime.now().isoformat(),
                 })
@@ -71,7 +90,7 @@ class MarketAlert:
                     'type': 'LIMIT_DOWN',
                     'level': 'HIGH',
                     'title': f'跌停潮：{limit_down}只股票跌停',
-                    'detail': f'当前{limit_down}只股票跌停，市场恐慌',
+                    'detail': self._limit_down_detail(limit_down, breadth),
                     'icon': '💀',
                     'timestamp': datetime.now().isoformat(),
                 })
@@ -80,13 +99,74 @@ class MarketAlert:
                     'type': 'LIMIT_DOWN',
                     'level': 'MEDIUM',
                     'title': f'跌停家数增加：{limit_down}只',
-                    'detail': f'当前{limit_down}只股票跌停',
+                    'detail': self._limit_down_detail(limit_down, breadth),
                     'icon': '📉',
                     'timestamp': datetime.now().isoformat(),
                 })
         except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check limit alerts error: {e}")
         return alerts
+
+    @staticmethod
+    def _count_at_limit(quotes: pd.DataFrame, up: bool = True) -> int:
+        """按逐股名义涨跌停幅度统计涨停/跌停家数（D63）
+
+        全市场 5563 只 → 用 tolist() 一次性取列后纯 Python 判定，避免 pandas
+        逐行 .iloc 的索引开销（告警每 5 分钟跑一次，须控制耗时）。
+        """
+        from ...utils.limit_rules import is_at_limit_down, is_at_limit_up
+
+        if quotes is None or quotes.empty or 'change_pct' not in quotes.columns:
+            return 0
+        pcts = quotes['change_pct'].tolist()
+        codes = (quotes['code'].tolist() if 'code' in quotes.columns
+                 else [''] * len(quotes))
+        names = (quotes['name'].tolist() if 'name' in quotes.columns
+                 else [None] * len(quotes))
+        prices = (quotes['price'].tolist() if 'price' in quotes.columns
+                  else [None] * len(quotes))
+        checker = is_at_limit_up if up else is_at_limit_down
+        return sum(1 for i in range(len(pcts))
+                   if checker(pcts[i], codes[i], names[i], prices[i]))
+
+    @staticmethod
+    def _limit_up_detail(limit_up: int, breadth: float | None) -> str:
+        """涨停文案（D63：用市场宽度交叉判定，不在宽度不支持时断言「亢奋」）
+
+        宽度口径与「普跌行情」告警**同一个** `market.breadth` —— 同屏两条消息
+        引用同一宽度，语义自洽。
+        """
+        if breadth is None:
+            return f'当前{limit_up}只股票涨停'
+        up_ratio = breadth
+        down_ratio = 1 - breadth
+        if limit_up >= 10:
+            if up_ratio >= 0.5:
+                return (f'当前{limit_up}只股票涨停，全市场上涨占比{up_ratio:.0%}，'
+                        f'市场情绪极度亢奋')
+            if up_ratio < 0.4:
+                return (f'当前{limit_up}只股票涨停，但全市场{down_ratio:.0%}下跌——'
+                        f'赚钱效应集中在极少数标的，属结构性分化')
+            return (f'当前{limit_up}只股票涨停，全市场上涨占比{up_ratio:.0%}，'
+                    f'局部情绪偏热')
+        return f'当前{limit_up}只股票涨停，全市场上涨占比{up_ratio:.0%}'
+
+    @staticmethod
+    def _limit_down_detail(limit_down: int, breadth: float | None) -> str:
+        """跌停文案（D63：对称交叉判定——普涨中的少数跌停不是「恐慌」）"""
+        if breadth is None:
+            return f'当前{limit_down}只股票跌停'
+        up_ratio = breadth
+        down_ratio = 1 - breadth
+        if limit_down >= 10:
+            if down_ratio >= 0.6:
+                return (f'当前{limit_down}只股票跌停，全市场下跌占比{down_ratio:.0%}，'
+                        f'市场恐慌情绪蔓延')
+            if up_ratio > 0.6:
+                return (f'当前{limit_down}只股票跌停，但全市场{up_ratio:.0%}上涨——'
+                        f'属结构性分化而非全面恐慌')
+            return f'当前{limit_down}只股票跌停，全市场下跌占比{down_ratio:.0%}'
+        return f'当前{limit_down}只股票跌停，全市场下跌占比{down_ratio:.0%}'
 
     def _check_volume_alerts(self) -> list[dict]:
         alerts = []

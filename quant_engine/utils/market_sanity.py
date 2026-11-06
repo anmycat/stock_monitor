@@ -28,6 +28,11 @@ _NEW_LISTING_RE = re.compile(r"^[NC][\u4e00-\u9fff]")
 def change_pct_limit(code: str) -> float:
     """按代码段返回涨跌幅物理上限（含 0.5 绝对容差，防源端四舍五入误差）
 
+    D63：实现已下沉到 `utils/limit_rules.limit_pct_physical`（涨跌停口径单一事实源），
+    本函数保留为薄封装以兼容既有调用方。**物理上限对 ST 不敏感**——
+    若对 ST 收紧到 5.5，sanitize_quotes 会剔除 ST 股 +6% 的合法行情 → breadth 变化
+    → 门控变化 → 盘中信号漂移（D41 纪律）。
+
     规则与 utils/code_utils.MARKET_RULES 同源：SH=6/5/9、SZ=0/1/2/3、BJ=4/8/92。
     - 科创板 688/689（CDR）与创业板 300/301/302：±20.5%
     - 北交所（.BJ 后缀，或 4/8/92 数字段兜底）：±30.5%
@@ -38,13 +43,8 @@ def change_pct_limit(code: str) -> float:
     主板各段 max ≤10.19。新股上市首五日不设涨跌幅（N/C 前缀）由
     sanitize_quotes 豁免，不走本函数。
     """
-    code = str(code)
-    num = code.split(".")[0]
-    if num.startswith(("688", "689", "300", "301", "302")):
-        return 20.5
-    if code.endswith(".BJ") or num.startswith(("4", "8", "92")):
-        return 30.5
-    return 10.5
+    from .limit_rules import limit_pct_physical
+    return limit_pct_physical(code)
 
 
 def sanitize_quotes(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
