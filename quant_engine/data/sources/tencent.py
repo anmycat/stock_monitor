@@ -146,11 +146,15 @@ class TencentSource:
                 TencentSource.DAILY_URL, params=params,
                 headers=TencentSource._get_headers(), timeout=15)
             if response.status_code != 200:
-                # D53：501 = 该代码在腾讯无复权日线（新股/次新上市不足），
-                # 属"该票无数据"而非网络故障——降级为 debug，避免刷屏且
-                # 不触发源冷却（空结果由 SourceManager 单独计数）。
+                # D64：501 的判读修正——原注释「该代码在腾讯无复权日线（新股/次新上市
+                # 不足）」**不准确**。2026-11-06 实测：同一接口直连
+                # （param=sh600892,day,,,120,qfq）返回 200 且 qfqday 正常，
+                # 而生产对 ≥15 只/日收到 501 → **501 实为腾讯限流**，不是「该票无数据」。
+                # 影响：501 → 降级新浪，而新浪 240 分钟日K 盘中不含当日未完成 bar
+                # → 信号价变成昨收（见 D64：current_price/price_ref 分离）。
+                # 仍按 debug 记录（避免刷屏），且不触发源冷却（空结果由 SourceManager 计数）。
                 if response.status_code == 501:
-                    logger.debug(f"Tencent daily {code}: HTTP 501 (无复权日线)")
+                    logger.debug(f"Tencent daily {code}: HTTP 501 (疑似限流，降级新浪)")
                 else:
                     logger.warning(
                         f"Tencent daily {code} HTTP {response.status_code}")
