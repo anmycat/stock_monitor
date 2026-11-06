@@ -28,6 +28,17 @@ class Settings(BaseSettings):
     # 每分钟发送上限（留余量给市场告警）：窗口满时消息暂存，flush 延到下一轮
     NOTIFY_MAX_PER_MINUTE: int = 18
     
+    # 盘中日K 实时修正（D65，2026-11-06）
+    # 背景：日K 主源（腾讯 fqkline）盘中含当日未完成 bar，但降级源（新浪 240 分钟日K）
+    #       盘中**不含** → 指标全部基于 T-1，跳空完全不在评分视野（实测：当日 12 个 BUY 中
+    #       4 个是「跳空 ≥3% 下行的票」）。开启后用实时报价把日K 最后一根对齐到当下。
+    # 关闭则退回旧口径（仅保留 D64 的现价/参考价分离展示）。
+    INTRADAY_KLINE_CORRECTION: bool = True
+    # A/B 影子对比：同时用「修正前 / 修正后」两个口径各算一次信号，把差异写入
+    # Redis（intraday_kline:ab）供复盘——这是本次改动唯一的真实证据来源
+    # （历史完成日上该修正是 no-op，半年窗口无法直接验证）。
+    INTRADAY_KLINE_SHADOW: bool = True
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""

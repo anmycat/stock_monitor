@@ -71,10 +71,16 @@ class TencentSource:
                 if not inferred:
                     return None
                 code = f"{symbol}.{inferred}"
+            # D65：补 open/high/low/prev_close —— 盘中日K 实时修正需要构造当日 bar
+            # （腾讯 qt 数组：3=现价 4=昨收 5=今开 32=涨跌幅 33=最高 34=最低）
             return {
                 'code': code,
                 'name': parts[1],
                 'price': float(parts[3]) if parts[3] else 0,
+                'prev_close': float(parts[4]) if parts[4] else 0,
+                'open': float(parts[5]) if parts[5] else 0,
+                'high': float(parts[33]) if len(parts) > 33 and parts[33] else 0,
+                'low': float(parts[34]) if len(parts) > 34 and parts[34] else 0,
                 'change_pct': float(parts[32]) if parts[32] else 0,
                 # 成交量单位统一为「股」（与新浪实时/列表、日K链路口径一致）。
                 # 腾讯 qt 接口口径分裂（2026-10-27 实测 12/12 样本零例外）：

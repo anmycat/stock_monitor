@@ -62,8 +62,9 @@ class SignalGenerator:
         except Exception as e:  # noqa: BLE001 降级默认
             logger.warning(f"Pre-ranking failed, using default order: {e}")
             scan_list = list(stocks.itertuples(index=False, name=None))
-        # D64：本轮实时报价留作「信号现价」来源（零额外请求——上面已取全市场）
-        self._round_quote_prices = self._extract_prices(quotes)
+        # D64/D65：本轮实时报价留作「信号现价」与「盘中日K 修正」的来源
+        # （零额外请求——上面已取全市场）
+        self._round_quotes = self._extract_quotes(quotes)
 
         signals = []
         for stock in scan_list:
@@ -117,7 +118,9 @@ class SignalGenerator:
             return None
         df['code'] = code
         df['name'] = name
-        signal = self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
+
+        # D65：盘中日K 实时修正 + A/B 影子对比（修正会改变信号，故配影子取证）
+        signal = self._dispatch_with_intraday(df, code, name, market)
         if signal is None:
             return None
         risk_check = self.risk_manager.check_signal(signal, self.current_positions)
@@ -160,21 +163,120 @@ class SignalGenerator:
             self.notifier.send_signal(signal)
         return signal
 
+    def _quote_for_code(self, code: str) -> dict | None:
+        """取该票的实时报价（D65：修正与现价都用它，零额外请求优先）"""
+        q = (getattr(self, '_round_quotes', None) or {}).get(code)
+        if q:
+            return q
+        try:
+            df = self.datacenter.get_realtime_quote([code])
+            if df is not None and not df.empty:
+                row = df.to_dict('records')[0]
+                if float(row.get('price') or 0) > 0:
+                    return row
+        except Exception as e:  # noqa: BLE001 取价失败不影响信号主流程
+            logger.debug(f"[D65] quote for {code} unavailable: {e}")
+        return None
+
+    def _dispatch_with_intraday(self, df, code: str, name: str, market):
+        """D65：按开关决定用「修正后」还是「修正前」的日K 出信号，并做 A/B 影子取证
+
+        - INTRADAY_KLINE_CORRECTION=True：用实时报价修正后的日K（默认）
+        - INTRADAY_KLINE_SHADOW=True：同时算两口径，把差异写入 Redis `intraday_kline:ab`
+          （这是本次改动唯一的真实证据来源——历史完成日上修正是 no-op，半年窗口验不了）
+        """
+        from ...config import get_settings
+        from ...utils.intraday_kline import apply_intraday_correction, describe
+
+        settings = get_settings()
+        want_corr = bool(settings.INTRADAY_KLINE_CORRECTION)
+        want_shadow = bool(settings.INTRADAY_KLINE_SHADOW)
+        if not (want_corr or want_shadow):
+            return self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
+
+        quote = self._quote_for_code(code)
+        if not quote:
+            return self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
+
+        df_corr, info = apply_intraday_correction(df, quote)
+        if not info.get('applied'):
+            return self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
+
+        if not want_shadow:
+            logger.debug(f"[D65] {code} {describe(info)}")
+            return self.dispatcher.dispatch(
+                df_corr if want_corr else df, market, self.trades, self.equity_curve)
+
+        # A/B：两口径各算一次（dispatch/engine 均无副作用，可安全双跑）
+        sig_base = self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
+        sig_corr = self.dispatcher.dispatch(df_corr, market, self.trades, self.equity_curve)
+        self._record_intraday_ab(code, name, sig_base, sig_corr, info)
+        signal = sig_corr if want_corr else sig_base
+        base_desc = (f"{sig_base.action.value}/{sig_base.score:.1f}"
+                     if sig_base else 'None')
+        corr_desc = (f"{sig_corr.action.value}/{sig_corr.score:.1f}"
+                     if sig_corr else 'None')
+        logger.debug(f"[D65] {code} {describe(info)} | base={base_desc} "
+                     f"corr={corr_desc}")
+        return signal
+
+    def _record_intraday_ab(self, code: str, name: str, sig_base, sig_corr,
+                            info: dict) -> None:
+        """把 A/B 差异写入 Redis（intraday_kline:ab，滚动保留最近 200 条）"""
+        try:
+            rec = {
+                'ts': datetime.now().isoformat(timespec='seconds'),
+                'code': code,
+                'name': name,
+                'mode': info.get('mode'),
+                'price': info.get('price'),
+                'base_close': info.get('base_close'),
+                'gap_pct': info.get('gap_pct'),
+                'base_action': sig_base.action.value if sig_base else None,
+                'base_score': round(sig_base.score, 1) if sig_base else None,
+                'corr_action': sig_corr.action.value if sig_corr else None,
+                'corr_score': round(sig_corr.score, 1) if sig_corr else None,
+                'changed': bool(
+                    (sig_base.action.value if sig_base else None)
+                    != (sig_corr.action.value if sig_corr else None)),
+            }
+            key = 'intraday_kline:ab'
+            cache = self.datacenter.cache
+            items = cache.get(key) or []
+            if not isinstance(items, list):
+                items = []
+            items.append(rec)
+            items = items[-200:]
+            cache.set(key, items, ttl=604800)   # 7 天
+            if rec['changed']:
+                logger.info(
+                    f"[D65][A/B变更] {code} {name} base="
+                    f"{rec['base_action']}/{rec['base_score']} → corr="
+                    f"{rec['corr_action']}/{rec['corr_score']} "
+                    f"(跳空 {info.get('gap_pct')})")
+        except Exception as e:  # noqa: BLE001 影子记录失败不影响信号主流程
+            logger.debug(f"[D65] record A/B failed for {code}: {e}")
+
     @staticmethod
-    def _extract_prices(quotes) -> dict:
-        """从本轮全市场实时报价提取 {code: price}（D64：信号现价来源）"""
+    def _extract_quotes(quotes) -> dict:
+        """从本轮全市场实时报价提取 {code: quote_dict}（D64/D65）
+
+        保留整行（price/open/high/low/volume/prev_close）——D65 的盘中日K 修正
+        需要 open/high/low 构造当日 bar，仅有 price 不够。
+        """
         if quotes is None or getattr(quotes, 'empty', True):
             return {}
         if 'code' not in quotes.columns or 'price' not in quotes.columns:
             return {}
         out = {}
-        for code, price in zip(quotes['code'], quotes['price']):
+        for row in quotes.to_dict('records'):
+            code = str(row.get('code') or '')
             try:
-                p = float(price)
+                p = float(row.get('price') or 0)
             except (TypeError, ValueError):
                 continue
-            if p > 0:
-                out[str(code)] = p
+            if code and p > 0:
+                out[code] = row
         return out
 
     def _fill_current_price(self, signal: Signal) -> None:
@@ -194,9 +296,9 @@ class SignalGenerator:
         """
         signal.price_ref = signal.price
         cur = 0.0
-        prices = getattr(self, '_round_quote_prices', None) or {}
-        if signal.code in prices:
-            cur = float(prices[signal.code])
+        quotes_map = getattr(self, '_round_quotes', None) or {}
+        if signal.code in quotes_map:
+            cur = float(quotes_map[signal.code].get('price') or 0)
         else:
             # 兜底：按票 Redis 缓存（TTL 60s，本轮扫描刚被全市场请求预热）
             try:

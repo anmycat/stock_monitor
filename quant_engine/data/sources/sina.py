@@ -68,10 +68,15 @@ class SinaSource:
                 return None
             symbol = code_raw[2:]
             code = f"{symbol}.{market}"
+            # D65：补 open/high/low/prev_close（新浪：1=今开 2=昨收 3=现价 4=最高 5=最低）
             return {
                 'code': code,
                 'name': values[0],
                 'price': float(values[3]) if values[3] else 0,
+                'prev_close': float(values[2]) if len(values) > 2 and values[2] else 0,
+                'open': float(values[1]) if len(values) > 1 and values[1] else 0,
+                'high': float(values[4]) if len(values) > 4 and values[4] else 0,
+                'low': float(values[5]) if len(values) > 5 and values[5] else 0,
                 'change_pct': float(values[32]) if len(values) > 32 and values[32] else 0,
                 'volume': float(values[8]) if values[8] else 0,
             }

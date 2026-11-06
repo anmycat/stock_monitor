@@ -34,10 +34,10 @@ def _signal(code='600892.SH', name='大晟文化', price=5.14, action=SignalActi
     )
 
 
-def _gen(round_prices=None, cached=None):
+def _gen(round_quotes=None, cached=None):
     """最小 SignalGenerator 替身（__new__ 绕开 __init__ 的外部依赖）"""
     g = SignalGenerator.__new__(SignalGenerator)
-    g._round_quote_prices = round_prices or {}
+    g._round_quotes = round_quotes or {}
     dc = MagicMock()
     if cached is None:
         dc.get_cached_quote.return_value = None
@@ -47,36 +47,45 @@ def _gen(round_prices=None, cached=None):
     return g
 
 
-class TestExtractPrices(unittest.TestCase):
-    def test_extracts_code_price_pairs(self):
+class TestExtractQuotes(unittest.TestCase):
+    """D65：提取的是**整行** quote（修正需要 open/high/low/volume）"""
+
+    def test_extracts_full_quote_rows(self):
         df = pd.DataFrame([
-            {'code': '600892.SH', 'price': 4.83, 'change_pct': -6.0},
-            {'code': '000001.SZ', 'price': 12.3, 'change_pct': 1.2},
+            {'code': '600892.SH', 'price': 4.83, 'open': 4.90,
+             'high': 4.95, 'low': 4.80, 'volume': 100, 'change_pct': -6.0},
+            {'code': '000001.SZ', 'price': 12.3, 'open': 12.0,
+             'high': 12.5, 'low': 11.9, 'volume': 200, 'change_pct': 1.2},
         ])
-        out = SignalGenerator._extract_prices(df)
-        self.assertEqual(out['600892.SH'], 4.83)
-        self.assertEqual(out['000001.SZ'], 12.3)
+        out = SignalGenerator._extract_quotes(df)
+        self.assertEqual(len(out), 2)
+        self.assertEqual(out['600892.SH']['price'], 4.83)
+        self.assertEqual(out['600892.SH']['open'], 4.90)     # 修正需要的字段
+        self.assertEqual(out['600892.SH']['high'], 4.95)
+        self.assertEqual(out['600892.SH']['low'], 4.80)
+        self.assertEqual(out['000001.SZ']['price'], 12.3)
 
     def test_skips_invalid_prices(self):
         df = pd.DataFrame([
-            {'code': 'A.SH', 'price': 0},
-            {'code': 'B.SH', 'price': None},
-            {'code': 'C.SH', 'price': 3.5},
+            {'code': 'A.SH', 'price': 0, 'open': 1},
+            {'code': 'B.SH', 'price': None, 'open': 1},
+            {'code': 'C.SH', 'price': 3.5, 'open': 3.4},
         ])
-        out = SignalGenerator._extract_prices(df)
-        self.assertEqual(out, {'C.SH': 3.5})
+        out = SignalGenerator._extract_quotes(df)
+        self.assertEqual(list(out.keys()), ['C.SH'])
+        self.assertEqual(out['C.SH']['price'], 3.5)
 
     def test_empty_and_missing_columns(self):
-        self.assertEqual(SignalGenerator._extract_prices(None), {})
-        self.assertEqual(SignalGenerator._extract_prices(pd.DataFrame()), {})
+        self.assertEqual(SignalGenerator._extract_quotes(None), {})
+        self.assertEqual(SignalGenerator._extract_quotes(pd.DataFrame()), {})
         self.assertEqual(
-            SignalGenerator._extract_prices(pd.DataFrame([{'code': 'A'}])),
+            SignalGenerator._extract_quotes(pd.DataFrame([{'code': 'A'}])),
             {})
 
 
 class TestFillCurrentPrice(unittest.TestCase):
     def test_uses_round_quotes(self):
-        g = _gen(round_prices={'600892.SH': 4.83})
+        g = _gen(round_quotes={'600892.SH': {'price': 4.83}})
         sig = _signal()
         g._fill_current_price(sig)
         self.assertEqual(sig.current_price, 4.83)
@@ -85,21 +94,21 @@ class TestFillCurrentPrice(unittest.TestCase):
         self.assertEqual(sig.price, 5.14)
 
     def test_falls_back_to_cached_quote(self):
-        g = _gen(round_prices={}, cached={'price': 4.8})
+        g = _gen(round_quotes={}, cached={'price': 4.8})
         sig = _signal()
         g._fill_current_price(sig)
         self.assertEqual(sig.current_price, 4.8)
         self.assertEqual(sig.price_ref, 5.14)
 
     def test_no_price_available_keeps_none(self):
-        g = _gen(round_prices={}, cached=None)
+        g = _gen(round_quotes={}, cached=None)
         sig = _signal()
         g._fill_current_price(sig)
         self.assertIsNone(sig.current_price)
         self.assertEqual(sig.price_ref, 5.14)
 
     def test_cached_quote_error_does_not_raise(self):
-        g = _gen(round_prices={}, cached=None)
+        g = _gen(round_quotes={}, cached=None)
         g.datacenter.get_cached_quote.side_effect = RuntimeError('redis down')
         sig = _signal()
         g._fill_current_price(sig)   # 不应抛异常
