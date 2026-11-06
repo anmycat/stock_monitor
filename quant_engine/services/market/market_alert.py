@@ -71,7 +71,7 @@ class MarketAlert:
                 alerts.append({
                     'type': 'LIMIT_UP',
                     'level': 'HIGH',
-                    'title': f'涨停潮：{limit_up}只股票涨停',
+                    'title': self._limit_up_title(limit_up, breadth),
                     'detail': self._limit_up_detail(limit_up, breadth),
                     'icon': '🔥',
                     'timestamp': datetime.now().isoformat(),
@@ -128,6 +128,17 @@ class MarketAlert:
         checker = is_at_limit_up if up else is_at_limit_down
         return sum(1 for i in range(len(pcts))
                    if checker(pcts[i], codes[i], names[i], prices[i]))
+
+    @staticmethod
+    def _limit_up_title(limit_up: int, breadth: float | None) -> str:
+        """涨停标题（D63：标题同样用宽度交叉判定，不在普跌日称「潮」）
+
+        实测（2026-11-06 收盘）：全市场 5213 只、86% 下跌、当日 35 只涨停。
+        旧标题「涨停潮」在这种结构下属夸大 → 改称「结构性涨停」。
+        """
+        if breadth is not None and breadth < 0.4:
+            return f'结构性涨停：{limit_up}只股票涨停'
+        return f'涨停潮：{limit_up}只股票涨停'
 
     @staticmethod
     def _limit_up_detail(limit_up: int, breadth: float | None) -> str:

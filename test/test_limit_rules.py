@@ -168,6 +168,13 @@ class TestAlertWording(unittest.TestCase):
         detail = MarketAlert._limit_down_detail(12, breadth=0.15)
         self.assertIn('恐慌', detail)
 
+    def test_title_also_cross_checked(self):
+        """普跌日不得称「涨停潮」（实测 5213 只里 35 只涨停、86% 下跌）"""
+        self.assertIn('结构性涨停', MarketAlert._limit_up_title(35, breadth=0.137))
+        self.assertNotIn('涨停潮', MarketAlert._limit_up_title(35, breadth=0.137))
+        self.assertIn('涨停潮', MarketAlert._limit_up_title(35, breadth=0.72))
+        self.assertIn('涨停潮', MarketAlert._limit_up_title(35, breadth=None))
+
     def test_breadth_consistency_between_two_messages(self):
         """同屏两条消息引用同一宽度 → 语义自洽"""
         breadth = 0.17
