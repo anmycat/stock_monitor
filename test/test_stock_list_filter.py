@@ -39,6 +39,7 @@ class _StaleStockInfo:
 
 def setUpModule():
     from unittest import mock
+
     from quant_engine.data.repositories import market_data as _md
     global _info_patcher
     _info_patcher = mock.patch.object(_md, 'get_stock_info_table',

@@ -51,6 +51,7 @@ def _is_adjacent_session(last_date: str, today: str) -> bool:
     若按墙钟今天追加 bar，历史序列会凭空多一根 → 指标被污染 → 回归结论失真。
     """
     from datetime import datetime as _dt
+
     from .calendar import get_trading_days_between
     try:
         start = _dt.strptime(last_date, '%Y-%m-%d')

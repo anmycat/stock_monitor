@@ -118,7 +118,7 @@ class TestApplyCorrection(unittest.TestCase):
             self.assertEqual(len(out), len(df))
 
     def test_empty_df(self):
-        out, info = apply_intraday_correction(pd.DataFrame(), _quote())
+        _out, info = apply_intraday_correction(pd.DataFrame(), _quote())
         self.assertFalse(info['applied'])
         self.assertEqual(info['reason'], 'empty_df')
 
