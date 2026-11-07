@@ -1,0 +1,990 @@
+{
+ "scan_date": "2026-11-07 08:43:32",
+ "method": "GitHub REST API v3 (anonymous) + raw.githubusercontent.com",
+ "note": "精简取证数据；源码级实现与结论见 research/docs/34",
+ "projects": {
+  "ZhuLinsen/daily_stock_analysis": {
+   "full_name": "ZhuLinsen/daily_stock_analysis",
+   "stars": 67649,
+   "forks": 55948,
+   "language": "Python",
+   "pushed_at": "2026-11-03T15:34:35Z",
+   "created_at": "2026-01-10T06:43:20Z",
+   "archived": false,
+   "open_issues": 42,
+   "default_branch": "main",
+   "topics": [
+    "a-stock",
+    "ai-agent",
+    "aigc",
+    "llm",
+    "quant",
+    "quantitative-finance",
+    "quantitative-trading"
+   ],
+   "description": "LLM 驱动的多市场股票智能分析系统：多源行情、实时新闻、决策看板与自动推送，支持零成本定时运行。  LLM-powered multi-market stock analysis system with multi-source market data, real-time news, decision dashboard, automated notifications, and cost-f",
+   "releases": [
+    {
+     "tag": "v3.33.0",
+     "published_at": "2026-10-15T11:46",
+     "body_excerpt": "## v3.33.0\n\n## 发布亮点\n\n- feat: 问股讨论对象由服务端保存，刷新、重开及 Bot/Web 交替使用可恢复；修复“长电科技”等完整股票名称被内部短别名误判的问题。\n- feat: 新增无需 LLM 的规则化 ETF 双动量轮动，提供最新调仓信号、扣成本回测、年度对比、参数平原检验及数据质量告警。\n- feat: Web 新增只读数据中心、持仓风险与暴露看板，以及自选股“变化 / 状态 / 下一步”提示；设置页保护未保存草稿并改善首次配置引导。\n- improve: 选股补齐带来源与质量状态的入选理由及新闻事件证据，修复日线新鲜度、交易日期、缓存降级和检索时间一致性。\n- feat: 简化 Modelflare 单 Key 配置，补充 Requesty 渠道、妙想筹码与资金流数据、FXMacroData 宏观工具，以及单票决策复盘记忆和 Multi-Agent 阶段评估。\n- fix: 修复基本面和资金流解析、科创板成交量单位、重复定时派发及桌面 MiniRacer 打包；调度超时后默认推送已完成的部分结果，可通过 `DSA_TIMEOUT_PARTIAL_NOTIFY=false` 关闭。\n\n## What's Changed\n\n- Persisted the confirmed chat discussion target on the server so "
+    },
+    {
+     "tag": "v3.32.0",
+     "published_at": "2026-09-06T11:00",
+     "body_excerpt": "## v3.32.0\n\n### Highlights\n- 已登记 A 股指数贯通 Web/API、Bot、CLI 与 GitHub Actions 分析入口，注册表扩展至 33 项，并统一指数身份、任务去重、历史与 Chat 上下文。\n- 新增个股研究聚合 API、ResearchArtifact 结构化研究产物，以及数据源能力与数据集质量只读接口。\n- 完善 Futu OpenD 港股数据源接入，新增 Web Chat 分词基础模块与 Agent 轨迹评估入口。\n- 自建 SearXNG 搜索超时可配置，Tavily 改用 basic 搜索以降低 credit 消耗。\n- 定时分析采用独立进程与硬超时保护，选股结果支持历史恢复，桌面端增加全局更新入口，并修复 Linux/Docker 分享图中韩文字体缺失。\n- 收敛 LiteLLM 兼容版本窗口，更新 Web/桌面依赖，并修复美股数据源优先级与股票名称归一问题。\n\n### Contributors\n@Gach-Coder, @SPEC, @ZhuLinsen, @anupamme, @ariesy, @daladada666-a11y, @elvisw, @subaoyan16, @sunkai174634, @tzlwn1, @wvyan, @zhanghao56666-svg, @zhulinsen\n\n### Full ch"
+    },
+    {
+     "tag": "v3.31.0",
+     "published_at": "2026-08-23T14:34",
+     "body_excerpt": "## v3.31.0\n\n## 发布亮点\n\n- feat: Agent 工具调用新增按类别和单工具配置的超时契约，并补齐防重试、协作取消、并发预算、线程安全与热重载一致性。\n- feat: 股票名称解析、`StockDaily.canonical_id` 双写和 A 股指数多数据源 fallback 路由共同完善股票身份与行情降级链路。\n- improve: 新闻检索为空时在报告中如实披露证据边界；Anspire 默认覆盖全球区域，公共 SearXNG 实例改为显式启用。\n- fix: 修复服务重启后的定时任务恢复、分析无报告时的失败反馈、钉钉通知识别，以及大盘复盘历史摘要和实际生成后端诊断。\n- security: 桌面端升级 `builder-util-runtime` 至 9.7.0，修复 CVE-2026-54673 涉及的 HTTP 重定向凭据头信息泄露风险。\n- docs: 增加 xAI Grok 的 LiteLLM 配置示例、Grok Bot 集成说明与可复用异步分析 Skill，并更新 AIHubMix 中国大陆直连入口。\n\n## What's Changed\n\n- Added category-level and per-tool Agent timeout policies with first-wins resolution, non-retriable tim"
+    }
+   ],
+   "key_commits": [
+    {
+     "sha": "77e419281d",
+     "date": "2026-10-05",
+     "message": "fix: 修复选股日线缓存新鲜度并保留策略元数据 (#2389)",
+     "files_changed": 10,
+     "additions": 1106,
+     "deletions": 40,
+     "files": [
+      {
+       "name": ".env.example",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "docs/CHANGELOG.md",
+       "add": 23,
+       "del": 0
+      },
+      {
+       "name": "docs/screening-engine.md",
+       "add": 28,
+       "del": 3
+      },
+      {
+       "name": "src/services/screening/daily.py",
+       "add": 147,
+       "del": 22
+      },
+      {
+       "name": "src/services/screening/pipeline.py",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "src/services/screening/snapshot_us.py",
+       "add": 6,
+       "del": 2
+      },
+      {
+       "name": "src/services/screening_service.py",
+       "add": 53,
+       "del": 12
+      },
+      {
+       "name": "tests/test_screening_api.py",
+       "add": 7,
+       "del": 0
+      },
+      {
+       "name": "tests/test_screening_daily_freshness.py",
+       "add": 734,
+       "del": 0
+      },
+      {
+       "name": "tests/test_screening_history.py",
+       "add": 104,
+       "del": 1
+      }
+     ]
+    },
+    {
+     "sha": "ebab2ba9f5",
+     "date": "2026-10-04",
+     "message": "feat: add data capability center (#2304)",
+     "files_changed": 17,
+     "additions": 833,
+     "deletions": 6,
+     "files": [
+      {
+       "name": "apps/dsa-web/e2e/fixtures/data-center.spec.ts",
+       "add": 130,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/App.test.tsx",
+       "add": 13,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/App.tsx",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/api/__tests__/dataCapability.test.ts",
+       "add": 39,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/api/dataCapability.ts",
+       "add": 70,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/components/layout/Shell.tsx",
+       "add": 1,
+       "del": 1
+      },
+      {
+       "name": "apps/dsa-web/src/components/layout/ShellHeader.tsx",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/components/layout/SidebarNav.tsx",
+       "add": 11,
+       "del": 5
+      },
+      {
+       "name": "apps/dsa-web/src/components/layout/__tests__/SidebarNav.test.tsx",
+       "add": 22,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/i18n/uiText.ts",
+       "add": 64,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/pages/DataCenterPage.tsx",
+       "add": 213,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/pages/__tests__/DataCenterPage.test.tsx",
+       "add": 180,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/types/dataCapability.ts",
+       "add": 52,
+       "del": 0
+      },
+      {
+       "name": "docs/CHANGELOG.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/INDEX.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/INDEX_EN.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/data-center-diagnostics.md",
+       "add": 32,
+       "del": 0
+      }
+     ]
+    },
+    {
+     "sha": "5fa42fd9",
+     "date": "2026-10-04",
+     "message": "feat: explain screening selections with evidence provenance (#2305)",
+     "files_changed": 21,
+     "additions": 2116,
+     "deletions": 65,
+     "files": [
+      {
+       "name": ".github/workflows/ci.yml",
+       "add": 4,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/e2e/fixtures/screening-explanations.spec.ts",
+       "add": 160,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/playwright.config.ts",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/api/__tests__/screening.test.ts",
+       "add": 21,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/api/screening.ts",
+       "add": 15,
+       "del": 0
+      },
+      {
+       "name": "apps/dsa-web/src/pages/StockScreeningPage.tsx",
+       "add": 59,
+       "del": 26
+      },
+      {
+       "name": "apps/dsa-web/src/pages/__tests__/StockScreeningPage.test.tsx",
+       "add": 153,
+       "del": 3
+      },
+      {
+       "name": "docs/CHANGELOG.md",
+       "add": 10,
+       "del": 0
+      },
+      {
+       "name": "docs/INDEX.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/INDEX_EN.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/screening-explanations.md",
+       "add": 70,
+       "del": 0
+      },
+      {
+       "name": "src/services/screening/models.py",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "src/services/screening/pipeline.py",
+       "add": 6,
+       "del": 1
+      },
+      {
+       "name": "src/services/screening/post_analysis.py",
+       "add": 1,
+       "del": 1
+      },
+      {
+       "name": "src/services/screening/scorer.py",
+       "add": 8,
+       "del": 3
+      },
+      {
+       "name": "src/services/screening_service.py",
+       "add": 435,
+       "del": 29
+      },
+      {
+       "name": "tests/test_builtin_screening_engine.py",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "tests/test_ci_workflow_contract.py",
+       "add": 12,
+       "del": 0
+      },
+      {
+       "name": "tests/test_screening_api.py",
+       "add": 4,
+       "del": 2
+      },
+      {
+       "name": "tests/test_screening_explanations.py",
+       "add": 808,
+       "del": 0
+      }
+     ]
+    },
+    {
+     "sha": "e0e0b723",
+     "date": "2026-09-27",
+     "message": "feat: add decision review aggregation and agent memory context (#2331)",
+     "files_changed": 14,
+     "additions": 1288,
+     "deletions": 20,
+     "files": [
+      {
+       "name": "api/v1/endpoints/decision_signals.py",
+       "add": 31,
+       "del": 0
+      },
+      {
+       "name": "api/v1/schemas/decision_signals.py",
+       "add": 22,
+       "del": 0
+      },
+      {
+       "name": "docs/CHANGELOG.md",
+       "add": 1,
+       "del": 0
+      },
+      {
+       "name": "docs/architecture/api_spec.json",
+       "add": 173,
+       "del": 0
+      },
+      {
+       "name": "docs/decision-signals.md",
+       "add": 10,
+       "del": 0
+      },
+      {
+       "name": "src/agent/agents/base_agent.py",
+       "add": 30,
+       "del": 18
+      },
+      {
+       "name": "src/agent/memory.py",
+       "add": 72,
+       "del": 1
+      },
+      {
+       "name": "src/repositories/decision_signal_outcome_repo.py",
+       "add": 28,
+       "del": 1
+      },
+      {
+       "name": "src/services/decision_signal_outcome_service.py",
+       "add": 151,
+       "del": 0
+      },
+      {
+       "name": "tests/test_agent_memory_decision_review.py",
+       "add": 295,
+       "del": 0
+      },
+      {
+       "name": "tests/test_api_schema_pydantic.py",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "tests/test_decision_signal_docs.py",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "tests/test_decision_signal_review_memory.py",
+       "add": 468,
+       "del": 0
+      },
+      {
+       "name": "tests/test_multi_agent.py",
+       "add": 3,
+       "del": 0
+      }
+     ]
+    }
+   ]
+  },
+  "hsliuping/TradingAgents-CN": {
+   "full_name": "hsliuping/TradingAgents-CN",
+   "stars": 32821,
+   "forks": 6842,
+   "language": "Python",
+   "pushed_at": "2026-09-22T12:11:05Z",
+   "created_at": "2025-06-26T07:45:09Z",
+   "archived": false,
+   "open_issues": 299,
+   "default_branch": "v3.0",
+   "topics": [],
+   "description": "基于多智能体LLM的中文金融交易框架 - TradingAgents中文增强版",
+   "releases": [],
+   "key_commits": []
+  },
+  "wbh604/UZI-Skill": {
+   "full_name": "wbh604/UZI-Skill",
+   "stars": 7543,
+   "forks": 1048,
+   "language": "Python",
+   "pushed_at": "2026-11-05T09:31:38Z",
+   "created_at": "2026-04-16T07:36:06Z",
+   "archived": false,
+   "open_issues": 2,
+   "default_branch": "main",
+   "topics": [],
+   "description": "冰冷的钱就这样流进我温暖的口袋-游资（UZI）Skills — 让我们欢迎，股海贼王！66位投资大佬帮你看盘 · 22维数据 × 180条量化规则 × 17种机构分析方法 · A股/港股/美股 ",
+   "releases": [
+    {
+     "tag": "v3.9.1",
+     "published_at": "2026-06-22T18:13",
+     "body_excerpt": "## ✨ HTML 报告左侧导航栏可一键折叠/展开\n\n社区 issue #79（@QKioi）：v3.6.0 加的左侧 sticky 章节导航栏会略微遮挡正文，希望能收起。按建议实现：\n\n- 导航栏顶部新增折叠按钮（沿用暗色模式 toggle 的玻璃拟态风格）\n- 展开态显示 `◀`，点一下收起成一个 `☰` 小圆把手（章节项全藏，不再压住正文）；再点一下展开\n- 折叠状态写入 `localStorage`（`uzi-toc-collapsed`），刷新/换页记忆，与暗色模式同一套持久化模式\n- 全程安全 DOM（`textContent` / `classList`，无 `innerHTML`）+ 同步 `aria-expanded` / `aria-label` 可访问性\n\n## 🧪 测试\n\n7 个新回归 · **649/649 全过**\n\n感谢 @QKioi 的建议 🙏"
+    },
+    {
+     "tag": "v3.9.0",
+     "published_at": "2026-06-11T11:48",
+     "body_excerpt": "## ✨ 首位\"数据原生\"评委 (65→66)\n\n其他评委的规则来自书本/访谈归纳 —— **股海贼王的规则阈值直接来自其真实交易行为统计**。\n\n**数据源**：淘股吧十年实盘帖（2016-02-21 开贴至今）· 3898 张持仓截图 OCR → **8951 笔反推交割单** + **5069 条论坛发言**（70+ 条长文复盘）。\n\n## 📊 定量画像\n\n| 指标 | 值 |\n|---|---|\n| 资产轨迹 | 33 万 → **3131 万**（~95 倍 / 10 年 · 2018 曾回撤至 ~11 万）|\n| 持仓周期 | **中位 1 天** · P75 3 天（教科书超短接力）|\n| 同时持仓 | 3-5 只 · **第一重仓中位 51%** |\n| 广度 | 10 年 **2010 只票**题材轮动（鸿博/川能/人民网/大众交通全是其高频标的）|\n\n## 🧠 方法论（原帖楼层可溯源 · 完整见 [`docs/ghzw-dossier.md`](docs/ghzw-dossier.md)）\n\n- **复盘三问**：\"涨停的股为啥涨停 · 在板块的地位如何 · 在大盘的地位如何\"\n- **接力纪律**：\"弱转强快速板才是超预期……盘面确认强度\"\n- **选股**：\"逻辑硬的低位票爆发力足\"\n- **格局票**：把大众交通\"当无人驾驶时代的情绪载体……能走出三五倍为"
+    },
+    {
+     "tag": "v3.8.1",
+     "published_at": "2026-06-10T09:22",
+     "body_excerpt": "## 🩺 背景 · 体检发现\"加人没加配套\"\n\nv3.6.3 加 Serenity (I 组)、v3.7.0 加 13 位科技大佬时，**只更新了 investor_db + 规则** —— 仓库里 6 处按组遍历/查表的配套层漏了 H/I。全部 `.get(g, default)` 静默降级（不崩、CI 全绿），所以潜伏了两个版本。\n\n## 🐛 修复的 6 个缺陷\n\n| # | 位置 | 症状 |\n|---|---|---|\n| 1 | `assets/avatars/` | **14 位新评委无头像** → 报告评委席/群聊/世纪分歧破图（已补齐 · 总 65）|\n| 2 | `render_school_scores` | order=[A..G] → **H/I 两派分数永远不渲染** |\n| 3 | `GROUP_LABELS` ×3 处 | H/I 显示裸字母 \"H\"/\"I\" |\n| 4 | `GROUP_DEFAULT` | H/I 评委 profile 全 \"—\" |\n| 5 | `STYLE_GROUP_WEIGHTS` | **v2.7 风格动态加权对 H/I 失效**（现 Serenity 在红利股 0.2 / 科技成长 1.5）|\n| 6 | `MARKET_SCOPE` + `PERSONAS` | 13 新评委缺显式 scope + 群聊台词全是 gen"
+    }
+   ],
+   "key_commits": []
+  },
+  "shy3130/tick-stock-panel": {
+   "full_name": "shy3130/tick-stock-panel",
+   "stars": 7208,
+   "forks": 1749,
+   "language": "Python",
+   "pushed_at": "2026-11-06T16:56:14Z",
+   "created_at": "2026-06-18T06:18:29Z",
+   "archived": false,
+   "open_issues": 56,
+   "default_branch": "main",
+   "topics": [
+    "a-stock",
+    "ai-agent",
+    "aigc",
+    "aigc-detection",
+    "backtesting",
+    "daily",
+    "duckdb",
+    "fastapi",
+    "llm",
+    "polars"
+   ],
+   "description": "TSP自托管、零运维的 A 股「自建策略 + 监控 + 回测」量化工作台  | LLM能力驱使策略定制+个股分析+复盘 | 自由接入第三方数据源与个性化扩展数据 | 个人开源",
+   "releases": [
+    {
+     "tag": "v0.3.32",
+     "published_at": "2026-11-06T15:49",
+     "body_excerpt": "# TSP v0.3.32\n\n## 本次更新\n\n- **自选与详情行情链路修复**：合并股票、ETF、指数的按需行情订阅，完善跨日更新、多窗口重复请求去重与逐标的行情时效提示。\n- **分时自适应完善**：按实际最高、最低点适配显示范围，指数隐藏不适用的涨跌停设置和均价，避免异常均价撑坏纵轴。日 K 异动下拉选项简化为“文字／颜色”。\n- **回测交易回放升级**：每日交易与交易明细中的单笔回放改用 Lightweight Charts，保留指标和操作，完善买卖点、成交价线、持仓区间及买卖日分时联动；切换同一标的交易时正确重置日期，缩放窗口后保持完整交易视野，ETF 回放价格保留三位小数。\n- **集合竞价与扩展数据修复**：修复后续快照才出现的字段被早期稀疏样本遗漏的问题，完善安全合并、空返回保护和拉取后的缓存刷新，恢复列表图表的数据更新。\n- **扩展字段校验完善**：重复字段自动去重，冲突的选盘时刻给出明确提示，修复连板梯队重复扩展列问题。\n- **Docker 配置持久化修复**：修正加载 `.env` 时相对数据路径错位、导致重建后丢失 Key 和配置的问题。保留自定义绝对路径及已挂载的旧目录，补充旧数据保护、挂载提醒和备份说明。\n\n## 下载\n\n| 平台 | 安装包 |\n| :--- | :--- |\n| Windows x64 | [TSP-Setup-x64-0.3"
+    },
+    {
+     "tag": "v0.3.31",
+     "published_at": "2026-11-05T16:55",
+     "body_excerpt": "# TSP v0.3.31\n\n## 本次更新\n\n- **个股详情图表升级**：日 K 与分时改用 Lightweight Charts，保留原有工具栏和操作，优化窗口布局、双轴刻度、午休衔接、昨收基准、指标读数和异动配色。\n- **ETF 数据链路修复**：修正分时日期与数据源路由，完善自选数据补齐和多窗口任务去重。\n- **ETF 价格精度统一**：自选、策略列表、详情、图表及点位提醒统一按三位小数显示 ETF 价格，股票继续保留两位；涨跌停价同步按报价精度处理。\n- **扩展数据展示完善**：资金迷你图支持近 N 日每天一根柱，修正比例、零轴和越界问题；日内多批扩展数据可配置按日或按日内展示。\n- **开放个股详情调用**：已安装的 JS／TSX 页面插件和源码扩展可调用宿主个股详情，复用日 K、分时与切股操作。\n- **调整部分介绍内容文字**：完善引导页与 README 的项目介绍及支持文案。\n\n## 下载\n\n| 平台 | 安装包 |\n| :--- | :--- |\n| Windows x64 | [TSP-Setup-x64-0.3.31.exe](https://github.com/shy3130/tick-stock-panel/releases/download/v0.3.31/TSP-Setup-x64-0.3.31.exe) |\n| macOS Apple S"
+    },
+    {
+     "tag": "v0.3.30",
+     "published_at": "2026-11-04T14:52",
+     "body_excerpt": "## 修复与改进\n\n- **多窗口与多人访问**：相同输入的策略计算、分钟补拉和交易日探测共享执行；队列增加容量边界与过载退避，减少重复后台任务。数据页统计改为后台刷新，保留上一份完整快照。\n- **分时图刷新**：切换策略列表后补拉当前标的的分时数据，修复关闭轮询时切换几次列表后图表空白的问题。按后台任务 ID 跟踪策略计算，避免旧结果被当成本轮完成。\n- **扩展配置分享**：在扩展数据卡片的设置弹窗中单独导出配置，在数据页预览并导入。分享包不含 API Key、Cookie、原设备凭据引用或历史数据；同名导入不覆盖已有配置，定时拉取默认关闭。\n- **日K异常修补**：上游没有目标日K时，对有明确依据的上市前、零成交或旧日快照遗留记录先备份再清理，并继续重算受影响指标。无法确认的缺失值或 NaN 仍保留原数据并提示具体标的；增加并发修改保护、完整北京时间取数窗口和实际数据源日志。\n\n## 下载\n\n| 平台 | 安装包 |\n| --- | --- |\n| Windows x64 | [TSP-Setup-x64-0.3.30.exe](https://github.com/shy3130/tick-stock-panel/releases/download/v0.3.30/TSP-Setup-x64-0.3.30.exe) |\n| macOS Apple Silicon（ARM"
+    }
+   ],
+   "key_commits": [
+    {
+     "sha": "8fb23fcf",
+     "date": "2026-10-30",
+     "message": "feat(data): 新增日K自检、精准修补及数据版本管理",
+     "files_changed": 48,
+     "additions": 2611,
+     "deletions": 112,
+     "files": [
+      {
+       "name": "backend/app/api/backtest.py",
+       "add": 33,
+       "del": 10
+      },
+      {
+       "name": "backend/app/api/data.py",
+       "add": 109,
+       "del": 1
+      },
+      {
+       "name": "backend/app/api/intraday.py",
+       "add": 5,
+       "del": 0
+      },
+      {
+       "name": "backend/app/api/screener.py",
+       "add": 2,
+       "del": 0
+      },
+      {
+       "name": "backend/app/api/settings.py",
+       "add": 2,
+       "del": 6
+      },
+      {
+       "name": "backend/app/backtest/engine.py",
+       "add": 9,
+       "del": 0
+      },
+      {
+       "name": "backend/app/enriched_generation.py",
+       "add": 13,
+       "del": 1
+      },
+      {
+       "name": "backend/app/indicators/pipeline.py",
+       "add": 58,
+       "del": 0
+      },
+      {
+       "name": "backend/app/jobs/daily_pipeline.py",
+       "add": 21,
+       "del": 5
+      },
+      {
+       "name": "backend/app/main.py",
+       "add": 6,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/daily_health.py",
+       "add": 175,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/data_integrity.py",
+       "add": 200,
+       "del": 37
+      },
+      {
+       "name": "backend/app/services/index_sync.py",
+       "add": 3,
+       "del": 12
+      },
+      {
+       "name": "backend/app/services/integrity_check.py",
+       "add": 185,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/kline_sync.py",
+       "add": 49,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/market_mainline.py",
+       "add": 9,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/pipeline_jobs.py",
+       "add": 2,
+       "del": 1
+      },
+      {
+       "name": "backend/app/services/quote_service.py",
+       "add": 27,
+       "del": 0
+      },
+      {
+       "name": "backend/app/services/regime_builder.py",
+       "add": 11,
+       "del": 1
+      },
+      {
+       "name": "backend/app/services/repair_daily.py",
+       "add": 182,
+       "del": 13
+      }
+     ]
+    }
+   ]
+  },
+  "oficcejo/aiagents-stock": {
+   "full_name": "oficcejo/aiagents-stock",
+   "stars": 2070,
+   "forks": 600,
+   "language": "Python",
+   "pushed_at": "2026-10-10T10:42:49Z",
+   "created_at": "2025-10-03T07:02:26Z",
+   "archived": false,
+   "open_issues": 5,
+   "default_branch": "main",
+   "topics": [],
+   "description": "复合多AI智能体股票团队分析盯盘系统，基于多个ai智能体，模拟证券分析师团队分析过程，提供全方位的股票投资分析和决策建议，新增游资龙虎榜跟踪分析、板块预警轮动分析，支持批量多线程分析，支持实时监测关键点位，发送警报信息，预留miniqmt接口，支持量化交易，真正做到了ai帮你来炒股，适合大陆A股。下方测试网站请填入deepseek临时key，测试完请删除，否则有泄露风险。注：测试云服务访问过多，数",
+   "releases": [
+    {
+     "tag": "stock，股票，A股，ai炒股",
+     "published_at": "2025-10-03T07:18",
+     "body_excerpt": "初始版本，支持多agents智能分析，支持股票监测，支持邮件提醒。请到主页下载最新版本使用\r\n[aiagents-stock-main.zip](https://github.com/user-attachments/files/22675995/aiagents-stock-main.zip)\r\n"
+    }
+   ],
+   "key_commits": []
+  },
+  "electkismet/eltdx": {
+   "full_name": "electkismet/eltdx",
+   "stars": 687,
+   "forks": 267,
+   "language": "Python",
+   "pushed_at": "2026-11-06T04:01:40Z",
+   "created_at": "2026-02-26T20:06:05Z",
+   "archived": false,
+   "open_issues": 13,
+   "default_branch": "main",
+   "topics": [
+    "a-share",
+    "finance",
+    "market-data",
+    "python",
+    "stocks",
+    "tdx",
+    "tongdaxin"
+   ],
+   "description": "通达信A股行情协议 Python 库，MCP，支持快照、分时、逐笔、K 线、集合竞价、特殊指标等接口。适合作为量化数据源，支持其他语言通过HTTP或WebSocket调用",
+   "releases": [
+    {
+     "tag": "v3.3.5",
+     "published_at": "2026-11-06T04:10",
+     "body_excerpt": "发布日期：2026-11-06。\n\n本版本修复 EX 扩展行情的连接初始化与 MAC-EX 主机探活，改善部分主站查询市场、报价和 K 线时超时的问题。\n\n## 主要变化\n\n- EX 连接建立后自动完成会话初始化，并完整读取响应后再发送业务请求。\n- EX 默认探活使用市场列表查询，帮助选出能够提供数据的主站。\n- MAC-EX 的 `ping_all()` 与 `from_best_host()` 使用 MAC-EX 连接模式和登录命令，与正式连接流程保持一致。\n\n## 修复内容\n\n- 补齐 EX 数据查询前所需的 92 字节初始化请求，避免仅建立 TCP 连接后业务请求无响应。\n- 完整读取初始化响应的帧头和响应体，避免后续业务响应错位。\n- MAC-EX 正式连接和探活均跳过 EX 初始化流程，使用自身的登录流程。\n- 增加初始化响应读取、失败清理、模式选择及两个 MAC-EX 探活入口的回归测试，并订正文档说明。\n\n## 兼容性与使用\n\n- 现有 `ExTdxClient` 和 `MacExClient` 高层调用方式保持不变。\n- 底层 `ExTdxConnection` 新增 `send_setup` 参数，默认开启 EX 初始化；MAC-EX 模式自动跳过。\n- 本次主要影响 EX / MAC-EX 扩展行情；沪深 A 股行情订阅用法保持不变。\n- 实际数据覆盖和可用"
+    },
+    {
+     "tag": "v3.3.3",
+     "published_at": "2026-11-06T03:10",
+     "body_excerpt": "发布日期：2026-11-06。\r\n\r\n本版本修复实时行情订阅无法持续收到服务端推送的问题，并支持多连接批量订阅及自动游标续期。\r\n\r\n## 主要变化\r\n\r\n- `quotes.subscribe()` / `subscribe_hq()` 默认每 7 秒续期，自动携带每只股票最后收到的服务端 `update_time_raw` 游标。\r\n- 关注代码标准化并去重，按每组最多 100 只自动拆分；每组独占原连接。\r\n- 统一读取共享推送队列，初始行情、续期返回的增量和服务端主动推送均派发给回调。\r\n\r\n## 修复内容\r\n\r\n- 修正 `0x0547` 请求消息编号，恢复服务端主动推送；请求响应与主动推送分别处理。\r\n- 保持每组订阅的连接和代码集合，续期自动更新游标，支持新交易日早盘时间变小的情况。\r\n- 订阅结束及异常退出时释放独占连接；轮询等待时间自动避开下一次续期时刻。\r\n- 补充游标、多组连接、错误清理和参数校验测试。\r\n\r\n## 兼容性与使用\r\n\r\n- Python 3.10+；现有 `subscribe(codes, callback).run()` 用法自动获得续期行为。显式传 `reactivate_interval=None` 可禁用续期。\r\n- 连接池至少需要 `ceil(去重代码数 / 100)` 个连接槽。如需同时执行其他请求，请预留额外连接槽。\r\n- 同一"
+    },
+    {
+     "tag": "v3.3.2",
+     "published_at": "2026-10-30T12:59",
+     "body_excerpt": "发布日期：2026-10-30。\n\n本版本修复批量行情和基础财务查询在混入无数据代码时的失败与垃圾记录问题，并发布全市场资讯接口及完整方法文档。\n\n## 主要变化\n\n- **批量缺失处理**：`client.quotes.get_snapshots()` 和 `client.corporate.finance_batch()` 新增关键字参数 `on_missing=\"raise\"` / `\"skip\"`。默认严格报错，确认缺失时通过 `MissingCodesError.missing_codes` 列出代码；显式 skip 时返回有效部分，并发出 `MissingCodesWarning`。\n- **有界恢复**：异常批次通过二分定位，每次公开调用最多追加 32 次恢复业务请求。正常批次保持一次请求；网络超时、连接错误、损坏单只和预算耗尽仍报错。\n- **市场资讯**：新增 `client.f10.market_news()` 首页要闻流、`channel_news()` 频道资讯和 `news_channels()` 静态频道枚举。覆盖 8 个首页标签和 84 个频道，支持 CLI、MCP 与 HTTP / WebSocket RPC；新闻行可用 `extract_news_rows()` 提取。\n- **文档**：补齐三个市场资讯方法单页、批量缺失策略、参数与错误说明；接口"
+    }
+   ],
+   "key_commits": []
+  },
+  "rootSunc/CNEquity": {
+   "full_name": "rootSunc/CNEquity",
+   "stars": 968,
+   "forks": 108,
+   "language": "Python",
+   "pushed_at": "2026-11-06T22:59:01Z",
+   "created_at": "2026-06-28T14:21:03Z",
+   "archived": false,
+   "open_issues": 4,
+   "default_branch": "main",
+   "topics": [
+    "a-share",
+    "a-shares",
+    "a-stock",
+    "ai-agent",
+    "akshare",
+    "ashare",
+    "astock",
+    "backtesting",
+    "baostock",
+    "china-stock-market"
+   ],
+   "description": "开源中国股市（A股）本地数据湖：沪深股票行情、A股股票数据与金融数据，面向量化研究、量化交易与回测，含财务数据、期货数据、资金流向、公告、指数行业与宏观。55 个日更数据集，复权与历史成分内置，行级溯源、PIT，MCP 原生。免注册、免 Token，自托管。Open-source China stock market data lake for quant research, backtestin",
+   "releases": [
+    {
+     "tag": "v0.23.0",
+     "published_at": "2026-11-06T23:10",
+     "body_excerpt": "**供应商占位 0 改为空值，日线等数据集改为按月存放**\n\nCNEquity 0.23.0 已发布至 [PyPI](https://pypi.org/project/cnequity/0.23.0/)。开源 A 股本地数据湖，用于量化研究、回测与 AI Agent。\n\n```bash\npython -m pip install --upgrade cnequity==0.23.0\n```\n\n- **升级步骤：** `pip install -U cnequity` 后重启 `cne serve` 和已在运行的 `cne mcp`。`daily_bars`、`adj_factors`、`margin_trading`、`valuation_metrics` 升到 schema 版本 2：列和主键不变，分区从按日改为按月（目录 `trade_date=YYYY-MM`）。旧湖先 `cne migrate` 预览，再 `cne migrate --apply`。本版迁移为 `daily-bars-month-partitions`、`adj-factors-month-partitions`、`margin-trading-month-partitions`、`valuation-metrics-month-partitions`、`limit-prices-month-partiti"
+    },
+    {
+     "tag": "v0.22.0",
+     "published_at": "2026-11-02T20:43",
+     "body_excerpt": "**Linux 日更不再卡死，回补和日更只写改动的数据**\n\nCNEquity 0.22.0 已发布至 [PyPI](https://pypi.org/project/cnequity/0.22.0/)。开源 A 股本地数据湖，用于量化研究、回测与 AI Agent。\n\n```bash\npython -m pip install --upgrade cnequity==0.22.0\n```\n\n- **升级步骤：** `pip install -U cnequity` 后重启 `cne serve` 和已在运行的 `cne mcp`。数据集契约没有变化，不需要迁移数据；配置不用改，`[orchestrator]` 可选新增 `batch_stall_seconds`（默认 600）。为绕过 [#56](https://github.com/rootSunc/CNEquity/issues/56) 临时加的 `tdx_daily_backend = \"thread\"` 可以删掉，恢复 Linux 默认的进程池。 直接读取 Parquet 文件的外部程序要读分区目录下的所有文件：一个分区现在可以有多个文件（见下文）。\n- 回补和日更只写改动的数据，不再重写整个分区：此前写入一个分区时，会把整个分区读出来、合并后整份重写成一个文件，写入成本取决于分区大小而不是改动多少。实测补 40 只股票"
+    },
+    {
+     "tag": "v0.21.0",
+     "published_at": "2026-10-31T16:40",
+     "body_excerpt": "**修订改为硬链接并默认只留 5 代，验收只看核心数据集**\n\nCNEquity 0.21.0 已发布至 [PyPI](https://pypi.org/project/cnequity/0.21.0/)。开源 A 股本地数据湖，用于量化研究、回测与 AI Agent。\n\n```bash\npython -m pip install --upgrade cnequity==0.21.0\n```\n\n- **升级步骤：** `pip install -U cnequity` 后重启 `cne serve` 和已在运行的 `cne mcp`。`share_structure` 升到 schema 版本 2，新增可空列 `float_a_shares`（见下文）；已有行为空，按窗口 `cne backfill share_structure` 补，不为这一列做迁移。`economic_calendar` 也升到 schema 版本 2：历史从“只能积累快照”改为可以回补，并新增可空列 `indicator_code`、`withdrawn`；已有行不用改写，缺的日子用 `cne backfill economic_calendar` 补，说明见 `contracts/migrations/0.21.0/economic_calendar.md`。旧湖运行 `cne migrate` 预览、再"
+    }
+   ],
+   "key_commits": []
+  },
+  "1nchaos/adata": {
+   "full_name": "1nchaos/adata",
+   "stars": 5363,
+   "forks": 709,
+   "language": "Python",
+   "pushed_at": "2026-10-31T16:53:50Z",
+   "created_at": "2023-05-23T05:13:52Z",
+   "archived": false,
+   "open_issues": 31,
+   "default_branch": "main",
+   "topics": [
+    "3000",
+    "a",
+    "china",
+    "datasource",
+    "financial",
+    "kline",
+    "market-data",
+    "quant",
+    "stock",
+    "stock-data"
+   ],
+   "description": "免费开源A股量化交易数据库； 专注A股，专注量化，向阳而生； 开放、纯净、持续、为Ai(爱)发电。为个人量化交易而生，保卫3000点，珍惜底部机会......【股票数据，股票行情数据，股票量化数据，股票交易数据，k线行情数据，股票概念数据，股票数据接口，行情数据接口，量化交易数据】【多数据源融合，动态设置代理，保障数据高可用性】",
+   "releases": [
+    {
+     "tag": "v2.9.0",
+     "published_at": "2025-04-02T11:59",
+     "body_excerpt": "2.9.0 (2024-04-02)\r\n------------------\r\n1. 又是一年清明节，两年 2k star，感谢各位老铁的支持。\r\n2. 新增：股票：舆情：通达信股票扫雷数据。"
+    },
+    {
+     "tag": "v2.8.0",
+     "published_at": "2024-12-25T12:36",
+     "body_excerpt": "2.8.0 (2024-12-25)\r\n------------------\r\n1. 新增：股票：行情：东财概念资金流向。"
+    },
+    {
+     "tag": "v2.7.0",
+     "published_at": "2024-10-16T12:05",
+     "body_excerpt": "2.7.0 (2024-10-16)\r\n------------------\r\n1. 新增：股票：股票所属的板块：行业、地域板块、概念。\r\n2. 修复：股票：部分文档描述"
+    }
+   ],
+   "key_commits": []
+  },
+  "hello245m/free-stockdb": {
+   "full_name": "hello245m/free-stockdb",
+   "stars": 3134,
+   "forks": 471,
+   "language": "HTML",
+   "pushed_at": "2026-10-12T19:32:40Z",
+   "created_at": "2026-05-08T13:34:17Z",
+   "archived": false,
+   "open_issues": 0,
+   "default_branch": "main",
+   "topics": [
+    "a-share",
+    "algorithmic-trading",
+    "backtesting",
+    "china-stock-market",
+    "kline",
+    "local-first",
+    "market-data",
+    "mcp",
+    "quant-research",
+    "quantitative-finance"
+   ],
+   "description": "面向 A 股日K、分钟K与ETF分钟数据的本地量化引擎，集成增量同步、本地缓存、复权、批量查询、回测与指标计算。",
+   "releases": [
+    {
+     "tag": "测试版本0.3.5",
+     "published_at": "2026-07-19T18:53",
+     "body_excerpt": "## 这是什么\r\nfree-stockdb 是面向 A 股日K、分钟K 与 ETF 分钟/tick 数据的本地量化数据引擎：\r\n增量同步、清洗、复权、批量查询与指标计算都在本机完成。\r\n\r\n## 适合谁\r\n- 需要全市场回测，但不想维护远程 API / 限频 / 入库的人\r\n- 希望用 Python / HTTP / Excel / 网页 / MCP 直接读本地数据的人\r\n\r\n## 本版本提供什么\r\n- Windows 发行包：更新工具 + stockdb 引擎（核心约 2.2MB）\r\n- 本地数据落盘 `./data`，后续增量更新\r\n- 39 种指标、板块查询、五种调用方式\r\n\r\n## 两分钟开始\r\n1. 下载下方 Assets 中的发行包并解压\r\n2. 运行数据更新工具 → 数据写入 `./data`\r\n3. 启动 stockdb\r\n4. 用 Python / HTTP / Excel / 网页 / MCP 查询\r\n\r\n## 和在线 API 的区别\r\n远程方案要自己做下载、清洗、复权、入库；本项目把这些做成可启动的本地底座。\r\n\r\n## [07-24]more-power版本\r\n支持全量数据——所有级别行情,财务,期货,etf,债券,指数,因子,ticks,实时。\r\n\r\n\r\n## [08-10]多平台版本发布\r\n\r\nwindows，macos，alpine，manylinux"
+    }
+   ],
+   "key_commits": []
+  },
+  "qusong0627/QuantMind": {
+   "full_name": "qusong0627/QuantMind",
+   "stars": 1881,
+   "forks": 430,
+   "language": "Python",
+   "pushed_at": "2026-11-06T08:00:41Z",
+   "created_at": "2026-04-15T10:14:34Z",
+   "archived": false,
+   "open_issues": 0,
+   "default_branch": "master",
+   "topics": [
+    "ashare",
+    "docker",
+    "lightgbm",
+    "python3",
+    "qlib",
+    "quant",
+    "transformer"
+   ],
+   "description": " QuantMind（量化大脑）开源版是一款面向个人开发者与投研团队的 AI 原生多市场量化交易平台。深度集成微软 Qlib、RD-Agent 因子演化与 QuantBot全能工作台，提供从 300+ 维因子挖掘、13 种机器学习与深度学习模型工场、Qlib 高性能回测、截面批量推理、7x24 实时舆情情绪分析，到通达信深度联动（板块推送/预警雷达/闪电下单）与实盘模拟交易的完整闭环。支持 A股、",
+   "releases": [],
+   "key_commits": []
+  },
+  "jundizhou/easy-stock": {
+   "full_name": "jundizhou/easy-stock",
+   "stars": 1765,
+   "forks": 191,
+   "language": "Go",
+   "pushed_at": "2026-11-05T13:24:09Z",
+   "created_at": "2026-08-07T16:25:36Z",
+   "archived": false,
+   "open_issues": 10,
+   "default_branch": "main",
+   "topics": [
+    "a-share",
+    "ai",
+    "ai-agent",
+    "china-stock",
+    "desktop-app",
+    "electron",
+    "go",
+    "golang",
+    "llm",
+    "llm-agent"
+   ],
+   "description": "A股行情分析与AI智能投研智能体：股票分析、量化交易分析、盘后复盘桌面工作台——easy stock",
+   "releases": [
+    {
+     "tag": "v1.7.4",
+     "published_at": "2026-11-05T14:12",
+     "body_excerpt": "# easy-stock v1.7.4\n\n本次更新改进 Windows 安装与升级、监控中心布局、盘前简报和多持仓巡检，并调整复盘日记的内容采集方式。\n\n## 主要更新\n\n- **Windows 安装与升级**：修复安装包解压兼容性；清理旧版 Hermes 运行时遗留的长路径，避免文件占用或路径过长阻断覆盖安装。\n- **监控中心与盘前简报**：监控列表和侧栏按窗口高度独立滚动，改善小窗口下的内容可见性；盘前简报将消息事实、题材线索和开盘验证分开呈现，减少重复说明。\n- **短线页面与行情回退**：在行情主源不可用时补充腾讯实时行情回退；交易精进内容移入独立弹窗，优化短线页面布局。\n- **多持仓巡检**：资料过长时先分段整理证据，再交给评分流程，降低输入超限导致巡检失败的概率。\n- **复盘日记**：订阅列表默认展开；移除内置微信公众号下载服务。微信公众号历史文章不再自动订阅，仍可粘贴具体文章链接导入；雪球和淘股吧订阅继续使用。\n\n## 升级说明\n\nWindows 可通过应用内检查更新下载并安装；macOS 请下载对应架构的 DMG 手动覆盖安装。升级前退出应用，保留原有应用数据目录。安装包已包含运行时，无需自行安装 Python、Hermes 或 Codex。\n\nv1.5.2 及更早版本请从本 Release 手动下载并覆盖安装一次，以切换到 GitHub 更新源。\n\n## 下"
+    },
+    {
+     "tag": "v1.7.3",
+     "published_at": "2026-11-05T04:36",
+     "body_excerpt": "# easy-stock v1.7.3\n\n本次更新包含 [PR #44](https://github.com/jundizhou/easy-stock/pull/44)，重点修复 Windows 覆盖安装、公共表格列宽与行情源提示问题。\n\n## 主要更新\n\n- **Windows 覆盖安装**：退出应用时等待后台进程树停止；安装和卸载时清理所选安装目录下的残留进程及其后代，避免后台进程占用文件导致升级失败。统一 Windows 长路径和 DOS 短路径的识别，保护安装器、自身进程和相邻目录中的程序。安装包使用与 NSIS 兼容的压缩过滤器。\n- **表格列宽调整**：首次拖动列宽时先测量整表，再统一应用宽度，修复调整一列导致其他列跟着变化的问题，保留刷新后的列宽恢复行为。\n- **数据源状态提示**：探测失败时显示简短状态，避免长错误信息撑宽面板；悬停仍可查看完整错误原因。\n- **腾讯前复权日线**：更新默认请求接口，保留前复权数据语义和自定义接口地址配置。\n\n## 升级说明\n\nWindows 可通过应用内检查更新下载并安装；macOS 请下载对应架构的 DMG 手动覆盖安装。升级前退出应用，保留原有应用数据目录。安装包已包含运行时，无需自行安装 Python、Hermes 或 Codex。\n\nWindows 安装器会检查所选安装目录的进程占用；若仍有无法停止的进程，会显示原因"
+    },
+    {
+     "tag": "v1.7.2",
+     "published_at": "2026-11-04T14:39",
+     "body_excerpt": "# easy-stock v1.7.2\n\n本次更新重点修复多持仓巡检的资料预算问题，为大 V 复盘日记增加全文分段压缩与检查点恢复，并改进资金流向、巡查交互和桌面运行时兼容性。\n\n## 主要更新\n\n- **多持仓巡检压缩修复**：修复研究资料分别压缩后，合并请求仍可能超限的问题（[#38](https://github.com/jundizhou/easy-stock/issues/38)）。按所有持仓的完整请求统一分配预算，保留资料来源、交易约束与压缩检查点，改善 10 只持仓等场景的处理。\n- **大 V 复盘全文处理**：取消单作者文章数量和正文的直接截断；资料过长时按全文顺序分段提炼，再分层归纳，覆盖文末修正、反证与失效条件。跨作者的两路汇总统一控制输入预算，保留原观点卡和来源，每位作者仍只计一票。已完成片段和作者归纳可在重试时复用，部分失败会明确标记。\n- **资金流向与巡查交互**：完善行情与资金流数据适配、回退处理和巡查结果展示，补充巡查验证及来源信息，改善刷新和定时巡查交互。\n- **分析与导出体验**：完善个股 K 线相关交互，修复个股分析图片导出时的颜色兼容问题，并记录导出失败原因。\n- **桌面运行时兼容**：改善 Hermes、Codex 和浏览器工具的运行时准备及兼容处理，修复下载源配置的传递，完善本地数据保护。\n\n## 升级说明\n\nWindows 可通过"
+    }
+   ],
+   "key_commits": []
+  }
+ },
+ "search_queries": [
+  {
+   "query": "stock analysis AI pushed:>2026-10-20",
+   "total_count": 338,
+   "top": [
+    {
+     "full_name": "dragon1086/prism-insight",
+     "stars": 795,
+     "pushed_at": "2026-11-06",
+     "description": "AI-based stock analysis and trading system"
+    },
+    {
+     "full_name": "YoungCan-Wang/WyckoffTradingAgent",
+     "stars": 770,
+     "pushed_at": "2026-11-06",
+     "description": "Open-source Wyckoff trading agent and AI stock screener for volume-price analysis, A-share screening, CLI workflows, and MCP tools.灵感来自秋生tra"
+    },
+    {
+     "full_name": "hengruiyun/AI-Stock-Master",
+     "stars": 395,
+     "pushed_at": "2026-11-06",
+     "description": "AI股票大师-基于AI 的股票趋势分析平台，通过AI 解读中国、香港、美国股票市场，融合三大核心算法，独家预分析多维数据，为投资者提供全方位的学习支持. This is an AI-based stock trend analysis platform that integrat"
+    },
+    {
+     "full_name": "kansoku-trade/kansoku",
+     "stars": 335,
+     "pushed_at": "2026-11-04",
+     "description": "AI Stock Partner on Your Mac – Local Market Information, Multi-timeframe K-line, AI Intraday Comments and Follow-up Analysis"
+    },
+    {
+     "full_name": "yennanliu/InvestSkill",
+     "stars": 279,
+     "pushed_at": "2026-10-24",
+     "description": "US stock analysis skills for LLMs (Claude code, Codex, Gemini ...)  | #AI"
+    },
+    {
+     "full_name": "0xrsydn/idx-cli",
+     "stars": 105,
+     "pushed_at": "2026-11-05",
+     "description": "CLI tool & MCP for Indonesian stock market (IDX) analysis. Built for humans and AI agents."
+    },
+    {
+     "full_name": "xiongcp/stock-skill",
+     "stars": 105,
+     "pushed_at": "2026-11-02",
+     "description": "AI agent skill (Claude Code / Codex) for deterministic K-line structure analysis of A-shares, HK & US stocks: triple-barrier risk plans, 15-"
+    },
+    {
+     "full_name": "surajrimal07/NepseAPI-Unofficial",
+     "stars": 64,
+     "pushed_at": "2026-11-05",
+     "description": "Unlock Nepal Stock Exchange (NEPSE) data with this powerful unofficial API. Features REST, WebSocket, and a first-of-its-kind Model Context "
+    },
+    {
+     "full_name": "saipradeep77964/jarvis-ai-assistant",
+     "stars": 43,
+     "pushed_at": "2026-10-23",
+     "description": "Free AI Personal Assistant with Voice Control, Stock Market Analysis & Holographic HUD"
+    },
+    {
+     "full_name": "Weaxs/stock-analysis-plugin",
+     "stars": 38,
+     "pushed_at": "2026-11-03",
+     "description": "Multi-market stock analysis, screening & backtesting plugin for AI agents — 39 tools + 20 strategy skills across A/HK/US/JP/KR/TW markets, w"
+    },
+    {
+     "full_name": "mphinance/momentum-mcp",
+     "stars": 31,
+     "pushed_at": "2026-10-21",
+     "description": "⚡ Give your AI agent a Bloomberg terminal. MCP server for stock screening, OHLCV data, technical analysis, chart generation, and financial n"
+    },
+    {
+     "full_name": "bobby1129/stock-analysis-pro",
+     "stars": 25,
+     "pushed_at": "2026-11-05",
+     "description": "A flexible stock analysis skill for personal investors. Optimized for AI Agent integration"
+    }
+   ]
+  },
+  {
+   "query": "A股 量化 pushed:>2026-10-01",
+   "total_count": 261,
+   "top": [
+    {
+     "full_name": "wbh604/UZI-Skill",
+     "stars": 7543,
+     "pushed_at": "2026-11-05",
+     "description": "冰冷的钱就这样流进我温暖的口袋-游资（UZI）Skills — 让我们欢迎，股海贼王！66位投资大佬帮你看盘 · 22维数据 × 180条量化规则 × 17种机构分析方法 · A股/港股/美股 "
+    },
+    {
+     "full_name": "shy3130/tick-stock-panel",
+     "stars": 7208,
+     "pushed_at": "2026-11-06",
+     "description": "TSP自托管、零运维的 A 股「自建策略 + 监控 + 回测」量化工作台  | LLM能力驱使策略定制+个股分析+复盘 | 自由接入第三方数据源与个性化扩展数据 | 个人开源"
+    },
+    {
+     "full_name": "1nchaos/adata",
+     "stars": 5363,
+     "pushed_at": "2026-10-31",
+     "description": "免费开源A股量化交易数据库； 专注A股，专注量化，向阳而生； 开放、纯净、持续、为Ai(爱)发电。为个人量化交易而生，保卫3000点，珍惜底部机会......【股票数据，股票行情数据，股票量化数据，股票交易数据，k线行情数据，股票概念数据，股票数据接口，行情数据接口，量化交易数据"
+    },
+    {
+     "full_name": "hello245m/free-stockdb",
+     "stars": 3134,
+     "pushed_at": "2026-10-12",
+     "description": "面向 A 股日K、分钟K与ETF分钟数据的本地量化引擎，集成增量同步、本地缓存、复权、批量查询、回测与指标计算。"
+    },
+    {
+     "full_name": "openctp/openctp",
+     "stars": 2980,
+     "pushed_at": "2026-10-07",
+     "description": "openctp提供CTP股票期权、中泰证券XTP、华鑫证券奇点TORA、东方证券OST、东方财富证券EMT、盈透证券TWS、易盛TAP、量投QDP等各通道的CTPAPI兼容接口，CTP程序可以无缝对接各股票柜台。openctp也提供了一套基于TTS交易系统的模拟环境，同样提供了C"
+    },
+    {
+     "full_name": "oficcejo/aiagents-stock",
+     "stars": 2070,
+     "pushed_at": "2026-10-10",
+     "description": "复合多AI智能体股票团队分析盯盘系统，基于多个ai智能体，模拟证券分析师团队分析过程，提供全方位的股票投资分析和决策建议，新增游资龙虎榜跟踪分析、板块预警轮动分析，支持批量多线程分析，支持实时监测关键点位，发送警报信息，预留miniqmt接口，支持量化交易，真正做到了ai帮你来炒"
+    },
+    {
+     "full_name": "qusong0627/QuantMind",
+     "stars": 1881,
+     "pushed_at": "2026-11-06",
+     "description": " QuantMind（量化大脑）开源版是一款面向个人开发者与投研团队的 AI 原生多市场量化交易平台。深度集成微软 Qlib、RD-Agent 因子演化与 QuantBot全能工作台，提供从 300+ 维因子挖掘、13 种机器学习与深度学习模型工场、Qlib 高性能回测、截面批量"
+    },
+    {
+     "full_name": "jundizhou/easy-stock",
+     "stars": 1765,
+     "pushed_at": "2026-11-05",
+     "description": "A股行情分析与AI智能投研智能体：股票分析、量化交易分析、盘后复盘桌面工作台——easy stock"
+    },
+    {
+     "full_name": "khscience/OSkhQuant",
+     "stars": 1630,
+     "pushed_at": "2026-10-19",
+     "description": "看海量化回测平台 khQuant 开源版 V2.2：免费开源的 A 股量化回测桌面软件。不用开户、不用装 QMT，BaoStock / Tushare 下载数据到本地 DuckDB，Python 写策略，一键出回测报告。"
+    },
+    {
+     "full_name": "rootSunc/CNEquity",
+     "stars": 968,
+     "pushed_at": "2026-11-06",
+     "description": "开源中国股市（A股）本地数据湖：沪深股票行情、A股股票数据与金融数据，面向量化研究、量化交易与回测，含财务数据、期货数据、资金流向、公告、指数行业与宏观。55 个日更数据集，复权与历史成分内置，行级溯源、PIT，MCP 原生。免注册、免 Token，自托管。Open-source"
+    },
+    {
+     "full_name": "ling-0729/KHunter",
+     "stars": 706,
+     "pushed_at": "2026-10-07",
+     "description": "KHunter 是一套开箱即用的A股量化交易系统，集数据管理、策略选股、择时交易、风险控制、回测验证于一体，为个人投资者提供从数据到交易的全流程量化解决方案。"
+    },
+    {
+     "full_name": "electkismet/eltdx",
+     "stars": 687,
+     "pushed_at": "2026-11-06",
+     "description": "通达信A股行情协议 Python 库，MCP，支持快照、分时、逐笔、K 线、集合竞价、特殊指标等接口。适合作为量化数据源，支持其他语言通过HTTP或WebSocket调用"
+    }
+   ]
+  }
+ ]
+}
