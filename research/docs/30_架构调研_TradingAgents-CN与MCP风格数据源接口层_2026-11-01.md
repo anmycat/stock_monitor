@@ -6,7 +6,7 @@
 ## 调研 A：tradingagents-cn
 
 **A1 基本面**（源：GitHub API `/repos/hsliuping/TradingAgents-CN`）
-仓库地址与题目一致：https://github.com/hsliuping/TradingAgents-CN ｜ **32,739 star / 6,817 fork**（官网宣传页写 65,391，与 API 不符，勿引用）｜ 最近推送 2026-09-22，默认分支 `v3.0`，无 GitHub Release。语言：Python 8.66MB(81%)、Vue 1.05MB、PowerShell 442KB、TypeScript 197KB、Shell 127KB；v3.0 形态 FastAPI+Vue3+MongoDB/Redis，社区版/Pro 版分裂。
+仓库地址与题目一致：https://github.com/hsliuping/TradingAgents-CN ｜ **32,739 star / 6,817 fork**（官网宣传页写 65,391，与 API 不符，勿引用）｜ 最近推送 2026-09-22，默认分支 `v3.0`，无 GitHub Release。（**2026-11-06 GitHub REST API 复测维持**：32,819★ / 6,841 fork，pushed_at 仍为 09-22，仍无 release，结论不变；见 `docs/32` §4.1 与 `docs/33` §6）语言：Python 8.66MB(81%)、Vue 1.05MB、PowerShell 442KB、TypeScript 197KB、Shell 127KB；v3.0 形态 FastAPI+Vue3+MongoDB/Redis，社区版/Pro 版分裂。
 **许可为混合授权（关键风险）**：`tradingagents/`、`cli/`、`docs/`、`tests/` = Apache-2.0 可自由用；`app/`(FastAPI)、`frontend/`(Vue3) = 专有 Source-Available，**禁止再分发与商业使用**。API 报 `NOASSERTION` 是因识别不了混合许可。
 
 **A2 agent 编排**（源：`tradingagents/graph/setup.py`、`agents/` 树）——LangGraph `StateGraph`，边全在 setup.py 显式声明（267 行，可读性好，值得抄）：
