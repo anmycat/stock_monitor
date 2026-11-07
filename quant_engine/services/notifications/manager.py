@@ -116,7 +116,11 @@ class NotificationManager:
         self._max_per_minute = getattr(settings, 'NOTIFY_MAX_PER_MINUTE', 18)
         self._window_start = time.monotonic()
         self._window_count = 0
-        self._last_sent = 0.0
+        # D68：用 -inf 表示「从未发送过」。原值 0.0 隐含假设 monotonic 起点 ≥
+        # _min_interval，但容器/沙箱/新启动进程的 CLOCK_MONOTONIC 可能从 0 起，
+        # 导致进程启动后 3s 内的第一条消息被 `now - 0 >= 3` 误判为「间隔未到」
+        # 而进缓冲（ECS 上就是首条告警不即时）；测试则随导入耗时忽冷忽热地 flaky。
+        self._last_sent = float('-inf')
         self._lock = threading.Lock()
         # 聚合缓冲（限流期暂存，flush_signals 合并发出）
         self._pending_signals: list = []
@@ -165,7 +169,7 @@ class NotificationManager:
         self._last_sent = now
 
     def _last_sent_at(self) -> float:
-        return getattr(self, '_last_sent', 0.0)
+        return getattr(self, '_last_sent', float('-inf'))
 
     def send(self, title: str, content: str) -> bool:
         """发送到所有已配置渠道，任一成功返回 True"""

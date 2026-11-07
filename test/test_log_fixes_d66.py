@@ -98,6 +98,33 @@ class TestNotifyThrottleFailureStorm(unittest.TestCase):
                          '连续失败时最小间隔必须仍然生效')
         self.assertEqual(len(self.mgr._pending_texts), 12)
 
+    def test_last_sent_means_never_sent(self):
+        """D68：初值必须表达「从未发送过」，不能依赖 monotonic 时钟起点。"""
+        import math
+        last = NotificationManager()._last_sent
+        self.assertTrue(math.isinf(last))
+        self.assertLess(last, 0)
+
+    def test_first_message_not_throttled_when_monotonic_starts_near_zero(self):
+        """D68：容器/沙箱/刚重启进程 CLOCK_MONOTONIC 从 0 起时，首条消息仍须即时发。
+
+        回归背景：原 `_last_sent = 0.0`，判断 `now - 0 >= 3`；若进程启动 3s 内
+        收到第一条告警（或热启动导入快），会被误判「间隔未到」而进聚合缓冲。
+        该缺陷让部署门禁随导入耗时忽冷忽热地 flaky（冷启动 >3s 通过、热启动 <3s 失败）。
+        """
+        ok_channel = _FakeChannel(ok=True)
+        with mock.patch(
+                'quant_engine.services.notifications.manager.time.monotonic',
+                return_value=1.0):
+            mgr = NotificationManager()
+            mgr._min_interval = 3.0
+            mgr._max_per_minute = 18
+            mgr.notifiers = [ok_channel]
+            ok = mgr.send_custom_message('首条告警', '内容')
+        self.assertTrue(ok)
+        self.assertEqual(ok_channel.calls, 1)
+        self.assertEqual(len(mgr._pending_texts), 0)
+
     def test_channel_backoff_buffers_everything(self):
         ch = _FakeChannel(ok=True)
         ch.rate_limited_until = __import__('time').monotonic() + 60
