@@ -84,6 +84,9 @@ class ReportSection(BaseModel):
     # 分区级补充文本（AI 叙述段落）
     body: str = ""
     collapsed: bool = False  # 前端默认展开
+    # I-09：结论证据血缘（源 / 数据截至 / 新鲜度 / 是否降级）。
+    # 只读展示，模型不得据此编造分值；空列表兼容历史日报。
+    evidence: list[dict] = Field(default_factory=list)
 
 
 class DailyReport(BaseModel):

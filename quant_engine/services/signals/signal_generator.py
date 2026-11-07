@@ -32,6 +32,15 @@ class SignalGenerator:
         self.current_positions: dict[str, float] = {}
         self.equity_curve: list[float] = []
         self.trades: list[dict] = []
+        # I-05：资金流 provider 可注入（回归脚本不再需要 /tmp wrapper 去 patch 类方法）
+        self._capital_flow_provider = None
+
+    def set_capital_flow_provider(self, provider) -> None:
+        """注入资金流 provider（需实现 ``get_capital_flow(code, days)``）。
+
+        缺省 None → 走 ``EastMoneySource``，生产行为不变。
+        """
+        self._capital_flow_provider = provider
 
     @staticmethod
     def _get_strategy_performance() -> dict:
@@ -123,6 +132,8 @@ class SignalGenerator:
         signal = self._dispatch_with_intraday(df, code, name, market)
         if signal is None:
             return None
+        # I-06：把日K 血缘标签透出成只读证据字段（不参与任何评分/风控计算）
+        self._fill_data_provenance(signal, df)
         risk_check = self.risk_manager.check_signal(signal, self.current_positions)
         if not risk_check['approved']:
             logger.info(f"Signal rejected: {risk_check['reason']}")
@@ -279,6 +290,25 @@ class SignalGenerator:
                 out[code] = row
         return out
 
+    def _fill_data_provenance(self, signal: Signal, df,
+                              session: str | None = None) -> None:
+        """I-06/I-09：把 D66 的血缘标签透出为信号卡可读的只读字段。
+
+        **严格只读**：这四个字段不进入评分、风控、Kelly、通知决策的任何路径，
+        只用于 API/前端/日报展示「数据截至哪一天、是否复核过、整帧是否健康」。
+        D64 的 current_price/price_ref 也在此一并补上透出（此前只落 Signal、未进 API）。
+        """
+        try:
+            from ...utils.kline_provenance import evidence
+            ev = evidence(df, session)
+            signal.data_as_of = ev.get('data_as_of')
+            signal.data_source = ev.get('data_source')
+            signal.freshness = ev.get('freshness')
+            signal.cross_check = ev.get('cross_check')
+            signal.frame_status = ev.get('frame_status')
+        except Exception as e:  # noqa: BLE001 标签缺失是历史路径常态，不影响信号
+            logger.debug(f"[I-06] provenance unavailable for {signal.code}: {e}")
+
     def _fill_current_price(self, signal: Signal) -> None:
         """D64：填充「信号现价」与「日K参考价」
 
@@ -321,14 +351,17 @@ class SignalGenerator:
         同时避免连续扫描反复冲击。
         """
         try:
-            from ...data.sources.eastmoney import EastMoneySource
+            provider = self._capital_flow_provider
+            if provider is None:
+                from ...data.sources.eastmoney import EastMoneySource
+                provider = EastMoneySource
             today = datetime.now().strftime('%Y%m%d')
             cache_key = f'capflow:{signal.code}:{today}'
             cached = self.datacenter.cache.get(cache_key)
             if cached is not None:
                 signal.capital_flow_5d = cached if cached != '' else None
                 return
-            flow = EastMoneySource.get_capital_flow(signal.code, days=5)
+            flow = provider.get_capital_flow(signal.code, days=5)
             signal.capital_flow_5d = flow
             # 成功 2 天 / 失败 10 分钟负缓存（空串哨兵）
             self.datacenter.cache.set(
@@ -445,6 +478,15 @@ def signal_to_api_dict(s: Signal) -> dict:
         'kelly_confidence': s.kelly_confidence,
         'kelly_source': s.kelly_source,
         'capital_flow_5d': s.capital_flow_5d,
+        # D64 现价/参考价（此前只落 Signal 未透出，本次随 I-06 一并补齐）
+        'current_price': s.current_price,
+        'price_ref': s.price_ref,
+        # I-06 只读血缘证据（不参与评分）
+        'data_as_of': s.data_as_of,
+        'data_source': s.data_source,
+        'freshness': s.freshness,
+        'cross_check': s.cross_check,
+        'frame_status': s.frame_status,
     }
 
 

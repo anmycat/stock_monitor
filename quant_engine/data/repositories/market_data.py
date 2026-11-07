@@ -46,6 +46,13 @@ class MarketDataRepository:
         self.source = CompositeSource()
         self.source.datacenter = self  # 设置引用（CompositeSource 缓存写入用）
         self.cache.connect()
+        # I-02：源健康状态跨重启保留（只在此处 attach 一次，避免每次请求
+        # 从 Redis 恢复旧状态覆盖本进程刚刚更新的内存态）
+        try:
+            from ..source_manager import source_manager
+            source_manager.attach_cache(self.cache)
+        except Exception as e:  # noqa: BLE001 旁路恢复失败不得影响启动
+            logger.debug(f"[I-02] source state attach skipped: {e}")
         self._validation_errors = []
         # 线程锁保护共享缓存
         self._cache_lock = threading.Lock()
@@ -115,7 +122,7 @@ class MarketDataRepository:
         cache_key = f"daily:{session}:{code}:{days}"
         cached = self.cache.get(cache_key)
         if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"daily:{code}"):
-            return self._restore_daily_tags(df, code)
+            return self._restore_daily_tags(df, code, session)
         return self._merger().run(
             cache_key, lambda: self._fetch_daily_data(code, days, cache_key, session))
 
@@ -128,12 +135,22 @@ class MarketDataRepository:
             return 'legacy'
         return expected_session()
 
-    def _restore_daily_tags(self, df: pd.DataFrame, code: str) -> pd.DataFrame:
-        """缓存命中路径也要有标签（缓存里存不了 attrs，需重建）"""
+    def _restore_daily_tags(self, df: pd.DataFrame, code: str,
+                            session: str | None = None) -> pd.DataFrame:
+        """缓存命中路径也要有标签（缓存里存不了 attrs，需重建）。"""
+        from ...utils import kline_frame
         from ...utils import kline_provenance as prov
         from .. import daily_guard
 
+        session = session or self._daily_session()
         prov.tag(df, 'cache')
+        # I-04：缓存命中同样做整帧校验，避免异常帧借缓存「洗白」
+        try:
+            if bool(get_settings().KLINE_FRAME_VALIDATION):
+                kline_frame.annotate(df, session, cache=getattr(self, 'cache', None),
+                                     code=code)
+        except Exception as e:  # noqa: BLE001 标注失败不得影响取数
+            logger.debug(f"[I-04] frame annotate on cache hit failed: {e}")
         # 缓存命中也登记封存候选：worker 重启/多进程时保证当日 bar 不漏
         try:
             if bool(get_settings().KLINE_EOD_SEAL):
@@ -141,6 +158,28 @@ class MarketDataRepository:
         except Exception as e:  # noqa: BLE001 封存收集异常不得影响取数
             logger.debug(f"[D66] seal collect on cache hit failed: {e}")
         return df
+
+    def invalidate_daily_cache(self, code: str, session: str | None = None) -> int:
+        """I-04：数据修补后统一失效该票日K缓存（含历史 session 残留）。
+
+        外部修复历史涨跌停/复权/缺失 bar 后必须调用，否则新数据要等
+        TTL 3600 才生效。返回删除的 key 数。
+        """
+        pattern = (f'daily:{session}:{code}:*' if session
+                   else f'daily:*:{code}:*')
+        keys = self.cache.keys(pattern)
+        # 二次精确过滤：不依赖缓存后端的 glob 语义（Redis SCAN / 内存替身
+        # 行为可能不同），避免误删别的标的缓存。
+        keys = [k for k in keys
+                if k.startswith('daily:') and f':{code}:' in k
+                and (not session or k.startswith(f'daily:{session}:'))]
+        n = 0
+        for key in keys:
+            if self.cache.delete(key):
+                n += 1
+        if n:
+            logger.info(f"[I-04] 失效日K缓存 {code} {n} 个 key（{pattern}）")
+        return n
 
     def _fetch_daily_data(self, code: str, days: int, cache_key: str,
                           session: str | None = None) -> pd.DataFrame:
@@ -154,6 +193,17 @@ class MarketDataRepository:
 
         # ① 血缘标签（只写 attrs，不动任何列 → 趋势/指标零影响）
         prov.tag(df, prov.read(df).get('source') or 'composite')
+
+        # ①b I-04 整帧完整性校验：逐根查交易日/单调/价格，结论只写 attrs。
+        #     DSA #2389 的关键点是「因子消费整份序列，混入一个节假日 bar 即整帧不可信」，
+        #     D66 的 assess() 只判末根，补上这一层。
+        try:
+            if bool(get_settings().KLINE_FRAME_VALIDATION):
+                from ...utils import kline_frame
+                kline_frame.annotate(
+                    df, session, cache=getattr(self, 'cache', None), code=code)
+        except Exception as e:  # noqa: BLE001 标注失败不得影响取数
+            logger.debug(f"[I-04] frame annotate skipped for {code}: {e}")
 
         # ② 针对性跨源复核：仅「疑似降级」时打第二源，正常路径零额外请求
         try:
@@ -186,6 +236,18 @@ class MarketDataRepository:
                         f"确认为已完成的上一交易日 bar（非 {session} 数据）")
             except Exception as e:  # noqa: BLE001
                 logger.debug(f"[D66] seal verify skipped for {code}: {e}")
+        # ④b I-04 拒绝层（默认关闭）：只在开关显式开启时生效。
+        #     开启会改变信号，必须先做 D41 双跑 + 半年窗口复验 + 用户裁定；
+        #     关闭时是纯 no-op，D41 零漂移。
+        try:
+            from ...utils.kline_frame import should_reject
+            if should_reject(df, session):
+                logger.warning(
+                    f"[I-04][拒绝层] {code} 整帧异常且非当日数据 → 不出厂 "
+                    f"({prov.describe(df, session)})")
+                return pd.DataFrame()
+        except Exception as e:  # noqa: BLE001 拒绝层异常时保守放行
+            logger.debug(f"[I-04] reject check skipped for {code}: {e}")
         self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
         return df
 

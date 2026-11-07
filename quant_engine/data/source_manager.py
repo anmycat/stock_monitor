@@ -7,6 +7,28 @@ from collections.abc import Callable
 
 from loguru import logger
 
+# I-05：网络不可达/超时类失败属于「再试一次大概率还是失败」，盲重试只会
+# 把单次 10s 放大成 30s 并拖垮全市场扫描。用异常类名 + 消息特征识别，
+# 不硬依赖 requests / urllib3（各源实现可能换库）。
+_NETWORK_ERROR_NAMES = frozenset({
+    'TimeoutError', 'Timeout', 'ConnectTimeout', 'ReadTimeout',
+    'RemoteDisconnected', 'ConnectionError', 'ProxyError',
+    'ConnectionAbortedError', 'ConnectionResetError', 'socket.timeout',
+})
+_NETWORK_ERROR_TEXT = (
+    'timed out', 'timeout', 'remote end closed', 'no route to host',
+    'connection refused', 'network is unreachable', 'max retries exceeded',
+)
+
+
+def classify_failure(exc: BaseException) -> tuple[str, bool]:
+    """返回 ``(kind, non_retriable)``；非网络类异常保持原有重试语义。"""
+    name = type(exc).__name__
+    text = str(exc).lower()
+    if name in _NETWORK_ERROR_NAMES or any(t in text for t in _NETWORK_ERROR_TEXT):
+        return 'timeout', True
+    return 'error', False
+
 
 class SourceStatus:
     """数据源状态"""
@@ -21,48 +43,91 @@ class SourceStatus:
         self.cooldown_until = 0
         self.quarantined_until = 0  # 熔断截止时间（D53）
         self._cooldown_streak = 0  # 连续进入冷却的轮次
+        # I-05：失败路径结构化（供能力中心 I-02 与超时抑制使用）
+        self.timeout_streak = 0
+        self.suppress_until = 0.0
+        self.last_error_kind: str | None = None
+        self.last_error_message: str | None = None
+        self.last_empty_reason: str | None = None
+        self.missing_codes: list[str] = []
+        self.last_success_time = 0.0
+        self.fallback_count = 0
+        self.on_state_change = None  # 由 SourceManager 注入（节流持久化）
 
     def is_available(self, cooldown_seconds: int = 300) -> bool:
         """检查数据源是否可用（冷却中或熔断中均不可用）"""
         now = time.time()
         if now < self.quarantined_until:
             return False
+        if now < self.suppress_until:
+            return False
         return not now < self.cooldown_until
+
+    def _changed(self) -> None:
+        cb = self.on_state_change
+        if cb is not None:
+            try:
+                cb()
+            except Exception:  # noqa: S110 状态持久化是旁路，不得影响取数
+                pass
 
     def record_success(self):
         """记录成功请求"""
+        had_failure = bool(self.error_count or self.empty_count or self.timeout_streak)
         self.request_count += 1
         self.success_count += 1
         self.last_request_time = time.time()
+        self.last_success_time = time.time()
         self.error_count = 0
         self.empty_count = 0
         self._cooldown_streak = 0
+        self.timeout_streak = 0
+        self.suppress_until = 0.0
+        self.last_error_kind = None
+        self.last_error_message = None
+        if had_failure:
+            self._changed()
 
-    def record_empty(self, empty_threshold: int = 10):
-        """记录空结果（D53）
+    def record_empty(self, empty_threshold: int = 10, *,
+                     reason: str = 'no_data', missing_codes: list | None = None):
+        """记录空结果（D53 / I-05）
 
         空结果≠源故障：单只票无数据（新股/停牌/腾讯 501）是常态。原实现把
         空 DataFrame 当异常抛出 → 计入 error_count → 连续 3 次即让整个源
         进入 5 分钟冷却，主源（腾讯）被无谓误伤。
 
-        现在空结果单独计数，连续 empty_threshold 次才升级为故障冷却。
+        现在空结果单独计数，连续 empty_threshold 次才升级为故障冷却；
+        ``reason`` / ``missing_codes`` 让「该票无数据」与「源挂了」可区分。
         """
         self.empty_count += 1
         self.request_count += 1
         self.last_request_time = time.time()
+        self.last_empty_reason = reason
+        self.missing_codes = list(missing_codes or [])
         if self.empty_count >= empty_threshold:
             self.error_count += 1
             self.empty_count = 0
             self.cooldown_until = time.time() + 300
+            self.last_error_kind = 'empty_threshold'
             logger.warning(
                 f"Source {self.name} entering cooldown (连续 {empty_threshold} 次空结果)")
+            self._changed()
 
-    def record_error(self, cooldown_seconds: int = 300, quarantine_seconds: int = 1800):
-        """记录错误，进入冷却；连续多轮冷却未恢复则熔断"""
+    def record_error(self, cooldown_seconds: int = 300, quarantine_seconds: int = 1800,
+                     *, kind: str = 'error', message: str = ''):
+        """记录错误，进入冷却；连续多轮冷却未恢复则熔断
+
+        ``kind`` / ``message`` 是 I-05 新增的结构化诊断（keyword-only，
+        保持原有位置参数签名不变）。
+        """
         self.error_count += 1
         self.empty_count = 0
         self.last_error_time = time.time()
         self.last_request_time = time.time()
+        self.last_error_kind = kind
+        self.last_error_message = str(message)[:200] or None
+        if kind == 'timeout':
+            self.timeout_streak += 1
         if self.error_count >= 3:
             self.cooldown_until = time.time() + cooldown_seconds
             self._cooldown_streak += 1
@@ -76,6 +141,7 @@ class SourceStatus:
                     "（连续 3 轮冷却未恢复）")
             else:
                 logger.warning(f"Source {self.name} entering cooldown for {cooldown_seconds}s")
+        self._changed()
 
     def reset(self):
         """重置状态"""
@@ -84,6 +150,11 @@ class SourceStatus:
         self.cooldown_until = 0
         self.quarantined_until = 0
         self._cooldown_streak = 0
+        self.timeout_streak = 0
+        self.suppress_until = 0.0
+        self.last_error_kind = None
+        self.last_error_message = None
+        self._changed()
 
 
 class SourceManager:
@@ -98,10 +169,75 @@ class SourceManager:
         # 快照缓存（最后良好回退）
         self._snapshot_cache: dict[str, dict] = {}
         self.max_snapshot_age = 86400  # 快照最大保留24小时
+        # I-02/I-05：熔断状态跨重启保留 + 降级事件留痕（旁路，Redis 不可用时全降级为内存）
+        self._state_cache = None
+        self._last_persist = 0.0
+        self.last_fallback: dict[str, dict] = {}
 
     def register_source(self, name: str):
         """注册数据源"""
-        self.sources[name] = SourceStatus(name)
+        status = SourceStatus(name)
+        status.on_state_change = self._persist_state_throttled
+        self.sources[name] = status
+
+    def attach_cache(self, cache) -> None:
+        """注入 RedisCache 以持久化熔断状态（I-02）；启动期调用一次。"""
+        self._state_cache = cache
+        self._restore_state()
+
+    # Redis key 固定，三服务（api/worker/beat）共享同一份源健康视图
+    _STATE_KEY = 'capability:source_state'
+
+    def _persist_state_throttled(self) -> None:
+        """状态跃迁时写 Redis，最多每 5 秒一次，避免全市场扫描刷 Redis。"""
+        now = time.monotonic()
+        if now - self._last_persist < 5.0:
+            return
+        self._last_persist = now
+        if self._state_cache is None:
+            return
+        try:
+            payload = {}
+            for name, s in self.sources.items():
+                payload[name] = {
+                    'error_count': s.error_count,
+                    'cooldown_until': s.cooldown_until,
+                    'quarantined_until': s.quarantined_until,
+                    'cooldown_streak': s._cooldown_streak,
+                    'last_error_kind': s.last_error_kind,
+                    'last_error_message': s.last_error_message,
+                }
+            self._state_cache.set(self._STATE_KEY, payload, ttl=3600)
+        except Exception as e:
+            logger.debug(f"[I-02] source state persist failed: {e}")
+
+    def _restore_state(self) -> None:
+        """重启后恢复熔断/冷却状态（只恢复未来仍有效的时间窗）。"""
+        if self._state_cache is None:
+            return
+        try:
+            saved = self._state_cache.get(self._STATE_KEY)
+            if not isinstance(saved, dict):
+                return
+            now = time.time()
+            restored = 0
+            for name, row in saved.items():
+                s = self.sources.get(name)
+                if s is None or not isinstance(row, dict):
+                    continue
+                if float(row.get('quarantined_until') or 0) > now:
+                    s.quarantined_until = float(row['quarantined_until'])
+                    restored += 1
+                if float(row.get('cooldown_until') or 0) > now:
+                    s.cooldown_until = float(row['cooldown_until'])
+                s.error_count = int(row.get('error_count') or 0)
+                s._cooldown_streak = int(row.get('cooldown_streak') or 0)
+                s.last_error_kind = row.get('last_error_kind')
+                s.last_error_message = row.get('last_error_message')
+            if restored:
+                logger.info(f"[I-02] 恢复 {restored} 个数据源的熔断状态（跨重启保留）")
+        except Exception as e:
+            logger.debug(f"[I-02] source state restore failed: {e}")
 
     def get_available_source(self, preferred: str | None = None) -> str | None:
         """获取可用的数据源"""
@@ -187,22 +323,72 @@ class SourceManager:
                     if hasattr(result, "empty") and result.empty:
                         # D53：空结果不是源故障（单票无数据是常态）——
                         # 不重试、不计错误，只记空结果计数；继续下一个源。
-                        source.record_empty()
+                        # I-05：带 reason / missing_codes，区分「该票无数据」与「源挂了」。
+                        code_hint = str(args[0]) if args else None
+                        source.record_empty(
+                            reason='no_data',
+                            missing_codes=[code_hint] if code_hint else None)
                         return None
                     source.record_success()
                     return result
-            except TimeoutError as e:
-                logger.warning(f"Source {source_name} timeout (attempt {attempt + 1}/{max_retries}): {e}")
-                source.record_error(self.cooldown_seconds)
-                if attempt < max_retries - 1:
-                    time.sleep(1)
             except Exception as e:
+                kind, non_retriable = classify_failure(e)
+                source.record_error(self.cooldown_seconds, kind=kind, message=str(e))
+                if non_retriable:
+                    # I-05：超时/连接类失败**不重试**（原本每次 ~10s × 2 重试，
+                    # 全市场扫描被单个不可达源拖垮），立即让下一个源接手。
+                    logger.warning(
+                        f"Source {source_name} {kind} (non-retriable, "
+                        f"attempt {attempt + 1}/{max_retries}): {e}")
+                    try:
+                        from ..config import get_settings
+                        cfg = get_settings()
+                        if (bool(cfg.SOURCE_TIMEOUT_SUPPRESSION)
+                                and source.timeout_streak
+                                >= int(cfg.SOURCE_TIMEOUT_SUPPRESS_STREAK)):
+                            source.suppress_until = (
+                                time.time() + float(cfg.SOURCE_TIMEOUT_SUPPRESS_SECONDS))
+                            logger.warning(
+                                f"Source {source_name} suppressed for "
+                                f"{cfg.SOURCE_TIMEOUT_SUPPRESS_SECONDS}s after "
+                                f"{source.timeout_streak} consecutive {kind} failures")
+                    except Exception:  # noqa: S110 配置缺失时退化为「只不重试」
+                        pass
+                    break
                 logger.error(f"Source {source_name} error: {e}")
-                source.record_error(self.cooldown_seconds)
                 if attempt < max_retries - 1:
                     time.sleep(1)
 
         return None
+
+    def _record_fallback(self, method_name: str, failed: list[str],
+                         landed: str) -> None:
+        """I-02：降级事件结构化留痕（内存 + 节流写 Redis）。"""
+        event = {
+            'dataset': method_name,
+            'from': failed,
+            'to': landed,
+            'fallbackFrom': failed,
+            'reason': 'source_unavailable_or_empty',
+            'as_of': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'count': int((self.last_fallback.get(method_name) or {}).get('count', 0)) + 1,
+        }
+        self.last_fallback[method_name] = event
+        s = self.sources.get(landed)
+        if s is not None:
+            s.fallback_count += 1
+        logger.warning(
+            f"[I-02][降级] {method_name}: {' → '.join(failed)} → {landed} "
+            f"(本进程第 {event['count']} 次)")
+        # 节流：全市场扫描可能高频降级，10s 内只落一次 Redis
+        now = time.monotonic()
+        if self._state_cache is not None and now - self._last_persist >= 10.0:
+            self._last_persist = now
+            try:
+                self._state_cache.set(
+                    f'capability:fallback:{method_name}', event, ttl=3600)
+            except Exception as e:
+                logger.debug(f"[I-02] fallback persist failed: {e}")
 
     def execute_with_fallback(
         self,
@@ -228,6 +414,7 @@ class SourceManager:
             ``return_source=True`` 时返回 ``(result, source_name)``（失败为
             ``(None, None)``）；否则返回结果或 None。
         """
+        failed: list[str] = []
         for source_name in source_priority:
             if source_name not in self.sources:
                 continue
@@ -247,13 +434,18 @@ class SourceManager:
                 skip_delay=skip_delay, **kwargs
             )
             if result is not None:
+                if failed:
+                    self._record_fallback(method_name, failed, source_name)
                 # 成功时缓存快照
                 self._save_snapshot(method_name, args, result)
                 return (result, source_name) if return_source else result
+            failed.append(source_name)
 
         # 所有源失败，尝试回退缓存
         stale = self._load_stale_snapshot(method_name, args)
         if stale is not None:
+            if failed:
+                self._record_fallback(method_name, failed, 'stale_snapshot')
             return (stale, 'stale_snapshot') if return_source else stale
         return (None, None) if return_source else None
 
@@ -271,6 +463,16 @@ class SourceManager:
                 'cooldown_until': source.cooldown_until,
                 'quarantined_until': source.quarantined_until,
                 'quarantined': now < source.quarantined_until,
+                # I-02/I-05 结构化诊断
+                'suppressed': now < source.suppress_until,
+                'suppress_until': source.suppress_until,
+                'timeout_streak': source.timeout_streak,
+                'last_error_kind': source.last_error_kind,
+                'last_error_message': source.last_error_message,
+                'last_empty_reason': source.last_empty_reason,
+                'missing_codes': list(source.missing_codes),
+                'last_success_time': source.last_success_time,
+                'fallback_count': source.fallback_count,
             }
         return report
 

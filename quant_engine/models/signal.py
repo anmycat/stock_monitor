@@ -40,6 +40,13 @@ class Signal(BaseModel):
     # 差值 > 0.5% 说明日K未含当日未完成 bar（降级源特征），卡片需同时给出两者
     current_price: float | None = None
     price_ref: float | None = None
+    # I-06/I-09（2026-11-07）：D66 血缘标签的只读透出。
+    # **不参与任何评分/风控/Kelly/通知决策**，仅供 API / 前端信号卡 / 日报证据展示。
+    data_as_of: str | None = None       # 日K 末根日期（数据实际截止日）
+    data_source: str | None = None      # 产出该日K 的源
+    freshness: str | None = None        # current / lagging / stale / unknown
+    cross_check: str | None = None      # 针对性跨源复核结论（None=未复核）
+    frame_status: str | None = None     # I-04 整帧校验 ok / invalid / unknown
     # Kelly公式字段
     kelly_position: float | None = None        # Kelly建议仓位
     kelly_confidence: float | None = None      # Kelly信心指数(0-100)

@@ -1031,9 +1031,25 @@ class AISummary:
         else:
             recommendation = "🎯 操作建议：震荡行情，建议小仓位参与，快进快出"
 
-        return {
+        local = {
             "market": market_summary, "signals": signal_summary,
             "recommendation": recommendation,
             "full_text": f"{market_summary}\n\n{signal_summary}\n\n{recommendation}",
             "summary_type": "local", "model": "local_rule",
         }
+        # I-11：AI 全失败时**不整块丢弃**，仍推送已完成的客观数据部分结果，
+        # 并显式标注降级（避免用户把规则模板误当成模型研判）。
+        local['partial'] = True
+        local['degraded'] = True
+        local['degraded_reason'] = 'ai_unavailable'
+        local['missing_sections'] = ['ai_narrative']
+        try:
+            from ...config import get_settings
+            notify_partial = bool(get_settings().AI_PARTIAL_NOTIFY)
+        except Exception:
+            notify_partial = True
+        if notify_partial:
+            local['full_text'] += (
+                "\n\n⚠️ 部分结果：AI 叙述生成失败，以上仅为客观数据与规则结论，"
+                "未包含模型研判，请勿视为完整分析。")
+        return local

@@ -49,6 +49,28 @@ class Settings(BaseSettings):
     # ③ 缓存 key 带交易日 + 隔夜 stale 快照作废（防止次日误读昨日数据）
     KLINE_DAY_BOUNDARY_GUARD: bool = True
 
+    # I-04 日K 整帧完整性（2026-11-07）
+    # ① 标注层：逐根校验交易日/单调/价格，结论只写 df.attrs（零信号影响）
+    KLINE_FRAME_VALIDATION: bool = True
+    # ② 拒绝层：**默认关闭**——开启后「整帧异常且非当日」的数据不再出厂，
+    #    会改变信号。启用前必须按项目纪律做 D41 双跑 + 半年窗口复验 + 用户裁定。
+    KLINE_REJECT_STALE_FRAME: bool = False
+
+    # I-05 数据源失败路径效率（2026-11-07）
+    # 超时/连接类失败不再盲重试（原本每次 ~10s × 2 重试拖垮全市场扫描），
+    # 并在抑制窗口内跳过同源重复请求；窗口内其它源仍正常参与 fallback。
+    SOURCE_TIMEOUT_SUPPRESSION: bool = True
+    SOURCE_TIMEOUT_SUPPRESS_SECONDS: float = 20.0
+    # 连续多少次同类超时才进入抑制（避免偶发抖动误伤）
+    SOURCE_TIMEOUT_SUPPRESS_STREAK: int = 2
+
+    # I-11 AI 叙述失败时仍推送已完成的部分结果（附降级标记）
+    AI_PARTIAL_NOTIFY: bool = True
+
+    # I-08 日报「过程纪律」第六维：默认关闭，口径待用户裁定；
+    # 开启后由代码从真实信号/评估历史算分，绝不交给模型发挥（D61 铁律）。
+    DAILY_REPORT_DISCIPLINE_DIMENSION: bool = False
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""

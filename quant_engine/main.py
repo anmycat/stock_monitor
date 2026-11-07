@@ -156,6 +156,16 @@ async def startup_event():
         f"API: {settings.API_HOST}:{settings.API_PORT} "
         f"reload={settings.API_RELOAD} auth={'enabled' if settings.API_AUTH_TOKEN else 'disabled'}"
     )
+    # I-01：鉴权覆盖自检（只读告警，不改变任何路由行为）
+    try:
+        from .api.auth import _warn_no_auth, audit_auth_coverage
+        _warn_no_auth()
+        cov = audit_auth_coverage(app)
+        logger.info(
+            f"[I-01] /api 鉴权覆盖 {cov['checked']} 条，豁免 "
+            f"{len(cov['exempt'])} 条，漏挂 {len(cov['missing'])} 条")
+    except Exception as e:  # noqa: BLE001 自检失败不得阻断启动
+        logger.warning(f"[I-01] auth coverage audit failed: {e}")
 
 
 @app.on_event("shutdown")

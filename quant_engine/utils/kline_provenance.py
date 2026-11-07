@@ -89,8 +89,30 @@ def read(df: pd.DataFrame) -> dict:
         'verified_by': attrs.get('kline_verified_by'),
         'cross_check': attrs.get('kline_cross_check'),
         'fetched_at': attrs.get('kline_fetched_at'),
+        # I-04：整帧健康结论（None=未启用校验或历史路径）
+        'frame_health': attrs.get('kline_frame_health'),
+        'frame_status': attrs.get('kline_frame_status'),
         # source_manager 的旧快照标记，一并暴露方便统一判陈旧
         'stale_snapshot': bool(attrs.get('_stale', False)),
+    }
+
+
+def evidence(df: pd.DataFrame, session: str | None = None) -> dict:
+    """I-06/I-09：把血缘标签收敛成给 API/前端/日报用的只读证据块。
+
+    刻意不包含任何评分字段——下游不得据此改变信号，只用于展示与审计。
+    """
+    meta = read(df)
+    cc = meta['cross_check'] or {}
+    return {
+        'data_as_of': meta['as_of'],
+        'data_source': meta['source'],
+        'freshness': assess(df, session),
+        'cross_check': cc.get('status'),
+        'verified_by': meta['verified_by'],
+        'sealed': meta['sealed'],
+        'frame_status': meta['frame_status'],
+        'fetched_at': meta['fetched_at'],
     }
 
 
@@ -176,6 +198,8 @@ def should_cross_check(df: pd.DataFrame, session: str | None = None,
 def describe(df: pd.DataFrame, session: str | None = None) -> str:
     """一行日志用的可读摘要。"""
     meta = read(df)
+    frame = meta['frame_status'] or 'unchecked'
     return (f"as_of={meta['as_of']} session={session or expected_session()} "
             f"source={meta['source']} freshness={assess(df, session)} "
-            f"sealed={meta['sealed']} verified_by={meta['verified_by']}")
+            f"frame={frame} sealed={meta['sealed']} "
+            f"verified_by={meta['verified_by']}")

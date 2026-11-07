@@ -5,6 +5,7 @@ main.py 经 export_router() 一次性挂载；URL 全集与原 routes.py 36 端�
 from fastapi import APIRouter
 
 from .alerts import router as alerts_router
+from .capability import router as capability_router
 from .etf import router as etf_router
 from .evaluation import router as evaluation_router
 from .market import router as market_router
@@ -23,6 +24,7 @@ def export_router() -> APIRouter:
     """聚合全部域路由（各域 router 自带 /api 前缀，此处不再叠加）"""
     combined = APIRouter()
     combined.include_router(alerts_router)
+    combined.include_router(capability_router)
     combined.include_router(etf_router)
     combined.include_router(evaluation_router)
     combined.include_router(market_router)

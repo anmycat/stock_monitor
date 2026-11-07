@@ -84,6 +84,17 @@
         .sig-meta { display: flex; gap: 10px; font-size: 11px; color: var(--ink-2); margin-top: 4px; }
         .sig-reasons { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
         .sig-reason { font-size: 10px; padding: 1px 6px; background: var(--surface); border-radius: 4px; color: var(--ink-3); }
+        /* I-06：逐标的数据时效（只读证据，不参与评分） */
+        .sig-fresh { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10px; color: var(--ink-3); margin-top: 5px; }
+        .sig-fresh .ok { color: var(--green); }
+        .sig-fresh .warn { color: var(--orange); }
+        .sig-fresh .bad { color: var(--red); }
+        /* I-02：数据源健康只读面板 */
+        .cap-row { display: flex; justify-content: space-between; gap: 8px; font-size: 11px;
+                   padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--ink-2); }
+        .cap-row:last-child { border-bottom: none; }
+        .cap-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+        .cap-warn { font-size: 10px; color: var(--orange); margin-top: 6px; line-height: 1.5; }
 
         /* Alerts */
         .alert-item { padding: 8px 10px; background: var(--bg); border-radius: var(--r-sm); margin-bottom: 5px;
@@ -316,6 +327,11 @@
                 <div class="card-hd"><div class="bar" style="background:var(--purple)"></div><h3>AI总结</h3><span class="badge badge-purple" id="aiModel">--</span></div>
                 <div class="ai-text" id="aiSummary" style="max-height:300px">加载中...</div>
             </div>
+            <!-- I-02：数据源健康只读面板（不触发取数，纯观测） -->
+            <div class="card">
+                <div class="card-hd"><div class="bar" style="background:var(--blue)"></div><h3>数据源健康</h3><span class="badge badge-blue" id="capAsOf">--</span></div>
+                <div id="capBody"><div class="loading">加载中...</div></div>
+            </div>
         </div>
         <!-- COL 2: 交易信号 + 热点板块 + 板块行情 + 市场预警 -->
         <div>
@@ -416,8 +432,27 @@ var marketClosed = false; // 收盘后冻结数据
 var etfData = []; // 缓存ETF数据
 var etfSortKey = 'change_pct'; // 默认按涨跌排序
 var etfSortAsc = false; // 降序
+/* I-01：API Key 只存浏览器本地，绝不写入仓库/静态文件。后端未配 token 时留空即可。 */
+var API_KEY = localStorage.getItem('sm_api_key') || '';
+var _authPrompted = false;
+var _inflight = {}; // 同端点并发去重（tsp v0.3.32 同款「多窗口重复请求去重」思路）
 function $(id) { return document.getElementById(id); }
-function fetchAPI(ep) { return fetch(API+ep).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}); }
+function setApiKey(k) { API_KEY = (k||'').trim(); if (API_KEY) localStorage.setItem('sm_api_key', API_KEY); else localStorage.removeItem('sm_api_key'); return API_KEY; }
+function apiHeaders() { return API_KEY ? {'X-API-Key': API_KEY} : {}; }
+function promptApiKey() {
+    if (_authPrompted) return; _authPrompted = true;
+    var k = window.prompt('该接口需要 API Key（与服务端 .env 的 API_AUTH_TOKEN 一致）。\n仅保存在本浏览器 localStorage，不会上传或写入代码仓库。', API_KEY||'');
+    if (k !== null) { setApiKey(k); if (k.trim()) location.reload(); }
+}
+function fetchAPI(ep) {
+    if (_inflight[ep]) return _inflight[ep];
+    var p = fetch(API+ep, {headers: apiHeaders()})
+        .then(function(r){ if (r.status===401) { promptApiKey(); return null; } return r.ok?r.json():null; })
+        .catch(function(){ return null; })
+        .then(function(d){ delete _inflight[ep]; return d; });
+    _inflight[ep] = p;
+    return p;
+}
 
 function showPage(p) {
     document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active');});
@@ -477,14 +512,54 @@ function loadSignals() {
                 badges += '<span class="sig-badge kelly" style="color:'+(kc>=60?'var(--green)':kc>=30?'var(--orange)':'var(--red)')+'">K'+kc.toFixed(0)+'</span>';
             }
             var reasons = (s.reason||[]).map(function(r){return '<span class="sig-reason">'+r+'</span>';}).join('');
+            /* I-06/I-09：逐标的数据时效 + 证据血缘（只读，不参与评分） */
+            var freshLine = '';
+            if (s.data_as_of) {
+                var fcls = s.freshness==='current'?'ok':(s.freshness==='lagging'?'warn':'bad');
+                var fzh = s.freshness==='current'?'当日':(s.freshness==='lagging'?'隔夜 T-1':'历史');
+                freshLine = '<div class="sig-fresh"><span class="'+fcls+'">数据截至 '+s.data_as_of+' · '+fzh+'</span>';
+                if (s.data_source) freshLine += '<span>源 '+s.data_source+'</span>';
+                if (s.cross_check) freshLine += '<span>复核 '+s.cross_check+'</span>';
+                if (s.frame_status==='invalid') freshLine += '<span class="bad">整帧异常</span>';
+                if (s.current_price!=null && s.price_ref!=null && s.price_ref>0 && Math.abs(s.current_price/s.price_ref-1)>0.005) {
+                    freshLine += '<span class="warn">现价 ¥'+s.current_price.toFixed(2)+' / 基准 ¥'+s.price_ref.toFixed(2)+'</span>';
+                }
+                freshLine += '</div>';
+            }
             h += '<div class="sig-item'+wc+'" onclick="openStockDash(\''+s.code+'\',\''+s.name+'\')">' +
                 '<div class="sig-hd"><div><span class="sig-name">'+s.name+'</span><span class="sig-code">'+s.code+'</span></div>' +
                 '<div class="sig-badges">'+badges+'</div></div>' +
                 '<div class="sig-meta"><span>评分 '+s.score.toFixed(0)+'</span><span>仓位 '+(s.position*100).toFixed(0)+'%</span><span>¥'+s.price.toFixed(2)+'</span>' +
                 (s.kelly_position!=null?'<span>Kelly '+(s.kelly_position*100).toFixed(0)+'%</span>':'') + '</div>' +
+                freshLine +
                 (reasons?'<div class="sig-reasons">'+reasons+'</div>':'') + '</div>';
         });
         el.innerHTML = h;
+    });
+}
+
+/* === I-02 数据源健康（只读观测，不触发取数） === */
+function loadCapability() {
+    fetchAPI('/api/data-capability').then(function(d) {
+        var el = $('capBody');
+        if (!d) { el.innerHTML = '<div class="empty">暂不可用</div>'; return; }
+        $('capAsOf').textContent = (d.as_of||'--').slice(11,16);
+        var h = '';
+        (d.providers||[]).forEach(function(p){
+            var color = p.status==='ok'?'var(--green)':(p.status==='unavailable'?'var(--red)':'var(--orange)');
+            h += '<div class="cap-row"><span><i class="cap-dot" style="background:'+color+'"></i>'+p.name+
+                 '</span><span>'+p.status+' · 成功 '+(p.successCount||0)+'/'+(p.requestCount||0)+'</span></div>';
+        });
+        (d.datasets||[]).forEach(function(ds){
+            if (ds.status==='ok') return;
+            var color = ds.status==='unavailable'?'var(--red)':'var(--orange)';
+            h += '<div class="cap-row"><span><i class="cap-dot" style="background:'+color+'"></i>'+(ds.label||ds.name)+
+                 '</span><span>'+ds.status+'</span></div>';
+        });
+        if (d.warnings && d.warnings.length) {
+            h += '<div class="cap-warn">'+d.warnings.slice(0,4).join('<br>')+'</div>';
+        }
+        el.innerHTML = h || '<div class="empty">全部数据源正常</div>';
     });
 }
 
@@ -742,6 +817,15 @@ function renderReport(r) {
             html += escapeHtml(f.value) + '</div></div>';
         });
         if (sec.body) html += '<div class="rp-body">' + renderMd(sec.body) + '</div>';
+        /* I-09：结论证据血缘（源 / 数据截至 / 是否降级） */
+        if (sec.evidence && sec.evidence.length) {
+            var ev = sec.evidence.map(function(e){
+                if (e.kind==='gate') return '结论由代码计算（非模型生成）';
+                return (e.code?e.code+' ':'')+(e.source||'unknown')+' · 截至 '+(e.as_of||'未知')+
+                       (e.freshness?' · '+e.freshness:'')+(e.degraded?' · 降级':'');
+            }).join(' ｜ ');
+            html += '<div class="sig-fresh" style="margin-top:8px">证据血缘：'+escapeHtml(ev)+'</div>';
+        }
         html += '</div></div>';
     });
     body.innerHTML = html;
@@ -854,7 +938,8 @@ var wsReconnectTimer = null;
 function connectWS() {
     if (ws && ws.readyState <= 1) return;
     var proto = location.protocol==='https:'?'wss:':'ws:';
-    try { ws = new WebSocket(proto+'//'+location.host+'/ws'); } catch(e) { return; }
+    var wsUrl = proto+'//'+location.host+'/ws' + (API_KEY ? '?token='+encodeURIComponent(API_KEY) : '');
+    try { ws = new WebSocket(wsUrl); } catch(e) { return; }
     ws.onopen = function() { if(wsReconnectTimer){clearInterval(wsReconnectTimer);wsReconnectTimer=null;} };
     ws.onmessage = function(e) {
         try {
@@ -928,13 +1013,13 @@ function refreshAll() {
             console.log('🔒 收盘后冻结数据，停止自动刷新');
             // 最后刷新一次确保数据最新
             loadMarket(); loadSignals(); loadAlerts(); loadSectors(); loadHotspots();
-            loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary();
+            loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary(); loadCapability();
         }
         return;
     }
     marketClosed = false;
     loadMarket(); loadSignals(); loadAlerts(); loadSectors(); loadHotspots();
-    loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary();
+    loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary(); loadCapability();
 }
 loadReportDates();
 refreshAll();

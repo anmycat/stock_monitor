@@ -305,6 +305,34 @@ class DailyReportBuilder:
             position_reason=ai_data.get('position_reason', ''),
             ai_data=ai_data)
 
+        # I-08：可选「过程纪律」客观分区（默认关闭，口径待用户裁定）。
+        # 关闭时本段完全跳过 → 日报输出与上一版逐字段一致。
+        try:
+            from ...config import get_settings
+            if bool(get_settings().DAILY_REPORT_DISCIPLINE_DIMENSION):
+                from .discipline import (
+                    build_discipline_metrics,
+                    render_discipline_fields,
+                )
+                sealed: list = []
+                try:
+                    from ...data.store import get_history_store
+                    sealed = get_history_store().list_sealed_dates(limit=5)
+                except Exception as e:  # noqa: BLE001 封存不可读不影响日报
+                    logger.debug(f"[I-08] sealed dates unavailable: {e}")
+                metrics = build_discipline_metrics(signals, sealed_dates=sealed)
+                sections.append(ReportSection(
+                    index=len(sections) + 1,
+                    title='过程纪律（客观指标）',
+                    collapsed=True,
+                    fields=[ReportField(label=k, value=v)
+                            for k, v in render_discipline_fields(metrics)],
+                    evidence=[{'kind': 'discipline', 'source': 'code',
+                               'degraded': False, 'note': metrics['note']}],
+                ))
+        except Exception as e:  # noqa: BLE001 可选维度失败不得影响日报主流程
+            logger.debug(f"[I-08] discipline section skipped: {e}")
+
         return DailyReport(
             date=report_date,
             model=model,
@@ -356,7 +384,8 @@ class DailyReportBuilder:
                 severity=ReportSeverity.INFO))
 
         sections.append(ReportSection(
-            index=1, title='大盘研判', fields=market_fields))
+            index=1, title='大盘研判', fields=market_fields,
+            evidence=self._build_evidence(signals)))
 
         # 二、AI 自定义分区（模型给的板块机会/操作策略等）
         for i, sec in enumerate(ai_data.get('sections') or [], start=2):
@@ -379,6 +408,42 @@ class DailyReportBuilder:
                     severity=ReportSeverity.CRITICAL)]))
 
         return sections
+
+    @staticmethod
+    def _build_evidence(signals) -> list[dict]:
+        """I-09：为大盘研判附上结论证据血缘（只读，模型不得编造分值）。
+
+        D61 铁律「客观与主观分离」在此延续：门控状态/综合分/仓位建议
+        明确标注由代码计算；数据侧标注源、截止日、新鲜度与是否降级。
+        """
+        def field(obj, key, default=None):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
+        out = [{
+            'kind': 'gate', 'source': 'code', 'degraded': False,
+            'note': '门控状态 / 5 维综合分 / 仓位建议由代码从真实数据计算',
+        }]
+        seen = set()
+        for s in signals or []:
+            source = field(s, 'data_source') or 'unknown'
+            as_of = field(s, 'data_as_of')
+            key = (source, as_of)
+            if key in seen or (source == 'unknown' and not as_of):
+                continue
+            seen.add(key)
+            freshness = field(s, 'freshness')
+            out.append({
+                'kind': 'daily_kline',
+                'code': field(s, 'code'),
+                'source': source,
+                'as_of': as_of,
+                'freshness': freshness,
+                'cross_check': field(s, 'cross_check'),
+                'degraded': freshness in ('lagging', 'stale'),
+            })
+        return out[:8]
 
     @staticmethod
     def _render_full_text(sections: list[ReportSection]) -> str:

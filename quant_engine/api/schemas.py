@@ -30,6 +30,15 @@ class SignalResponse(BaseModel):
     kelly_source: str | None = None
     # 资金流字段（近5日主力净流入累计，元；无数据 None）
     capital_flow_5d: float | None = None
+    # D64 现价 / 日K参考价
+    current_price: float | None = None
+    price_ref: float | None = None
+    # I-06 只读血缘证据（全部可选，兼容历史缓存数据）
+    data_as_of: str | None = None
+    data_source: str | None = None
+    freshness: str | None = None
+    cross_check: str | None = None
+    frame_status: str | None = None
 
 
 class SignalHistoryItem(BaseModel):

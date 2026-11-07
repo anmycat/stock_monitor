@@ -38,6 +38,39 @@ def _warn_no_auth():
         _auth_warned = True
 
 
+# I-01：显式豁免清单（健康检查必须匿名——部署脚本、容器探针、负载均衡都依赖它）。
+# 除此之外所有 /api 路由都应挂 verify_api_key；新增路由漏挂会在启动期告警。
+AUTH_EXEMPT_PATHS = frozenset({'/api/health'})
+
+
+def audit_auth_coverage(app) -> dict:
+    """启动期自检：找出未挂鉴权的 /api 路由（只读，不阻断启动）。
+
+    DSA #2304 与 docs/34 I-01 建议「router 级统一挂载」，本项目选择
+    逐路由挂载 + 启动期自检的等价形态：既保留 /api/health 匿名，又能
+    在新增路由忘记挂依赖时立刻暴露，而不是等上线后才发现端点裸奔。
+    """
+    checked = 0
+    missing: list[str] = []
+    for route in getattr(app, 'routes', []):
+        path = getattr(route, 'path', '')
+        if not path.startswith('/api/') or path in AUTH_EXEMPT_PATHS:
+            continue
+        checked += 1
+        dependant = getattr(route, 'dependant', None)
+        calls = [getattr(d, 'call', None)
+                 for d in (getattr(dependant, 'dependencies', None) or [])]
+        raw = getattr(route, 'dependencies', None) or []
+        if verify_api_key not in calls and not any(
+                getattr(d, 'dependency', None) is verify_api_key for d in raw):
+            missing.append(path)
+    if missing:
+        logger.warning(
+            f"🔓 [SECURITY] {len(missing)} 个 /api 路由未挂鉴权: {', '.join(missing)}")
+    return {'checked': checked, 'missing': missing,
+            'exempt': sorted(AUTH_EXEMPT_PATHS)}
+
+
 def verify_api_key(api_key: str = Security(api_key_header)) -> None:
     """
     验证API Key

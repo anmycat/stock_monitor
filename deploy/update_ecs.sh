@@ -6,6 +6,16 @@
 # 认证：显式 -i ~/.ssh/id_ed25519 + BatchMode（agent 不可见时仍走密钥，失败即报错不挂起等密码）
 set -euo pipefail
 
+# I-07：部署门禁默认全跑；应急可 ``bash deploy/update_ecs.sh --skip-tests``
+# （跳过会打印醒目告警，事后必须补跑，见 prd/14 §15）。
+SKIP_TESTS=0
+for arg in "$@"; do
+    case "$arg" in
+        --skip-tests) SKIP_TESTS=1 ;;
+        *) echo "未知参数: $arg（仅支持 --skip-tests）" >&2; exit 2 ;;
+    esac
+done
+
 # ===== 目标主机（凭据与地址一律经环境变量传入，不入库）=====
 # 用法：export DEPLOY_HOST=<host> DEPLOY_PATH=<path> DEPLOY_USER=<user>
 #      未设置 DEPLOY_HOST 时直接报错退出 —— 避免误连默认主机
@@ -46,6 +56,38 @@ if [ -f research/scripts/scan_secrets.py ]; then
     echo "     请先吊销该密钥并清理（详见 research/scripts/scan_secrets.py 输出）"
     exit 1
   fi
+fi
+
+echo "== 0.8/6 部署前本地门禁（compileall + ruff + 全量回归；I-07 固化）"
+if [ "$SKIP_TESTS" -eq 1 ]; then
+    echo "  ⚠️⚠️ --skip-tests 已指定：跳过测试门禁（应急路径，事后必须补跑！）"
+else
+    GATE_PY="coding/.venv/bin/python"
+    [ -x "$GATE_PY" ] || GATE_PY="python3"
+    echo "  [1/3] compileall (quant_engine + test)"
+    "$GATE_PY" -m compileall -q quant_engine test || { echo "  ❌ compileall 失败 —— 部署中止"; exit 1; }
+    echo "  [2/3] ruff (quant_engine + test)"
+    if command -v ruff >/dev/null 2>&1; then
+        ruff check quant_engine test --output-format concise || { echo "  ❌ ruff 失败 —— 部署中止"; exit 1; }
+    else
+        echo "  ⚠️ ruff 不可用，跳过（建议安装后重跑门禁）"
+    fi
+    echo "  [3/3] 全量回归（test/test_*.py 逐文件）"
+    GATE_FAIL=0
+    GATE_TOTAL=0
+    for f in test/test_*.py; do
+        GATE_TOTAL=$((GATE_TOTAL+1))
+        if ! "$GATE_PY" "$f" >/tmp/sm_deploy_gate_$$.log 2>&1; then
+            echo "  ❌ FAIL $f"; tail -20 /tmp/sm_deploy_gate_$$.log
+            GATE_FAIL=$((GATE_FAIL+1))
+        fi
+    done
+    rm -f /tmp/sm_deploy_gate_$$.log
+    if [ "$GATE_FAIL" -ne 0 ]; then
+        echo "  ❌ 回归失败 $GATE_FAIL/$GATE_TOTAL —— 部署中止"
+        exit 1
+    fi
+    echo "  ✅ 门禁全绿（回归 $GATE_TOTAL/$GATE_TOTAL 文件）"
 fi
 
 echo "== 1/6 备份 ECS 现有生产代码（本次迭代前备份）"
