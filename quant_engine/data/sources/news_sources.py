@@ -163,13 +163,35 @@ class EastMoneyNewsSource:
         self.columns = columns or ['101', '102', '103']
         self.page_size = page_size
 
+    @staticmethod
+    def _em_get_with_retry(url: str) -> str | None:
+        """D68：东财域请求统一走 em_get（限速 ≥1s + 抖动 + 共享 Session）。
+
+        原实现用 ``urllib.request.urlopen`` 直连，每次新建连接、3 个栏目
+        串行无间隔，绕过「东财三招」。保留原 2 次重试语义，且每次重试
+        都重新预约限速，不会出现失败后立刻重打的固定节奏。
+        """
+        from .eastmoney import em_get
+        for attempt in range(1, 3):
+            try:
+                resp = em_get(
+                    url,
+                    headers={'User-Agent': DEFAULT_UA,
+                             'Referer': 'https://finance.eastmoney.com/'})
+                if resp is not None and resp.status_code == 200:
+                    return resp.content.decode('utf-8', 'replace')
+            except Exception as e:
+                logger.debug(f"EM news GET failed ({attempt}/2): {e}")
+        return None
+
     def fetch(self, raw_fetcher=None) -> list[NewsItem]:
         """raw_fetcher: 测试注入 (url, headers) -> str"""
         items: list[NewsItem] = []
         for col in self.columns:
             url = (f"{self.BASE}?client=web&biz=web_724&fastColumn={col}"
                    f"&sortEnd=&pageSize={self.page_size}&req_trace=nx{int(time.time()*1000)}")
-            raw = raw_fetcher(url, {}) if raw_fetcher else _http_get(url)
+            raw = (raw_fetcher(url, {}) if raw_fetcher
+                   else self._em_get_with_retry(url))
             if not raw:
                 continue
             try:

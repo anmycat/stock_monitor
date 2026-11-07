@@ -1,6 +1,19 @@
-"""东方财富数据源"""
+"""东方财富数据源
+
+反封禁纪律（用户 2026-11-01 指示，2026-11-07 截图复核）：
+  「东财好用，但娇贵，三招躲封号。第一，限速，两次请求至少隔一秒。
+    第二，加点随机抖动，别太像机器人。第三，所有请求共用一个连接，
+    别每次都新建。对东财，慢，就是快。」
+
+D68 加固：原三招只在**单个进程内**生效，而现网是 quant-api / quant-worker /
+quant-beat 三个独立进程 —— 每进程各持一份 _THROTTLE 与 _SESSION，进程间
+互不感知，实际对东财的 QPS 可达 3 倍。本轮增加「Redis 预约式全局限速」：
+多进程原子预约下一个允许时刻，保证全局任意两次请求间隔 ≥1s + 抖动；
+Redis 不可用 / fork 子进程 / 开关关闭时优雅降级回原进程内锁（零行为变化）。
+"""
 from __future__ import annotations
 
+import os
 import random
 import re
 import threading
@@ -10,18 +23,34 @@ import pandas as pd
 import requests
 from loguru import logger
 
+from ...config import get_settings
 from ...utils.code_utils import market_by_symbol, to_secid
+
+# 跨进程预约键（三服务共享同一 Redis → 全局串行）
+_GLOBAL_KEY = 'em:throttle:next_allowed'
+# 原子预约：读上次放行时刻 → 分配本次允许时刻 → 返回本进程需等待的秒数。
+# 用客户端时间即可（三服务在同一台 ECS，时钟一致）；SET ... EX 防止键永久残留。
+_RESERVE_LUA = """
+local now = tonumber(ARGV[1])
+local gap = tonumber(ARGV[2])
+local last = tonumber(redis.call('GET', KEYS[1]) or '0')
+local allowed = now
+if last + gap > allowed then allowed = last + gap end
+redis.call('SET', KEYS[1], string.format('%.6f', allowed), 'EX', tonumber(ARGV[3]))
+return allowed - now
+"""
+# 排队上限：三服务最坏排队约 3×1.6s，10s 足够；超限时告警并截断，避免 worker 卡死
+_MAX_QUEUE_WAIT = 10.0
+_GLOBAL_KEY_TTL = 120
 
 
 class _Throttle:
-    """东财"三招"之一：限速 + 随机抖动（对东财，慢，就是快）
+    """东财「限速 + 随机抖动」+ 可选的跨进程全局预约（D68）
 
-    东财对高频同源请求敏感：从生产 ECS 访问 push2his / push2 曾因
-    IP 级风控被 Connection abort（capital_flow_5d 仅 3/33 非空）。
-    对策（用户 2026-11-01 指示）：
-      ① 限速：两次请求至少间隔 MIN_INTERVAL 秒
-      ② 随机抖动：每次请求额外加随机延迟，避免固定节奏像机器人
-      ③ 连接复用：所有请求共用一个 Session（keep-alive，见 _SESSION）
+    ① 限速：两次请求至少间隔 MIN_INTERVAL 秒
+    ② 随机抖动：每次请求额外加随机延迟，避免固定节奏像机器人
+    ③ 连接复用：所有东财请求共用一个 Session（keep-alive，见 _SESSION）
+    ④ 跨进程：Redis 原子预约，使 ① 在三个服务进程间同样成立（D68）
 
     抖动叠加在限速之上（而非替代），保证间隔 ≥1s 且节奏不可预测。
     """
@@ -32,19 +61,97 @@ class _Throttle:
     def __init__(self):
         self._lock = threading.Lock()
         self._last = 0.0
+        self._redis = None        # 仅由 attach_redis() 注入，绝不自建连接池
+        self._pid = os.getpid()
+        self._last_warn = 0.0
 
-    def wait(self) -> None:
+    def attach_redis(self, client) -> None:
+        """注入已连接的 redis 客户端（由装配点调用一次）。"""
+        self._redis = client
+        self._pid = os.getpid()
+
+    def _reserve_global(self) -> float | None:
+        """返回本进程需等待的秒数；不可用/异常返回 None（调用方降级）。"""
+        if self._redis is None:
+            return None
+        # guarded_fetch 用 fork：子进程继承父进程的 Redis 连接池不安全，
+        # 直接忽略并降级到进程内锁（子进程短命，不影响全局限速主旨）。
+        if self._pid != os.getpid():
+            self._redis = None
+            return None
+        try:
+            gap = self.MIN_INTERVAL + random.uniform(*self.JITTER_RANGE)
+            wait = float(self._redis.eval(
+                _RESERVE_LUA, 1, _GLOBAL_KEY,
+                time.time(), gap, _GLOBAL_KEY_TTL))
+            return max(0.0, wait)
+        except Exception as e:
+            now = time.monotonic()
+            if now - self._last_warn > 30.0:
+                self._last_warn = now
+                logger.warning(
+                    f"[EM] 全局限速预约失败，降级进程内锁: {type(e).__name__}: {e}")
+            return None
+
+    def _wait_local(self) -> None:
         with self._lock:
             elapsed = time.monotonic() - self._last
             base = max(0.0, self.MIN_INTERVAL - elapsed)
             time.sleep(base + random.uniform(*self.JITTER_RANGE))
             self._last = time.monotonic()
 
+    def wait(self) -> None:
+        if bool(get_settings().EM_GLOBAL_THROTTLE):
+            reserved = self._reserve_global()
+            if reserved is not None:
+                if reserved > _MAX_QUEUE_WAIT:
+                    logger.warning(
+                        f"[EM] 全局限速排队 {reserved:.1f}s 超限，截断至 "
+                        f"{_MAX_QUEUE_WAIT:.1f}s（检查是否并发过高）")
+                    reserved = _MAX_QUEUE_WAIT
+                if reserved > 0:
+                    time.sleep(reserved)
+                return
+        self._wait_local()
+
 
 _THROTTLE = _Throttle()
 
 # 三招之二/之三：所有东财请求共用一个 Session（连接复用 + keep-alive）
 _SESSION = requests.Session()
+
+
+def attach_global_throttle(cache) -> None:
+    """装配点：把已连接的 RedisCache 注入全局限速器（MarketDataRepository 启动时调用）。
+
+    只有 ``cache.is_connected`` 为真才注入 —— 本地无 Redis 时不触发任何
+    网络探测，避免每次东财请求白等 socket 超时。
+    """
+    try:
+        if cache is None or not getattr(cache, 'is_connected', False):
+            return
+        client = getattr(cache, 'client', None)
+        if client is not None:
+            _THROTTLE.attach_redis(client)
+            logger.debug("[EM] 跨进程全局限速已启用")
+    except Exception as e:
+        logger.debug(f"[EM] global throttle attach skipped: {e}")
+
+
+def em_get(url: str, *, params: dict | None = None,
+           headers: dict | None = None, timeout: int = 15):
+    """**所有东财域 HTTP 请求的唯一入口**：全局限速 + 抖动 + 连接复用。
+
+    任何 eastmoney.com 子域（push2 / push2his / push2ex / np-weblist /
+    search-api-web / fundf10）的请求都必须经此函数，不得直接
+    requests.get / urllib.urlopen / httpx.Client —— 否则三招形同虚设。
+    headers 按请求合并（不同子域 Referer/UA 不同），不会污染共享 Session。
+    """
+    _THROTTLE.wait()
+    merged = dict(EastMoneySource.HEADERS)
+    if headers:
+        merged.update(headers)
+    return _SESSION.get(url, params=params or {}, headers=merged, timeout=timeout)
 
 
 class EastMoneySource:
@@ -94,15 +201,8 @@ class EastMoneySource:
 
     @staticmethod
     def _get(url: str, params: dict, headers: dict | None = None, timeout: int = 15):
-        """统一请求入口：限速 + 随机抖动 + 连接复用
-
-        三招合一——所有东财请求必须经此函数，不得直接 requests.get。
-        """
-        _THROTTLE.wait()
-        merged = dict(EastMoneySource.HEADERS)
-        if headers:
-            merged.update(headers)
-        return _SESSION.get(url, params=params, headers=merged, timeout=timeout)
+        """统一请求入口（保留旧签名）→ 委托 em_get，避免第二条旁路。"""
+        return em_get(url, params=params, headers=headers, timeout=timeout)
 
     @staticmethod
     def _get_json(url: str, params: dict, tries: int = 3, headers: dict | None = None):

@@ -71,6 +71,13 @@ class Settings(BaseSettings):
     # 开启后由代码从真实信号/评估历史算分，绝不交给模型发挥（D61 铁律）。
     DAILY_REPORT_DISCIPLINE_DIMENSION: bool = False
 
+    # D68 东财反封禁「三招」跨进程加固（2026-11-07，用户截图复核）
+    # 原三招只在单进程内生效，而现网 quant-api / quant-worker / quant-beat
+    # 是三个独立进程 → 各自限速，对东财实际 QPS 可达 3 倍。开启后用 Redis
+    # 原子预约下一个允许时刻，保证全局任意两次请求间隔 ≥1s + 抖动。
+    # Redis 不可用 / fork 子进程 / 关闭开关时自动降级回原进程内锁（零行为变化）。
+    EM_GLOBAL_THROTTLE: bool = True
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""

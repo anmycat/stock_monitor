@@ -145,24 +145,26 @@ class NewsService:
             "param": f'{{"uid":"","keyword":"{keyword}","type":["cmsArticleWebOld"],"client":"web","clientType":"web","clientVersion":"curr","param":{{"cmsArticleWebOld":{{"searchScope":"default","sort":"default","pageIndex":1,"pageSize":{count},"preTag":"<em>","postTag":"</em>"}}}}}}',
         }
         try:
-            with httpx.Client(timeout=10) as client:
-                response = client.get(url, params=params, headers=self.headers)
-                if response.status_code == 200:
-                    text = response.text
-                    # 解析JSONP响应
-                    json_str = text[text.index('(') + 1:text.rindex(')')]
-                    import json
-                    data = json.loads(json_str)
-                    news = []
-                    for item in data.get('result', {}).get('cmsArticleWebOld', []):
-                        news.append({
-                            'title': item.get('title', '').replace('<em>', '').replace('</em>', ''),
-                            'url': item.get('url', ''),
-                            'source': '东方财富',
-                            'time': item.get('showTime', ''),
-                            'snippet': item.get('content', '')[:200] if item.get('content') else '',
-                        })
-                    return news
+            # D68：东财域请求统一走 em_get（限速 ≥1s + 抖动 + 共享 Session）。
+            # 原实现 ``with httpx.Client`` 每次新建连接且完全绕过「东财三招」。
+            from ...data.sources.eastmoney import em_get
+            response = em_get(url, params=params, headers=self.headers, timeout=10)
+            if response is not None and response.status_code == 200:
+                text = response.text
+                # 解析JSONP响应
+                json_str = text[text.index('(') + 1:text.rindex(')')]
+                import json
+                data = json.loads(json_str)
+                news = []
+                for item in data.get('result', {}).get('cmsArticleWebOld', []):
+                    news.append({
+                        'title': item.get('title', '').replace('<em>', '').replace('</em>', ''),
+                        'url': item.get('url', ''),
+                        'source': '东方财富',
+                        'time': item.get('showTime', ''),
+                        'snippet': item.get('content', '')[:200] if item.get('content') else '',
+                    })
+                return news
         except Exception as e:
             logger.error(f"Eastmoney news error: {e}")
         return []

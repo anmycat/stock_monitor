@@ -18,12 +18,18 @@ import re
 import time
 
 import pandas as pd
-import requests
 from loguru import logger
+
+from .eastmoney import em_get
 
 
 class EastMoneyFundHoldingsSource:
-    """天天基金-基金季度持仓数据源"""
+    """天天基金-基金季度持仓数据源
+
+    D68：fundf10.eastmoney.com 同属东财域，原实现自建 ``requests.Session``
+    且仅有 0.3s 弱限流，绕过「东财三招」。现统一走 ``em_get`` ——
+    与 push2/push2his/push2ex 共用同一限速器与同一 keep-alive Session。
+    """
 
     BASE_URL = "https://fundf10.eastmoney.com/FundArchivesDatas.aspx"
     DEFAULT_TOPLINE = 100  # 服务端上限实测约 100，>=200 会被降级为 10
@@ -32,10 +38,8 @@ class EastMoneyFundHoldingsSource:
     _retry_sleep = 0.8
 
     def __init__(self):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        })
+        # D68：不再自建 Session（连接复用由 eastmoney._SESSION 统一提供）
+        pass
 
     # ------------------------------------------------------------------ 公共
 
@@ -70,7 +74,8 @@ class EastMoneyFundHoldingsSource:
                 df = self._fetch_year(code, year, topline)
                 if df is not None and not df.empty:
                     frames.append(df)
-                time.sleep(0.3)  # 轻微限流，避免触发风控
+                # D68：年份间限速由 em_get 的全局限速器统一保证（≥1s + 抖动），
+                # 原 0.3s 弱限流已移除（既是重复等待，也远低于反封禁要求）。
             if not frames:
                 return pd.DataFrame(
                     columns=['quarter', 'report_date', 'seq', 'code', 'name',
@@ -99,8 +104,8 @@ class EastMoneyFundHoldingsSource:
         }
         headers = {'Referer': f'https://fundf10.eastmoney.com/ccmx_{code}.html'}
         try:
-            resp = self.session.get(self.BASE_URL, params=params,
-                                    headers=headers, timeout=15)
+            resp = em_get(self.BASE_URL, params=params,
+                          headers=headers, timeout=15)
             if resp.status_code != 200:
                 return []
             m = re.search(r'arryear:\[([\d,]*)\]', resp.text)
@@ -136,8 +141,8 @@ class EastMoneyFundHoldingsSource:
         last_error: Exception | None = None
         for attempt in range(1, self._max_retries + 1):
             try:
-                resp = self.session.get(self.BASE_URL, params=params,
-                                        headers=headers, timeout=15)
+                resp = em_get(self.BASE_URL, params=params,
+                              headers=headers, timeout=15)
                 if resp.status_code != 200:
                     raise ValueError(f"HTTP {resp.status_code}")
                 text = resp.text

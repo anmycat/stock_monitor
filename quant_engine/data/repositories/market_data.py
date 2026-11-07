@@ -53,6 +53,14 @@ class MarketDataRepository:
             source_manager.attach_cache(self.cache)
         except Exception as e:  # noqa: BLE001 旁路恢复失败不得影响启动
             logger.debug(f"[I-02] source state attach skipped: {e}")
+        # D68：东财「三招」跨进程全局限速。复用同一个已连接的 RedisCache，
+        # 不新建连接池；本地无 Redis（is_connected=False）时自动跳过，
+        # 完全退化为 D53 的进程内限速，不产生任何 socket 探测开销。
+        try:
+            from ..sources.eastmoney import attach_global_throttle
+            attach_global_throttle(self.cache)
+        except Exception as e:  # noqa: BLE001 旁路装配失败不得影响启动
+            logger.debug(f"[EM] global throttle attach skipped: {e}")
         self._validation_errors = []
         # 线程锁保护共享缓存
         self._cache_lock = threading.Lock()
