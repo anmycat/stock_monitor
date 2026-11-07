@@ -208,6 +208,60 @@ class EastMoneySource:
             logger.error(f"EastMoney get realtime quote error: {e}")
             return pd.DataFrame()
 
+    # 日K（push2his，2026-11-06 实测：status 200 且含当日 bar）
+    KLINE_URL = "https://push2his.eastmoney.com/api/qt/stock/kline/get"
+
+    @staticmethod
+    def get_daily_data(code: str, days: int = 120) -> pd.DataFrame:
+        """日K（D66：补齐 daily 优先级里的死配置 + 作为跨源复核源）
+
+        背景：``_PRIORITY['daily']`` 长期列有 ``eastmoney``，但本类从未实现
+        ``get_daily_data``，``execute_with_fallback`` 的 ``getattr(..., None)``
+        会静默跳过 —— 腾讯限流(501) → 新浪(签名错误) 之后，实际只剩同花顺
+        一根独苗。本方法把该备路补实，同时供
+        ``utils/daily_cross_check`` 做「末根日期/收盘价」针对性复核。
+
+        口径：``fqt=0`` 不复权（prd/02 §1 规定），``klt=101`` 日线。
+        返回列与其余日K源一致：date/open/high/low/close/volume。
+        """
+        try:
+            secid = to_secid(str(code))
+            params = {
+                'secid': secid,
+                'fields1': 'f1,f2,f3,f4,f5,f6',
+                'fields2': 'f51,f52,f53,f54,f55,f56,f57',
+                'klt': '101',
+                'fqt': '0',
+                'end': '20500101',
+                'lmt': str(min(int(days), 1024)),
+            }
+            data = EastMoneySource._get_json(EastMoneySource.KLINE_URL, params)
+            node = (data or {}).get('data') or {}
+            klines = node.get('klines') or []
+            records = []
+            for line in klines:
+                parts = str(line).split(',')
+                if len(parts) < 6:
+                    continue
+                try:
+                    records.append({
+                        'date': parts[0],
+                        'open': float(parts[1] or 0),
+                        'close': float(parts[2] or 0),
+                        'high': float(parts[3] or 0),
+                        'low': float(parts[4] or 0),
+                        'volume': float(parts[5] or 0),
+                    })
+                except (ValueError, IndexError):
+                    continue
+            if not records:
+                return pd.DataFrame()
+            df = pd.DataFrame(records)
+            return df[df['close'] > 0].sort_values('date').reset_index(drop=True)
+        except Exception as e:  # 备源异常不得影响主链
+            logger.warning(f"EM daily {code} error: {e}")
+            return pd.DataFrame()
+
     @staticmethod
     def get_capital_flow(code: str, days: int = 5) -> float | None:
         """获取近 N 个交易日主力资金净流入累计（元）

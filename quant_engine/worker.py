@@ -79,6 +79,34 @@ def get_sleep_seconds(phase: str) -> int:
     return (target - t) * 60
 
 
+_eod_seal_done_for: str | None = None
+
+
+def seal_daily_bars_once(datacenter) -> None:
+    """D66：当日收盘数据打包封存，每个交易日只做一次（幂等）。
+
+    挂点：进入 AFTER_HOURS(15:00+) 时立即封存；若 worker 晚启动，
+    DAILY_REVIEW(18:10) 再兜底一次。纯本地 SQLite，不访问行情服务器。
+    """
+    global _eod_seal_done_for
+    try:
+        from .config import get_settings
+        from .data import daily_guard
+        if not get_settings().KLINE_EOD_SEAL:
+            return
+        session = daily_guard.prov.expected_session()
+        if _eod_seal_done_for == session:
+            return
+        seal = daily_guard.seal_session(
+            session, cache=getattr(datacenter, 'cache', None))
+        if seal['sealed'] > 0:
+            _eod_seal_done_for = session
+        logger.info(f"✅ 当日日K封存: {session} {seal['sealed']} 条 "
+                    f"({seal['reason']})")
+    except Exception as e:  # noqa: BLE001 封存失败绝不影响主流程
+        logger.warning(f"[D66] EOD seal failed: {e}")
+
+
 def push_summary_to_web(summary_type: str, title: str, summary_data: dict):
     """通过WebSocket推送AI总结到Web页面"""
     try:
@@ -337,6 +365,9 @@ def main():
             phase = get_current_phase()
             if phase != last_phase:
                 logger.info(f"Phase: {phase}")
+                # D66：15:00 收盘后立即打包封存当日完成 bar（纯本地、幂等）
+                if phase == "AFTER_HOURS":
+                    seal_daily_bars_once(datacenter)
                 last_phase = phase
 
             if phase == "SELF_CHECK":
@@ -489,6 +520,9 @@ def main():
                 generate_daily_report(datacenter, market, signals, sectors,
                                       alerts=alerts_history, summary=summary,
                                       ai=ai_summary)
+
+                # D66：封存兜底（正常已在 15:00 盘后完成，此处防晚启动）
+                seal_daily_bars_once(datacenter)
 
                 # 保存运行结果供 T+N 后验评估
                 _save_post_evaluation(post_eval, signals, market)

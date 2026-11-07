@@ -21,6 +21,7 @@ class DingTalkNotifier(BaseNotifier):
         self.webhook_url = webhook_url
         self.secret = secret
         self.enabled = bool(webhook_url)
+        self.rate_limited_until = 0.0  # D66：钉钉返回限流错误时的退避截止时刻
 
     def send(self, title: str, content: str) -> bool:
         if not self.enabled:
@@ -59,9 +60,13 @@ class DingTalkNotifier(BaseNotifier):
                     if result.get('errcode') == 0:
                         self._log_success()
                         return True
-                    else:
-                        self._log_error(str(result))
-                        return False
+                    self._log_error(str(result))
+                    # D66：钉钉侧限流（410100 发送速率过快 / 660026 超 20 条每分钟）
+                    # 时打一段退避窗口，通知管理器据此把后续消息全部转入聚合缓冲，
+                    # 不再逐条硬发。原实现每次失败都立刻重试，形成雪崩。
+                    if result.get('errcode') in (410100, 660026):
+                        self.rate_limited_until = time.monotonic() + 60
+                    return False
         except Exception as e:
             self._log_error(str(e))
         return False
@@ -120,21 +125,44 @@ class NotificationManager:
         logger.info(f"NotificationManager initialized with {len(self.notifiers)} notifiers")
 
     # ── 流量控制 ──
+    def _in_channel_backoff(self) -> bool:
+        """渠道侧是否处于限流退避期（D66）
+
+        钉钉返回 410100/660026 后 60s 内不再逐条硬发；消息全部进聚合缓冲，
+        由轮末 flush 合并成一条摘要重试，避免「限流→重试→再限流」雪崩。
+        """
+        now = time.monotonic()
+        for n in self.notifiers:
+            until = getattr(n, 'rate_limited_until', 0.0)
+            # 测试替身（MagicMock）的属性不是数值，不能参与比较
+            if isinstance(until, (int, float)) and now < until:
+                return True
+        return False
+
     def _can_send_now(self) -> bool:
         """是否可立即发送（调用方持锁）"""
         now = time.monotonic()
         if now - self._window_start >= 60:
             self._window_start = now
             self._window_count = 0
+        if self._in_channel_backoff():
+            return False
         return self._window_count < self._max_per_minute
 
     def _mark_sent(self) -> None:
-        """记录一次发送（调用方持锁）"""
+        """记录一次发送（调用方持锁）
+
+        D66：无论下游渠道最终成功与否，只要本管理器决定「放行一次真实发送」，
+        就推进节流时钟。原实现只在 send() 成功时推进 → 一旦遇到 410100
+        连续失败，_last_sent 永远不动，最小间隔判定恒成立，导致 1 秒内
+        13 条消息全部硬发并全部失败（ECS 2026-11-06 10:00:56 实测）。
+        """
         now = time.monotonic()
         if now - self._window_start >= 60:
             self._window_start = now
             self._window_count = 0
         self._window_count += 1
+        self._last_sent = now
 
     def _last_sent_at(self) -> float:
         return getattr(self, '_last_sent', 0.0)
@@ -168,7 +196,14 @@ class NotificationManager:
                 self._pending_texts.append((title, content))
                 n = len(self._pending_texts)
         if send_now:
-            return self.send(title, content)
+            ok = self.send(title, content)
+            if not ok:
+                # D66：下游渠道临时失败（限流/网络）时退回聚合缓冲，
+                # 由轮末 flush 合并重试——原实现直接丢弃这条消息。
+                with self._lock:
+                    self._pending_texts.append((title, content))
+                logger.warning(f"Custom message send failed, buffered for retry: {title}")
+            return ok
         logger.debug(f"Custom message throttled, buffered ({n} pending): {title}")
         return False
 
@@ -287,7 +322,13 @@ class NotificationManager:
                 self._pending_signals.append(signal)
                 n = len(self._pending_signals)
         if send_now:
-            return self.send(title, content)
+            ok = self.send(title, content)
+            if not ok:
+                # D66：与 send_custom_message 一致，渠道临时失败不丢信号
+                with self._lock:
+                    self._pending_signals.append(signal)
+                logger.warning(f"Signal send failed, buffered for retry: {signal.code}")
+            return ok
         logger.debug(f"Signal throttled, buffered ({n} pending): {signal.code}")
         return False
 

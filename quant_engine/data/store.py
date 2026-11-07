@@ -84,6 +84,23 @@ CREATE TABLE IF NOT EXISTS summaries (
     data_json TEXT                       -- 全量 summary_data
 );
 CREATE INDEX IF NOT EXISTS idx_summaries_type_time ON summaries(summary_type, generated_at DESC);
+
+-- D66 收盘封存：每个交易日每票一根「已确认完成」的 bar，带来源与校验和。
+-- 用途：次日读取日K时判断「末根是不是被误当成今天」，以及跨源复核的价格基准。
+-- 注意：封存的只是当日定稿 bar 的**索引**，不替代连续历史序列（趋势计算用）。
+CREATE TABLE IF NOT EXISTS daily_bar_seals (
+    trade_date TEXT NOT NULL,            -- 该 bar 归属交易日 YYYY-MM-DD
+    code TEXT NOT NULL,
+    open REAL, high REAL, low REAL, close REAL, volume REAL,
+    source TEXT,                         -- 产出源
+    verified_by TEXT,                    -- 跨源复核源（NULL=未复核）
+    price_ref REAL,                      -- 复核源同日收盘价（比对基准）
+    sealed_at TEXT NOT NULL,
+    payload_json TEXT,                   -- 完整标签摘要（可审计）
+    UNIQUE(trade_date, code)
+);
+CREATE INDEX IF NOT EXISTS idx_seals_date ON daily_bar_seals(trade_date DESC);
+CREATE INDEX IF NOT EXISTS idx_seals_code_date ON daily_bar_seals(code, trade_date DESC);
 """
 
 _SIGNAL_COLS = ("signal_date, created_at, code, name, action, level, score, strategy, "
@@ -406,6 +423,74 @@ class HistoryStore:
                 'data': self._loads(r[8], {}),
             } for r in cur.fetchall()]
 
+        return self._safe(_read, [])
+
+    # ---- D66 收盘封存 ----
+    def save_daily_seals(self, rows: list[dict]) -> int:
+        """批量封存当日已确认收盘 bar（同日同票幂等 upsert）。
+
+        rows 每项：trade_date/code/open/high/low/close/volume/source/
+                    verified_by/price_ref/payload（dict，可选）。
+        返回写入条数；持久层不可用时返回 0（绝不向上抛）。
+        """
+        def _write() -> int:
+            conn = self._conn()
+            now = datetime.now().isoformat(timespec='seconds')
+            conn.executemany(
+                """INSERT INTO daily_bar_seals
+                       (trade_date, code, open, high, low, close, volume,
+                        source, verified_by, price_ref, sealed_at, payload_json)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(trade_date, code) DO UPDATE SET
+                       open=excluded.open, high=excluded.high,
+                       low=excluded.low, close=excluded.close,
+                       volume=excluded.volume, source=excluded.source,
+                       verified_by=excluded.verified_by,
+                       price_ref=excluded.price_ref,
+                       sealed_at=excluded.sealed_at,
+                       payload_json=excluded.payload_json""",
+                [(
+                    r.get('trade_date'), r.get('code'),
+                    r.get('open'), r.get('high'), r.get('low'),
+                    r.get('close'), r.get('volume'), r.get('source'),
+                    r.get('verified_by'), r.get('price_ref'), now,
+                    json.dumps(r.get('payload') or {}, ensure_ascii=False,
+                               default=str),
+                ) for r in rows])
+            conn.commit()
+            return len(rows)
+
+        return self._safe(_write, 0)
+
+    def get_daily_seal(self, trade_date: str, code: str) -> dict | None:
+        """取某交易日某票的封存 bar（无记录返回 None）。"""
+        def _read() -> dict | None:
+            cur = self._conn().execute(
+                "SELECT trade_date, code, open, high, low, close, volume,"
+                " source, verified_by, price_ref, sealed_at, payload_json"
+                " FROM daily_bar_seals WHERE trade_date=? AND code=?",
+                (trade_date, code))
+            r = cur.fetchone()
+            if not r:
+                return None
+            return {
+                'trade_date': r[0], 'code': r[1], 'open': r[2], 'high': r[3],
+                'low': r[4], 'close': r[5], 'volume': r[6], 'source': r[7],
+                'verified_by': r[8], 'price_ref': r[9], 'sealed_at': r[10],
+                'payload': self._loads(r[11], {}),
+            }
+        return self._safe(_read, None)
+
+    def list_sealed_dates(self, limit: int = 10) -> list[dict]:
+        """已封存交易日汇总（供日报/运维核验数据完整性）。"""
+        def _read() -> list[dict]:
+            cur = self._conn().execute(
+                "SELECT trade_date, COUNT(*), MAX(sealed_at),"
+                " SUM(CASE WHEN verified_by IS NOT NULL THEN 1 ELSE 0 END)"
+                " FROM daily_bar_seals GROUP BY trade_date"
+                " ORDER BY trade_date DESC LIMIT ?", (int(limit),))
+            return [{'trade_date': r[0], 'bars': r[1], 'sealed_at': r[2],
+                     'verified': r[3] or 0} for r in cur.fetchall()]
         return self._safe(_read, [])
 
     # ---- 运维 ----

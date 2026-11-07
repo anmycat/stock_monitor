@@ -125,8 +125,11 @@ class InflightRepoTests(unittest.TestCase):
         for df in results:
             self.assertFalse(df.empty)
             self.assertEqual(len(df), 3)
-        # 结果已落缓存
-        self.assertIsNotNone(dc.cache.get('daily:000001.SZ:120'))
+        # 结果已落缓存（D66：key 带交易日，隔夜自动失效）
+        self.assertTrue(any(
+            k.startswith('daily:') and k.endswith('000001.SZ:120')
+            for k in dc.cache._data
+        ), f"daily cache keys: {list(dc.cache._data)}")
 
     def test_second_call_hits_cache_without_source(self):
         source = CountingSource()

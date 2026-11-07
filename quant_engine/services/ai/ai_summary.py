@@ -314,7 +314,10 @@ class AISummary:
                 primary,
                 "你是一位资深金融分析师，擅长综合多方观点形成全面判断。",
                 merge_prompt,
-                max_tokens=1500
+                # D66：不显式传 max_tokens —— 由主模型 cfg.max_tokens 决定。
+                # 原写死 1500 会把 U2 的配置预算（2500）砍掉，触发
+                # finish_reason=length 空正文（ECS 18:10 融合阶段实测 8 次）。
+                max_tokens=None
             )
 
             if merge_response.success:
@@ -400,7 +403,7 @@ class AISummary:
     # === 底层API调用 ===
 
     def _parallel_call(self, system_prompt: str, user_prompt: str,
-                       max_tokens: int = 1500) -> list[ModelResponse]:
+                       max_tokens: int | None = None) -> list[ModelResponse]:
         """并行调用所有可用模型"""
         results = []
         enabled = self._enabled_models()
@@ -432,7 +435,7 @@ class AISummary:
         return results
 
     def _call_single_model(self, cfg: ModelConfig, system_prompt: str,
-                           user_prompt: str, max_tokens: int = 1500,
+                           user_prompt: str, max_tokens: int | None = None,
                            max_retries: int = 2) -> ModelResponse:
         """调用单个模型（支持 OpenAI 兼容与 Anthropic 原生两种协议）
 
@@ -462,12 +465,15 @@ class AISummary:
             time.sleep(delay)
 
     def _call_once(self, cfg: ModelConfig, system_prompt: str,
-                   user_prompt: str, max_tokens: int = 1500) -> ModelResponse:
+                   user_prompt: str, max_tokens: int | None = None) -> ModelResponse:
         """发起一次模型请求（不重试；重试逻辑在 _call_single_model）"""
         start = time.time()
 
-        # 该模型自身的 max_tokens 上限优先（D56：思考型模型需更大预算）
-        max_tokens = min(max_tokens, cfg.max_tokens)
+        # D66：调用方不指定时，直接用模型自身预算（思考型 U2 = 2500）。
+        # 原实现默认 1500 + min() → 无论 .env 配 2500，ensemble/cascade
+        # 实际都只发 1500，ECS 近 7 天因此出现 8 次 finish_reason=length
+        # 空正文、5 次重试、1 次模型级联失败。
+        max_tokens = cfg.max_tokens if max_tokens is None else min(max_tokens, cfg.max_tokens)
 
         # 构建请求头
         if cfg.auth_header == "api-key":

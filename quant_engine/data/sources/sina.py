@@ -263,6 +263,7 @@ class SinaSource:
             logger.warning(f"Sina get minute data error [{code}/{period}m]: {e}")
             return pd.DataFrame()
 
+    @staticmethod
     def get_daily_data(code: str, days: int = 120) -> pd.DataFrame:
         """获取日线数据（getKLineData，scale=240 日线）
 

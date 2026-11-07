@@ -78,18 +78,17 @@ def is_trading_day(date: datetime | None = None, market: str = 'XSHG') -> bool:
     if _is_holiday(date):
         return False
 
-    if HAS_CALENDAR:
-        try:
-            cal = xcals.get_calendar(market)
-            ts = pd.Timestamp(date).normalize()
-            return cal.is_session(ts)
-        except Exception as e:
-            _warn_once('is_session',
-                       f"Calendar check failed (fallback to weekend+holiday table): {e}")
-            # 降级到简单判断
-            return date.weekday() < 5
-    else:
-        # 没有exchange-calendars时，简单判断是否为周末
+    # D66：2026+ 静态表已是完整事实源（周末 + 法定休市日已排除），
+    # 不再调用越界的 exchange_calendars（每次白抛一次异常）。
+    if date.year > 2025 or not HAS_CALENDAR:
+        return date.weekday() < 5
+    try:
+        cal = xcals.get_calendar(market)
+        ts = pd.Timestamp(date).normalize()
+        return cal.is_session(ts)
+    except Exception as e:
+        _warn_once('is_session',
+                   f"Calendar check failed (fallback to weekend+holiday table): {e}")
         return date.weekday() < 5
 
 
@@ -107,17 +106,22 @@ def get_next_trading_day(date: datetime | None = None, market: str = 'XSHG') -> 
     if date is None:
         date = datetime.now()
     
-    if HAS_CALENDAR:
+    # D66：2026 年起 XSHG 日历已越界（实测 next_session 对 2026-11-01
+    # 抛 "is not a session of calendar"），静态休市日表才是 2026 的事实源。
+    # 原来「先试 exchange_calendars、异常再降级」每轮都要白抛一次异常并刷
+    # WARNING（ECS 近 7 天 3 次）。现在 2026+ 直接走静态表，日历库仅用于
+    # 其 horizon 覆盖的 2025 及以前，且入参必须是有效 session。
+    if HAS_CALENDAR and date.year <= 2025:
         try:
             cal = xcals.get_calendar(market)
             ts = pd.Timestamp(date).normalize()
-            next_day = cal.next_session(ts)
-            return next_day.to_pydatetime()
+            if cal.is_session(ts):
+                return cal.next_session(ts).to_pydatetime()
         except Exception as e:
             _warn_once('next_session',
                        f"Calendar next day failed (fallback to weekend+holiday table): {e}")
-    
-    # 降级逻辑：跳过周末 + 静态休市日表（exchange_calendars 越界时）
+
+    # 静态表路径：跳过周末 + 法定休市日
     next_day = date + timedelta(days=1)
     for _ in range(30):
         if next_day.weekday() < 5 and not _is_holiday(next_day):
@@ -138,7 +142,12 @@ def get_trading_days_between(start_date: datetime, end_date: datetime, market: s
     Returns:
         list: 交易日列表
     """
-    if HAS_CALENDAR:
+    # D66：2026+ 直接按「周末 + 静态休市日表」枚举，避免 sessions_in_range
+    # 越界抛异常后降级成「只跳周末」——那会把法定节假日误算成交易日，
+    # 直接破坏 D65 的「末根与今天相邻」护栏（节假日后首日会误判陈旧）。
+    use_static = (start_date.year > 2025 or end_date.year > 2025
+                  or not HAS_CALENDAR)
+    if not use_static:
         try:
             cal = xcals.get_calendar(market)
             start = pd.Timestamp(start_date).normalize()
@@ -147,12 +156,11 @@ def get_trading_days_between(start_date: datetime, end_date: datetime, market: s
             return [s.to_pydatetime() for s in sessions]
         except Exception as e:
             logger.warning(f"Calendar range failed: {e}")
-    
-    # 降级逻辑
+
     days = []
     current = start_date
     while current <= end_date:
-        if current.weekday() < 5:
+        if is_trading_day(current, market):
             days.append(current)
         current += timedelta(days=1)
     return days

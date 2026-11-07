@@ -107,17 +107,86 @@ class MarketDataRepository:
         return self._filter_markets(df)
 
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:
-        cache_key = f"daily:{code}:{days}"
+        # D66：缓存 key 带「期望交易日」——隔夜后自动失效，从根上杜绝
+        # 次日读到昨天的日K缓存（TTL 3600 本可缓解，但 worker 长睡眠/
+        # 重启后旧 key 仍可能被复用）。历史/回测调用同样安全：它们传的
+        # session 由调用方固定，不随墙钟漂移。
+        session = self._daily_session()
+        cache_key = f"daily:{session}:{code}:{days}"
         cached = self.cache.get(cache_key)
         if cached is not None and validate_dataframe(df := pd.DataFrame(cached), f"daily:{code}"):
-            return df
+            return self._restore_daily_tags(df, code)
         return self._merger().run(
-            cache_key, lambda: self._fetch_daily_data(code, days, cache_key))
+            cache_key, lambda: self._fetch_daily_data(code, days, cache_key, session))
 
-    def _fetch_daily_data(self, code: str, days: int, cache_key: str) -> pd.DataFrame:
+    @staticmethod
+    def _daily_session() -> str:
+        from ...config import get_settings
+        from ...utils.kline_provenance import expected_session
+        if not bool(get_settings().KLINE_DAY_BOUNDARY_GUARD):
+            # 关闭日切护栏时退回旧口径（用于 A/B 对照与应急回退）
+            return 'legacy'
+        return expected_session()
+
+    def _restore_daily_tags(self, df: pd.DataFrame, code: str) -> pd.DataFrame:
+        """缓存命中路径也要有标签（缓存里存不了 attrs，需重建）"""
+        from ...utils import kline_provenance as prov
+        from .. import daily_guard
+
+        prov.tag(df, 'cache')
+        # 缓存命中也登记封存候选：worker 重启/多进程时保证当日 bar 不漏
+        try:
+            if bool(get_settings().KLINE_EOD_SEAL):
+                daily_guard.collector.collect(df, code)
+        except Exception as e:  # noqa: BLE001 封存收集异常不得影响取数
+            logger.debug(f"[D66] seal collect on cache hit failed: {e}")
+        return df
+
+    def _fetch_daily_data(self, code: str, days: int, cache_key: str,
+                          session: str | None = None) -> pd.DataFrame:
+        from ...utils import kline_provenance as prov
+        from .. import daily_guard
+
+        session = session or self._daily_session()
         df = self.source.get_daily_data(code, days)
-        if df is not None and not df.empty and validate_dataframe(df, f"daily:{code}"):
-            self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
+        if df is None or df.empty or not validate_dataframe(df, f"daily:{code}"):
+            return df
+
+        # ① 血缘标签（只写 attrs，不动任何列 → 趋势/指标零影响）
+        prov.tag(df, prov.read(df).get('source') or 'composite')
+
+        # ② 针对性跨源复核：仅「疑似降级」时打第二源，正常路径零额外请求
+        try:
+            if bool(get_settings().KLINE_CROSS_CHECK):
+                daily_guard.apply_cross_check(
+                    df, code, session, cache=getattr(self, 'cache', None))
+        except Exception as e:  # noqa: BLE001 复核失败不得影响取数/配置缺失
+            logger.debug(f"[D66] cross-check skipped for {code}: {e}")
+
+        # ③ 收集当日完成 bar，供盘后打包封存（零额外行情请求）
+        try:
+            if bool(get_settings().KLINE_EOD_SEAL):
+                daily_guard.collector.collect(df, code, session)
+        except Exception as e:  # noqa: BLE001
+            logger.debug(f"[D66] seal collect skipped for {code}: {e}")
+
+        freshness = prov.assess(df, session)
+        if freshness != 'current':
+            logger.info(f"[D66][新鲜度] {code} {prov.describe(df, session)}")
+        # ④ 疑似 T-1 时用封存的「日期锚点」确认，明确标注它不是今天
+        if freshness == 'lagging':
+            try:
+                anchor = daily_guard.verify_against_seal(df, code, session)
+                attrs = getattr(df, 'attrs', {})
+                attrs['kline_seal_check'] = anchor
+                if anchor.get('status') == 'matches':
+                    attrs['kline_sealed'] = True
+                    logger.info(
+                        f"[D66][封存锚点] {code} 末根 {anchor['as_of']} 与封存一致，"
+                        f"确认为已完成的上一交易日 bar（非 {session} 数据）")
+            except Exception as e:  # noqa: BLE001
+                logger.debug(f"[D66] seal verify skipped for {code}: {e}")
+        self.cache.set(cache_key, df.to_dict(orient='records'), ttl=3600)
         return df
 
     def get_minute_data(self, code: str, period: str = "5") -> pd.DataFrame:

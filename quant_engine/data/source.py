@@ -121,12 +121,18 @@ class CompositeSource:
         return pd.DataFrame()
 
     def get_daily_data(self, code: str, days: int = 120) -> pd.DataFrame:
-        """获取日线数据（腾讯 fqkline → 新浪 getKLineData → 东财）"""
-        result = source_manager.execute_with_fallback(
+        """获取日线数据（腾讯 fqkline → 新浪 → 同花顺 → 东财 → tushare）
+
+        D66：返回时打 ``kline_source`` 标签，让下游能说清「这根 bar 是谁给的」，
+        而不是靠降级顺序猜。来源名来自 SourceManager 实际命中的那一档。
+        """
+        result, source_name = source_manager.execute_with_fallback(
             _PRIORITY['daily'], self.sources, 'get_daily_data',
-            code, days, skip_delay=True,
+            code, days, skip_delay=True, return_source=True,
         )
         if result is not None and not result.empty:
+            from ..utils import kline_provenance as prov
+            prov.tag(result, source_name or 'unknown')
             return result
         return pd.DataFrame()
 

@@ -211,6 +211,7 @@ class SourceManager:
         method_name: str,
         *args,
         skip_delay: bool = True,
+        return_source: bool = False,
         **kwargs
     ) -> any | None:
         """按优先级尝试多个数据源，使用 execute_with_retry
@@ -224,7 +225,8 @@ class SourceManager:
             **kwargs: 方法关键字参数
         
         Returns:
-            第一个成功的数据源结果，或 None
+            ``return_source=True`` 时返回 ``(result, source_name)``（失败为
+            ``(None, None)``）；否则返回结果或 None。
         """
         for source_name in source_priority:
             if source_name not in self.sources:
@@ -234,6 +236,11 @@ class SourceManager:
                 continue
             func = getattr(source_obj, method_name, None)
             if func is None:
+                # D66：配置里列了但类未实现该方法 = 死配置，显式告警一次，
+                # 避免像 eastmoney 日K那样静默跳过数月无人察觉。
+                logger.warning(
+                    f"Source {source_name} has no {method_name} — "
+                    "priority entry is a no-op")
                 continue
             result = self.execute_with_retry(
                 source_name, func, *args,
@@ -242,13 +249,13 @@ class SourceManager:
             if result is not None:
                 # 成功时缓存快照
                 self._save_snapshot(method_name, args, result)
-                return result
+                return (result, source_name) if return_source else result
 
         # 所有源失败，尝试回退缓存
         stale = self._load_stale_snapshot(method_name, args)
         if stale is not None:
-            return stale
-        return None
+            return (stale, 'stale_snapshot') if return_source else stale
+        return (None, None) if return_source else None
 
     def get_status_report(self) -> dict:
         """获取数据源状态报告"""
@@ -273,18 +280,44 @@ class SourceManager:
         return f"{method_name}:{args_str}"
 
     def _save_snapshot(self, method_name: str, args: tuple, result):
-        """缓存成功结果"""
+        """缓存成功结果（D66：同时记录末根日期与归属交易日）"""
         import pandas as pd
         key = self._snapshot_key(method_name, args)
         if isinstance(result, pd.DataFrame):
             self._snapshot_cache[key] = {
                 'data': result.copy(),
                 'timestamp': time.time(),
+                # 日K 快照用末根日期判陈旧；其它数据（报价等）用自然日
+                'session': self._expected_session(),
+                'as_of': (self._last_bar_date(result)
+                          if method_name == 'get_daily_data' else None),
             }
         # 只缓存 DataFrame，其他类型不缓存
 
+    @staticmethod
+    def _expected_session() -> str:
+        try:
+            from ..utils.kline_provenance import expected_session
+            return expected_session()
+        except Exception:  # 日历异常时退回自然日
+            from datetime import datetime
+            return datetime.now().strftime('%Y-%m-%d')
+
+    @staticmethod
+    def _last_bar_date(df) -> str | None:
+        try:
+            from ..utils.kline_provenance import last_bar_date
+            return last_bar_date(df)
+        except Exception:  # 日历/格式异常时按无日期处理
+            return None
+
     def _load_stale_snapshot(self, method_name: str, args: tuple):
-        """加载过期快照（标记 stale/fallback）"""
+        """加载过期快照（标记 stale/fallback）
+
+        D66：日K 快照跨交易日一律作废。原实现 max_snapshot_age=86400
+        允许「昨天的日K」在次日所有源失败时被原样返回，且下游没有任何
+        日期校验 → 昨日收盘被当成今日数据使用（用户点名的第二条误读路径）。
+        """
         key = self._snapshot_key(method_name, args)
         entry = self._snapshot_cache.get(key)
         if entry is None:
@@ -293,11 +326,28 @@ class SourceManager:
         if age > self.max_snapshot_age:
             del self._snapshot_cache[key]
             return None
+        # 跨交易日作废：不管是日K还是实时快照，隔日数据都不该当今日使用
+        try:
+            from ..config import get_settings
+            guard_on = bool(get_settings().KLINE_DAY_BOUNDARY_GUARD)
+        except Exception:  # 配置缺失时默认开启（保守）
+            guard_on = True
+        if (guard_on and entry.get('session')
+                and entry['session'] != self._expected_session()):
+            del self._snapshot_cache[key]
+            logger.warning(
+                f"[D66] stale snapshot rejected: {method_name} {args} "
+                f"belongs to {entry['session']}, not today")
+            return None
         logger.warning(f"Using stale snapshot for {method_name} (age={age:.0f}s)")
         df = entry['data'].copy()
         df.attrs['_stale'] = True
         df.attrs['_fallback'] = True
         df.attrs['_age_seconds'] = int(age)
+        df.attrs['kline_as_of'] = entry.get('as_of')
+        if method_name == 'get_daily_data':
+            df.attrs['kline_source'] = 'stale_snapshot'
+            df.attrs['kline_sealed'] = False
         return df
 
 

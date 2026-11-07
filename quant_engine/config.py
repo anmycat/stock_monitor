@@ -39,6 +39,16 @@ class Settings(BaseSettings):
     # （历史完成日上该修正是 no-op，半年窗口无法直接验证）。
     INTRADAY_KLINE_SHADOW: bool = True
 
+    # D66 日K 数据防误用（2026-11-06）
+    # 背景：日志发现降级源把 T-1 收盘当今日使用；另有 daily 优先级里
+    # eastmoney 无 get_daily_data 的死配置、跨日缓存/快照仍可读等隐患。
+    # ① 疑似降级时用独立数据源针对性复核（只在 lagging 时触发，正常零请求）
+    KLINE_CROSS_CHECK: bool = True
+    # ② 收盘后把当日完成 bar 打包封存到 SQLite（带日期/来源/复核标签）
+    KLINE_EOD_SEAL: bool = True
+    # ③ 缓存 key 带交易日 + 隔夜 stale 快照作废（防止次日误读昨日数据）
+    KLINE_DAY_BOUNDARY_GUARD: bool = True
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
