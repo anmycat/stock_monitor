@@ -456,6 +456,13 @@ def main():
 
             elif phase == "MORNING_REVIEW":
                 # 12:15 推送【早盘总结】（避开DS 12:00-13:00涨价时段）
+                # B1/N-06 幂等（2026-11-21）：当日已推送则跳过，避免 worker 重启重复推送。
+                _today = datetime.now().strftime('%Y-%m-%d')
+                if datacenter.cache.get('review:check_date:morning_review') == _today:
+                    logger.info("早盘总结当日已推送，跳过（幂等）")
+                    time.sleep(600)
+                    continue
+                datacenter.cache.set('review:check_date:morning_review', _today, ttl=2 * 86400)
                 snap = snapshots.get('morning')
                 if snap:
                     market, signals, sectors = snap
@@ -489,6 +496,13 @@ def main():
 
             elif phase == "DAILY_REVIEW":
                 # 18:15 推送【全日总结】（避开DS 18:00-19:00涨价时段）
+                # B1/N-06 幂等（2026-11-21）：当日已推送则跳过，避免 worker 重启重复推送。
+                _today = datetime.now().strftime('%Y-%m-%d')
+                if datacenter.cache.get('review:check_date:daily_review') == _today:
+                    logger.info("全日总结当日已推送，跳过（幂等）")
+                    time.sleep(600)
+                    continue
+                datacenter.cache.set('review:check_date:daily_review', _today, ttl=2 * 86400)
                 snap = snapshots.get('daily')
                 if snap:
                     market, signals, sectors = snap

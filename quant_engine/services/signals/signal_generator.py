@@ -222,8 +222,9 @@ class SignalGenerator:
 
         if not want_shadow:
             logger.debug(f"[D65] {code} {describe(info)}")
-            return self.dispatcher.dispatch(
+            sig = self.dispatcher.dispatch(
                 df_corr if want_corr else df, market, self.trades, self.equity_curve)
+            return self._apply_gap_veto(sig, info)
 
         # A/B：两口径各算一次（dispatch/engine 均无副作用，可安全双跑）
         sig_base = self.dispatcher.dispatch(df, market, self.trades, self.equity_curve)
@@ -236,6 +237,34 @@ class SignalGenerator:
                      if sig_corr else 'None')
         logger.debug(f"[D65] {code} {describe(info)} | base={base_desc} "
                      f"corr={corr_desc}")
+        return self._apply_gap_veto(signal, info)
+
+    def _apply_gap_veto(self, signal, info: dict):
+        """S4（D64 跳空否决）：现价相对日K基准跳空 ≤ 阈值时，BUY 降级为 WATCH。
+
+        - 只降级 BUY → WATCH，不改 score/position/Kelly（最小侵入）。
+        - gap 来自 `info['gap_pct']`（D65 修正时已算好，零额外请求）。
+        - 开关 `GAP_VETO_BUY_PCT`（默认 -0.03；设 0 关闭）。
+        - 该规则属用户裁定改信号批次（S4），行为变化由 D41 双跑记录。
+        """
+        if signal is None:
+            return None
+        try:
+            from ...config import get_settings
+            thr = float(get_settings().GAP_VETO_BUY_PCT or 0)
+            if thr >= 0:
+                return signal
+            gap = info.get('gap_pct')
+            if (isinstance(gap, float) and gap <= thr
+                    and getattr(signal, 'action', None) is not None
+                    and getattr(signal.action, 'value', None) == 'BUY'):
+                signal.action = type(signal.action).WATCH
+                try:
+                    signal.reason.append(f'跳空否决: 现价相对日K基准 {gap:+.2%} ≤ {thr:+.0%}')
+                except Exception:  # noqa: BLE001, S110 reason 是展示，失败不影响降级
+                    pass
+        except Exception:  # noqa: BLE001, S110 否决层不得影响信号主流程
+            pass
         return signal
 
     def _record_intraday_ab(self, code: str, name: str, sig_base, sig_corr,

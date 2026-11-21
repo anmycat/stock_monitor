@@ -54,84 +54,135 @@ class BacktestEngine:
         }
 
     def _backtest_stock(self, df: pd.DataFrame, start_date: str, end_date: str, capital: float) -> tuple:
-        trades = []
-        equity = []
-        position = 0
-        entry_price = 0
-        entry_date = ""
+        """单票回测。
+
+        S1/I-12（2026-11-21 用户裁定）两处修正：
+
+        1. **日期列归一**：真实日K（腾讯/新浪/东财/eltdx）输出列是 ``date``，
+           原实现硬用 ``df['trade_date']``，对真实数据直接 KeyError → 每票
+           静默失败、回测端点实际返回空。此处 ``date`` / ``trade_date`` 兼容。
+        2. **未来函数修复**：原实现用「截至今日收盘」的数据出信号，又用
+           **同一根 bar 的当日收盘价**当场成交——决策价与成交价重合＝系统性
+           乐观偏差。现改为「收盘决策 → 次日开盘成交」（挂单次日成交）。开关
+           ``BACKTEST_FILL_NEXT_OPEN`` 置 False 时保留旧的同日收盘成交，仅用于
+           A/B 量化乐观偏差量，不影响任何实盘信号（回测是纯分析工具）。
+        """
+        from ..config import get_settings
+        next_open_fill = bool(getattr(get_settings(), 'BACKTEST_FILL_NEXT_OPEN', True))
+
+        date_col = 'trade_date' if 'trade_date' in df.columns else 'date'
+        dates = df[date_col]
+        has_open = 'open' in df.columns
+        code = df['code'].iloc[0] if 'code' in df.columns else ''
         window = 60
+
+        trades: list[dict] = []
+        equity: list[float] = []
+        # 用 state dict + 闭包统一买卖，避免多头 hand-off 逻辑在分支里重复
+        state = {
+            'position': 0.0,
+            'entry_price': 0.0,
+            'entry_date': '',
+            'capital': float(capital),
+            # next_open 模式的挂单：上一交易日收盘挂、今日开盘成交
+            'pending_entry': False,
+            'pending_frac': 0.0,
+            'pending_exit': None,  # 'stop_loss' / 'take_profit'
+            'last_close': 0.0,
+            'last_date': '',
+        }
+
+        def _sell(price: float, date, reason: str) -> None:
+            pos = state['position']
+            if pos <= 0 or state['entry_price'] <= 0:
+                return
+            sell_value = pos * price
+            commission = sell_value * self.commission_rate
+            pnl = pos * (price - state['entry_price']) - commission
+            state['capital'] += sell_value - commission
+            trades.append({
+                'code': code,
+                'entry_date': state['entry_date'],
+                'exit_date': date,
+                'entry_price': state['entry_price'],
+                'exit_price': price,
+                'pnl': pnl,
+                'pnl_pct': (price - state['entry_price']) / state['entry_price'],
+                'reason': reason,
+            })
+            state['position'] = 0.0
+            state['entry_price'] = 0.0
+            state['entry_date'] = ''
+
+        def _buy(price: float, date, frac: float) -> None:
+            if price <= 0 or frac <= 0:
+                return
+            size = state['capital'] * frac / price
+            buy_value = size * price
+            commission = buy_value * self.commission_rate
+            if buy_value + commission <= state['capital']:
+                state['position'] = size
+                state['entry_price'] = price
+                state['entry_date'] = date
+                state['capital'] -= buy_value + commission
+
         for i in range(window, len(df)):
-            current_date = df['trade_date'].iloc[i]
-            if current_date < start_date or current_date > end_date:
-                continue
-            historical = df.iloc[max(0, i-window):i+1]
+            current_date = dates.iloc[i]
+            if current_date > end_date:
+                break  # 越过回测区间即停（遗留持仓由期末清算处理）
+            close_i = float(df['close'].iloc[i])
+            open_i = float(df['open'].iloc[i]) if has_open else close_i
+
+            # ① next_open 模式：先执行「上一交易日收盘」挂出的委托，成交于今日开盘
+            if next_open_fill:
+                if state['pending_exit'] is not None:
+                    _sell(open_i, current_date, state['pending_exit'])
+                    state['pending_exit'] = None
+                if state['pending_entry']:
+                    _buy(open_i, current_date, state['pending_frac'])
+                    state['pending_entry'] = False
+                    state['pending_frac'] = 0.0
+
+            if current_date < start_date:
+                continue  # 区间前不决策、不计权益（也不会有挂单）
+            state['last_close'] = close_i
+            state['last_date'] = current_date
+
+            historical = df.iloc[max(0, i - window):i + 1]
             market = self._create_mock_market(historical)
             signal = self.dispatcher.dispatch(historical, market)
-            if position > 0:
-                current_price = df['close'].iloc[i]
-                pnl_pct = (current_price - entry_price) / entry_price
-                if pnl_pct < -self.stop_loss:
-                    sell_value = position * current_price
-                    commission = sell_value * self.commission_rate
-                    pnl = position * (current_price - entry_price) - commission
-                    capital += sell_value - commission
-                    trades.append({
-                        'code': df['code'].iloc[0],
-                        'entry_date': entry_date,
-                        'exit_date': current_date,
-                        'entry_price': entry_price,
-                        'exit_price': current_price,
-                        'pnl': pnl,
-                        'pnl_pct': pnl_pct,
-                        'reason': 'stop_loss',
-                    })
-                    position = 0
-                    entry_price = 0
-                elif pnl_pct > self.take_profit:
-                    sell_value = position * current_price
-                    commission = sell_value * self.commission_rate
-                    pnl = position * (current_price - entry_price) - commission
-                    capital += sell_value - commission
-                    trades.append({
-                        'code': df['code'].iloc[0],
-                        'entry_date': entry_date,
-                        'exit_date': current_date,
-                        'entry_price': entry_price,
-                        'exit_price': current_price,
-                        'pnl': pnl,
-                        'pnl_pct': pnl_pct,
-                        'reason': 'take_profit',
-                    })
-                    position = 0
-                    entry_price = 0
-            if position == 0 and signal and signal.action.value == 'BUY':
-                price = df['close'].iloc[i]
-                size = capital * signal.position / price
-                buy_value = size * price
-                commission = buy_value * self.commission_rate
-                if buy_value + commission <= capital:
-                    position = size
-                    entry_price = price
-                    entry_date = current_date
-                    capital -= buy_value + commission
-            equity.append(capital + position * df['close'].iloc[i])
-        if position > 0:
-            final_price = df['close'].iloc[-1]
-            sell_value = position * final_price
-            commission = sell_value * self.commission_rate
-            pnl = position * (final_price - entry_price) - commission
-            capital += sell_value - commission
-            trades.append({
-                'code': df['code'].iloc[0],
-                'entry_date': entry_date,
-                'exit_date': df['trade_date'].iloc[-1],
-                'entry_price': entry_price,
-                'exit_price': final_price,
-                'pnl': pnl,
-                'pnl_pct': (final_price - entry_price) / entry_price,
-                'reason': 'end_of_period',
-            })
-            position = 0
+
+            if next_open_fill:
+                # ② 收盘评估止损/止盈 → 挂次日开盘卖出
+                if state['position'] > 0 and state['pending_exit'] is None:
+                    pnl_pct = (close_i - state['entry_price']) / state['entry_price']
+                    if pnl_pct < -self.stop_loss:
+                        state['pending_exit'] = 'stop_loss'
+                    elif pnl_pct > self.take_profit:
+                        state['pending_exit'] = 'take_profit'
+                # ③ 空仓且有 BUY 信号 → 挂次日开盘买入
+                if (state['position'] == 0 and state['pending_exit'] is None
+                        and signal and signal.action.value == 'BUY'):
+                    state['pending_entry'] = True
+                    state['pending_frac'] = float(signal.position)
+            else:
+                # legacy：当日收盘即时成交（仅用于 A/B 对比乐观偏差量）
+                if state['position'] > 0:
+                    pnl_pct = (close_i - state['entry_price']) / state['entry_price']
+                    if pnl_pct < -self.stop_loss:
+                        _sell(close_i, current_date, 'stop_loss')
+                    elif pnl_pct > self.take_profit:
+                        _sell(close_i, current_date, 'take_profit')
+                if (state['position'] == 0 and signal
+                        and signal.action.value == 'BUY'):
+                    _buy(close_i, current_date, float(signal.position))
+
+            equity.append(state['capital'] + state['position'] * close_i)
+
+        # 期末清算：用区间内最后一日值（而非全序列末根，避免越过 end_date 的错位）
+        if state['position'] > 0:
+            final_price = state['last_close'] or float(df['close'].iloc[-1])
+            _sell(final_price, state['last_date'] or dates.iloc[-1], 'end_of_period')
         return trades, equity
 
     def _create_mock_market(self, df: pd.DataFrame) -> MarketState:

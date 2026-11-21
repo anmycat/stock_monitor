@@ -237,5 +237,51 @@ class TestCountAtLimit(unittest.TestCase):
             MarketAlert._count_at_limit(self._df([{'code': 'x'}]), up=True), 0)
 
 
+class TestHistoricalCaliber(unittest.TestCase):
+    """S2/I-12b：创业板注册制改革(2020-08-24)前 ±10%、之后 ±20%。
+
+    实证依据（2026-11-21，Sina 日K 采样 78 只创业板）：
+    - 改革前(2020-06~08-21)：单日涨跌密集落在 ±10%（111 天在 9.5~10.5%），
+      >10.5% 仅 2 次且均为首日无涨跌幅限制的新股（含 47.31% 一只）
+    - 改革后(2020-08-24~10-30)：125 次 >10.5%，其中 40 次落在 19~20.5%，
+      max=20.07% → 印证 ±10% → ±20% 的跳变
+    """
+
+    def test_chinext_before_reform_10(self):
+        self.assertEqual(limit_pct_nominal('300750.SZ', trade_date='2020-08-21'), 10.0)
+        self.assertEqual(limit_pct_nominal('300118.SZ', trade_date='20200821'), 10.0)
+
+    def test_chinext_on_and_after_reform_20(self):
+        self.assertEqual(limit_pct_nominal('300750.SZ', trade_date='2020-08-24'), 20.0)
+        self.assertEqual(limit_pct_nominal('300750.SZ', trade_date='2024-03-01'), 20.0)
+
+    def test_chinext_no_date_uses_today_20(self):
+        """不传日期（实时/今天）→ 20%，与旧行为一致 → 实时信号零漂移"""
+        self.assertEqual(limit_pct_nominal('300750.SZ'), 20.0)
+
+    def test_star_always_20(self):
+        """科创板 2019-07-22 开板即 ±20%，日期无关"""
+        self.assertEqual(limit_pct_nominal('688981.SH', trade_date='2019-08-01'), 20.0)
+        self.assertEqual(limit_pct_nominal('688981.SH', trade_date='2020-08-21'), 20.0)
+
+    def test_bj_and_main_unaffected_by_date(self):
+        self.assertEqual(limit_pct_nominal('920819.BJ', trade_date='2020-08-21'), 30.0)
+        self.assertEqual(limit_pct_nominal('600000.SH', trade_date='2020-08-21'), 10.0)
+        self.assertEqual(
+            limit_pct_nominal('603959.SH', 'ST百利', trade_date='2020-08-21'), 5.0)
+
+    def test_is_at_limit_up_historical_chinext(self):
+        # 2020-08-21（±10%）：+10% 涨停、+8% 非涨停
+        self.assertTrue(is_at_limit_up(10.0, '300750.SZ', trade_date='2020-08-21'))
+        self.assertFalse(is_at_limit_up(8.0, '300750.SZ', trade_date='2020-08-21'))
+        # 2020-08-24（±20%）：+10% 非涨停、+20% 涨停
+        self.assertFalse(is_at_limit_up(10.0, '300750.SZ', trade_date='2020-08-24'))
+        self.assertTrue(is_at_limit_up(20.0, '300750.SZ', trade_date='2020-08-24'))
+
+    def test_date_formats_normalized(self):
+        for d in ('2020-08-21', '2020/08/21', '20200821'):
+            self.assertEqual(limit_pct_nominal('300750.SZ', trade_date=d), 10.0, d)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -28,8 +28,14 @@ from __future__ import annotations
 # ST / *ST / SST / S*ST 前缀 → 名义 5%
 _ST_PREFIXES = ('ST', '*ST', 'SST', 'S*ST')
 
-# 创业板 / 科创板 → 20%
+# 创业板 / 科创板 → 20%（physical 物理上限仍统一按此，见 limit_pct_physical）
 _GROWTH_BOARD = ('688', '689', '300', '301', '302')
+
+# S2/I-12b：创业板注册制改革日——2020-08-24 起涨跌幅由 ±10% 放宽至 ±20%。
+# 仅影响「历史区间」判定；实时（今天）与科创板(688/689，2019-07-22 开板即 20%)
+# 不受影响。limit_pct_physical 保持日期无关（进 sanitize → D41 零漂移铁律）。
+_CHINEXT_PREFIX = ('300', '301', '302')
+_CHINEXT_20PCT_START = '20200824'
 
 # 北交所 → 30%
 _BJ_BOARD = ('4', '8', '92')
@@ -38,13 +44,31 @@ _BJ_BOARD = ('4', '8', '92')
 _PHYSICAL_TOLERANCE = 0.5
 
 
-def limit_pct_nominal(code: str, name: str | None = None) -> float:
+def _date_key(trade_date) -> str:
+    """把交易日归一为可比较的 YYYYMMDD 字符串；无法解析返回空串（=按今天口径）。
+
+    兼容 '2024-08-24' / '2024/08/24' / '20240824' / pd.Timestamp 等输入。
+    """
+    if trade_date is None:
+        return ''
+    s = str(trade_date)
+    digits = ''.join(ch for ch in s if ch.isdigit())
+    return digits[:8]
+
+
+def limit_pct_nominal(code: str, name: str | None = None,
+                      trade_date=None) -> float:
     """该股当日**名义**涨跌停幅度（%）
 
-    - 创业板(300/301/302) / 科创板(688/689)：**20%**
+    - 创业板(300/301/302)：**2020-08-24 起 20%**（注册制改革）；**此前 10%**
+    - 科创板(688/689)：**20%**（2019-07-22 开板即 20%，日期无关）
     - 北交所(4/8/92 段 或 .BJ)：**30%**
     - 主板 ST / *ST / SST 前缀：**5%**
     - 其余主板（沪 60x/605、深 00x/001/002/003）：**10%**
+
+    ``trade_date`` 为**可选**历史口径参数（S2/I-12b，2026-11-21 用户裁定）：
+    传入历史交易日时按当时监管口径判定（创业板改革前 ±10%）；不传（None，
+    实时/今天）时创业板一律 20%，与旧行为一致 → **实时信号零漂移**。
 
     **ST 判定只对主板生效**（易错点）：注册制板块（创业板/科创板）的 ST/*ST 股
     涨跌幅限制与普通股同为 **20%**；北交所 ST 股同为 **30%**。只有主板 ST 才是 5%。
@@ -52,8 +76,14 @@ def limit_pct_nominal(code: str, name: str | None = None) -> float:
     误认为涨停，实际其名义幅度为 20%，+4.68% 只是普通涨幅。
     """
     num = str(code).split('.')[0]
-    # 注册制板块优先（ST 同幅度）
-    if num.startswith(_GROWTH_BOARD):
+    dk = _date_key(trade_date)
+    # 创业板：注册制改革(2020-08-24)前 ±10%，之后 ±20%
+    if num.startswith(_CHINEXT_PREFIX):
+        if dk and dk < _CHINEXT_20PCT_START:
+            return 10.0
+        return 20.0
+    # 科创板：开板即 ±20%，日期无关
+    if num.startswith(('688', '689')):
         return 20.0
     if str(code).endswith('.BJ') or num.startswith(_BJ_BOARD):
         return 30.0
@@ -110,28 +140,35 @@ def _tolerance(pct: float, price: float | None, nominal: float) -> float:
 
 
 def is_at_limit_up(pct: float | None, code: str, name: str | None = None,
-                   price: float | None = None) -> bool:
-    """是否处于涨停（含四舍五入容差）"""
+                   price: float | None = None, trade_date=None) -> bool:
+    """是否处于涨停（含四舍五入容差）
+
+    ``trade_date`` 可选：传入历史交易日时按当时监管口径（S2/I-12b，创业板改革
+    前 ±10%）；不传（实时）时按今天口径，实时信号零漂移。
+    """
     if pct is None:
         return False
     try:
         pct = float(pct)
     except (TypeError, ValueError):
         return False
-    nominal = limit_pct_nominal(code, name)
+    nominal = limit_pct_nominal(code, name, trade_date)
     tol = _tolerance(pct, price, nominal)
     return pct >= nominal - tol
 
 
 def is_at_limit_down(pct: float | None, code: str, name: str | None = None,
-                     price: float | None = None) -> bool:
-    """是否处于跌停（含四舍五入容差）"""
+                     price: float | None = None, trade_date=None) -> bool:
+    """是否处于跌停（含四舍五入容差）
+
+    ``trade_date`` 可选语义同 ``is_at_limit_up``。
+    """
     if pct is None:
         return False
     try:
         pct = float(pct)
     except (TypeError, ValueError):
         return False
-    nominal = limit_pct_nominal(code, name)
+    nominal = limit_pct_nominal(code, name, trade_date)
     tol = _tolerance(pct, price, nominal)
     return pct <= -(nominal - tol)

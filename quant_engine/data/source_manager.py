@@ -53,6 +53,13 @@ class SourceStatus:
         self.last_success_time = 0.0
         self.fallback_count = 0
         self.on_state_change = None  # 由 SourceManager 注入（节流持久化）
+        # S7/N-03 半开探测状态机
+        # half_open：当前是否处于「冷却/熔断结束、放行单次试探」的半开态
+        # _probe_deadline：本次试探的截止时间戳（0=无在途试探）
+        # _needs_probe：曾进入冷却/熔断且尚未被一次成功请求证明康复（恢复时须先试探）
+        self.half_open: bool = False
+        self._probe_deadline: float = 0.0
+        self._needs_probe: bool = False
         # D70/N-03：错误分类计数（旁路可观测，不改变现有熔断判定）
         # key=timeout/error/empty_threshold 等分类，value=累计次数
         self.error_kind_counts: dict[str, int] = {}
@@ -69,6 +76,45 @@ class SourceStatus:
             return False
         return not now < self.cooldown_until
 
+    def try_probe(self, probe_timeout: float = 60.0) -> tuple[bool, bool]:
+        """S7/N-03 半开探测准入（真正的「是否放行一次请求」门禁）。
+
+        ``is_available`` 只是纯查询（冷却/熔断/抑制三窗口），会在状态报告、
+        源选择等多处被调用，不能有副作用。半开探测的副作用集中在这里，只在
+        ``execute_with_retry`` 真正派发前调用一次。
+
+        返回 ``(allow, is_probe)``：
+
+        * CLOSED（健康）                     → ``(True, False)`` 正常放行
+        * 冷却/熔断窗口刚过且需证明康复       → ``(True, True)`` 放行唯一一次试探
+        * HALF_OPEN 探测在途                 → ``(False, True)`` 拒绝并发探测
+        * 探测超时未决                       → ``(False, False)`` 重新熔断（短惩罚）
+        """
+        now = time.time()
+        if self.half_open:
+            if self._probe_deadline and now < self._probe_deadline:
+                return False, True  # 已有试探在途，别再打第二个
+            # 试探卡死超时 → 重新熔断短时，待下轮再探
+            self.half_open = False
+            self._probe_deadline = 0.0
+            self._needs_probe = True
+            self._cooldown_streak = 0
+            self.quarantined_until = now + 120.0
+            logger.warning(f"Source {self.name} 探测超时未决 → 重新熔断 120s")
+            self._changed()
+            return False, False
+        # 有未愈失败史，且三窗口均已过期 → 放行单次试探
+        if (self._needs_probe
+                and now >= self.quarantined_until
+                and now >= self.cooldown_until
+                and now >= self.suppress_until):
+            self.half_open = True
+            self._probe_deadline = now + max(probe_timeout, 0.0)
+            logger.warning(f"Source {self.name} 冷却/熔断结束 → HALF_OPEN 单次试探")
+            self._changed()
+            return True, True
+        return True, False
+
     def _changed(self) -> None:
         cb = self.on_state_change
         if cb is not None:
@@ -79,7 +125,8 @@ class SourceStatus:
 
     def record_success(self):
         """记录成功请求"""
-        had_failure = bool(self.error_count or self.empty_count or self.timeout_streak)
+        had_failure = bool(self.error_count or self.empty_count
+                           or self.timeout_streak or self.half_open)
         self.request_count += 1
         self.success_count += 1
         self.last_request_time = time.time()
@@ -91,6 +138,12 @@ class SourceStatus:
         self.suppress_until = 0.0
         self.last_error_kind = None
         self.last_error_message = None
+        # S7/N-03：一次成功即证明康复 → 关闭半开并彻底清空熔断/冷却窗口
+        self.half_open = False
+        self._probe_deadline = 0.0
+        self._needs_probe = False
+        self.cooldown_until = 0
+        self.quarantined_until = 0
         if had_failure:
             self._changed()
 
@@ -110,10 +163,18 @@ class SourceStatus:
         self.last_request_time = time.time()
         self.last_empty_reason = reason
         self.missing_codes = list(missing_codes or [])
+        # S7/N-03：半开探测拿到传输层响应（空≠挂）→ 视为康复，关闭半开
+        if self.half_open:
+            self.half_open = False
+            self._probe_deadline = 0.0
+            self._needs_probe = False
+            self.cooldown_until = 0
+            self.quarantined_until = 0
         if self.empty_count >= empty_threshold:
             self.error_count += 1
             self.empty_count = 0
             self.cooldown_until = time.time() + 300
+            self._needs_probe = True  # S7：升级冷却后，恢复须先半开试探
             self.last_error_kind = 'empty_threshold'
             logger.warning(
                 f"Source {self.name} entering cooldown (连续 {empty_threshold} 次空结果)")
@@ -136,9 +197,24 @@ class SourceStatus:
         self.error_kind_counts[kind] = self.error_kind_counts.get(kind, 0) + 1
         if kind == 'timeout':
             self.timeout_streak += 1
+        # S7/N-03：半开探测若失败 → 立即重新熔断（不再等 error_count>=3 /
+        # 连续 3 轮冷却），避免把「刚到期的一瞬间」当成康复而全量放行。
+        if self.half_open:
+            self.half_open = False
+            self._probe_deadline = 0.0
+            self._needs_probe = True          # 下次恢复仍须先试探
+            self.cooldown_until = 0
+            self._cooldown_streak = 0
+            self.quarantined_until = time.time() + quarantine_seconds
+            self.error_count = 0              # 复位计数，避免泄漏到下一轮判定
+            logger.warning(
+                f"Source {self.name} 半开探测失败 → 重新熔断 {quarantine_seconds}s")
+            self._changed()
+            return
         if self.error_count >= 3:
             self.cooldown_until = time.time() + cooldown_seconds
             self._cooldown_streak += 1
+            self._needs_probe = True          # S7：进入冷却，恢复须先半开试探
             if self._cooldown_streak >= 3:
                 # 连续 3 轮冷却仍未恢复 → 熔断：期间彻底跳过该源，
                 # 省掉每次请求的网络超时（TDX 网关不可达 / 东财风控场景）
@@ -162,6 +238,10 @@ class SourceStatus:
         self.suppress_until = 0.0
         self.last_error_kind = None
         self.last_error_message = None
+        # S7/N-03：清空半开探测状态
+        self.half_open = False
+        self._probe_deadline = 0.0
+        self._needs_probe = False
         self.error_kind_counts.clear()       # D70/N-03
         self.endpoint_cooldowns.clear()      # D70/N-03
         self._changed()
@@ -311,6 +391,23 @@ class SourceManager:
         if not source.is_available(self.cooldown_seconds):
             logger.debug(f"Source {source_name} is in cooldown")
             return None
+
+        # S7/N-03：半开探测准入。冷却/熔断窗口刚过时不直接全量放行，
+        # 而是只放行唯一一次试探请求（失败立即重熔断、成功才彻底康复）。
+        try:
+            from ..config import get_settings
+            _cfg = get_settings()
+            _half_open_on = bool(getattr(_cfg, 'SOURCE_HALF_OPEN', True))
+            _probe_timeout = float(getattr(_cfg, 'SOURCE_HALF_OPEN_PROBE_SECONDS', 60.0))
+        except Exception:  # 配置缺失时退化为启用（安全侧）
+            _half_open_on, _probe_timeout = True, 60.0
+        if _half_open_on:
+            _allow, _is_probe = source.try_probe(_probe_timeout)
+            if not _allow:
+                logger.debug(f"Source {source_name} 半开探测在途/超时，本轮跳过")
+                return None
+            if _is_probe:
+                max_retries = 1  # 探测只打一次，不因默认重试放大请求
 
         # 添加超时参数（仅当方法支持时）
         import inspect
@@ -474,6 +571,10 @@ class SourceManager:
                 'cooldown_until': source.cooldown_until,
                 'quarantined_until': source.quarantined_until,
                 'quarantined': now < source.quarantined_until,
+                # S7/N-03：半开探测可观测（只读旁路，不影响取数）
+                'half_open': source.half_open,
+                'needs_probe': source._needs_probe,
+                'probe_deadline': source._probe_deadline,
                 # I-02/I-05 结构化诊断
                 'suppressed': now < source.suppress_until,
                 'suppress_until': source.suppress_until,

@@ -326,9 +326,14 @@ class TestDisciplineMetrics(unittest.TestCase):
         self.assertEqual(m['computed_by'], 'code')
         self.assertEqual(len(render_discipline_fields(m)), 7)
 
-    def test_default_switch_off(self):
+    def test_default_switch_on_after_r3(self):
+        """R3（2026-11-21 用户裁定推进）：I-08 过程纪律第六维默认启用。
+
+        原实现默认关闭（D67 上线时仅登记）。R3 已把默认改为 True——只加日报
+        展示分区、不进门控 5 维综合分、不改仓位，零信号影响（D61 铁律）。
+        """
         from quant_engine.config import Settings
-        self.assertFalse(Settings().DAILY_REPORT_DISCIPLINE_DIMENSION)
+        self.assertTrue(Settings().DAILY_REPORT_DISCIPLINE_DIMENSION)
 
 
 class TestAuthPartialAndEfficiencyExtras(unittest.TestCase):

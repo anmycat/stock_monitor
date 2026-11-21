@@ -13,9 +13,9 @@
 - 现价与日K基准偏离 > 3% 的票数（D64 跳空提示命中）
 - 近 5 个交易日日报封存覆盖（流程是否按日执行）
 
-``DAILY_REPORT_DISCIPLINE_DIMENSION`` 默认 **False**：口径是否纳入正式
-第六维、是否参与任何评分，仍需用户裁定（docs/34 I-08）。默认关闭时本模块
-完全不被调用，日报输出与上一版逐字段一致。
+``DAILY_REPORT_DISCIPLINE_DIMENSION`` 默认 **True**（2026-11-21 用户裁定 R3 推进）。
+口径仍严守「客观统计」，不参与门控 5 维综合分、不改仓位建议——它只是日报里的
+一个展示分区（可折叠）。若需临时关闭，`.env` 设 False 即回到无此分区的旧输出。
 """
 from __future__ import annotations
 
