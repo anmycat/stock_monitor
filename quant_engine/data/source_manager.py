@@ -541,6 +541,20 @@ class SourceManager:
                 f"[D66] stale snapshot rejected: {method_name} {args} "
                 f"belongs to {entry['session']}, not today")
             return None
+        # D69：陈旧报价年龄硬拒绝层（默认 0=关闭，保持零信号漂移）。
+        # 只作用于实时报价快照；日K 已有 D66 末根日期/封存校验，不在此重复拦截。
+        if method_name == 'get_realtime_quote':
+            try:
+                from ..config import get_settings
+                reject_after = int(get_settings().STALE_QUOTE_REJECT_SECONDS or 0)
+            except Exception:
+                reject_after = 0
+            if reject_after > 0 and age > reject_after:
+                del self._snapshot_cache[key]
+                logger.warning(
+                    f"[D69] stale quote rejected: {method_name} {args} "
+                    f"age={age:.0f}s exceeds {reject_after}s limit")
+                return None
         logger.warning(f"Using stale snapshot for {method_name} (age={age:.0f}s)")
         df = entry['data'].copy()
         df.attrs['_stale'] = True

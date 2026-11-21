@@ -17,6 +17,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
+import requests  # D69：RST 定向恢复测试
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import quant_engine.data.sources.eastmoney as em
@@ -296,6 +298,68 @@ class TestLocalFallbackSemantics(unittest.TestCase):
                                   return_value=SimpleNamespace(EM_GLOBAL_THROTTLE=True)):
             t.wait()
         self.assertTrue(sleep.called)
+
+
+class TestRstRecovery(unittest.TestCase):
+    """D69：对端主动断连（RST）定向恢复——清连接池重建后重试一次。"""
+
+    def setUp(self):
+        self.orig_count = em.get_rst_recovery_count()
+        self.rst = requests.exceptions.ConnectionError(
+            "('Connection aborted.', RemoteDisconnected('Remote end closed "
+            "connection without response'))")
+
+    def tearDown(self):
+        em._RST_RECOVERY_COUNT = self.orig_count
+
+    def test_rst_retries_once_with_fresh_connection(self):
+        ok = FakeResponse()
+        with mock.patch.object(em.time, 'sleep'), \
+                mock.patch.object(em, '_SESSION') as sess, \
+                mock.patch.object(em, '_THROTTLE') as thr:
+            sess.get.side_effect = [self.rst, ok]
+            out = em_get('https://push2.eastmoney.com/api/x')
+        self.assertIs(out, ok)
+        self.assertEqual(sess.get.call_count, 2)
+        self.assertTrue(sess.close.called, 'RST 后必须清空失效连接池')
+        self.assertEqual(thr.wait.call_count, 2, '重试也必须守限速')
+
+    def test_non_rst_error_does_not_retry(self):
+        err = requests.exceptions.ConnectionError('DNS lookup failed')
+        with mock.patch.object(em.time, 'sleep'), \
+                mock.patch.object(em, '_SESSION') as sess, \
+                mock.patch.object(em, '_THROTTLE'):
+            sess.get.side_effect = err
+            with self.assertRaises(requests.exceptions.ConnectionError):
+                em_get('https://push2.eastmoney.com/api/x')
+        self.assertEqual(sess.get.call_count, 1)
+        self.assertFalse(sess.close.called)
+
+    def test_persistent_rst_fails_after_one_retry(self):
+        with mock.patch.object(em.time, 'sleep'), \
+                mock.patch.object(em, '_SESSION') as sess, \
+                mock.patch.object(em, '_THROTTLE'):
+            sess.get.side_effect = [self.rst, self.rst]
+            with self.assertRaises(requests.exceptions.ConnectionError):
+                em_get('https://push2.eastmoney.com/api/x')
+        self.assertEqual(sess.get.call_count, 2, '只重试一次，不无限重试')
+
+    def test_recovery_counter_increments(self):
+        ok = FakeResponse()
+        before = em.get_rst_recovery_count()
+        with mock.patch.object(em.time, 'sleep'), \
+                mock.patch.object(em, '_SESSION') as sess, \
+                mock.patch.object(em, '_THROTTLE'):
+            sess.get.side_effect = [self.rst, ok]
+            em_get('https://push2.eastmoney.com/api/x')
+        self.assertEqual(em.get_rst_recovery_count(), before + 1)
+
+    def test_rst_detector_variants(self):
+        self.assertTrue(em._is_rst_connection_error(self.rst))
+        self.assertTrue(em._is_rst_connection_error(ConnectionResetError('reset by peer')))
+        self.assertFalse(em._is_rst_connection_error(ValueError('bad json')))
+        self.assertFalse(em._is_rst_connection_error(
+            requests.exceptions.ReadTimeout('read timeout')))
 
 
 if __name__ == '__main__':

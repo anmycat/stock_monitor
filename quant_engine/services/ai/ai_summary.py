@@ -18,7 +18,8 @@ AI智能分析总结服务 - 多模型融合架构
 - 云知声鉴权头 `x-api-key` 与 `Authorization: Bearer` 两者都接受。
 - **重要**：u2 系列是思考型模型，思考 token 计入 max_tokens；
   max_tokens 过小 → content=null + finish_reason=length（正文全丢）。
-  项目默认 UNISOUND_MAX_TOKENS=1500，实测足够覆盖 500 字总结。
+  项目默认 UNISOUND_MAX_TOKENS=6000（D69 从 2500 上调：ECS 近 7 天 3 次
+  finish_reason=length 空正文实证 2500 不足）。
 - 注意：请求 model="u2" 时服务端实际路由到 u2-flash（响应 model 字段回显
   u2-flash）；显式写 "u2-flash" 亦可，但 max_tokens 需更大（实测 100 会
   content=null）。项目用 "u2" + 1500。
@@ -138,7 +139,7 @@ class AISummary:
                 auth_header="Authorization",  # 实测 x-api-key 与 Bearer 都接受
                 weight=0.7,  # 主力权重
                 supports_thinking=True,
-                max_tokens=int(settings.UNISOUND_MAX_TOKENS or 2500),
+                max_tokens=int(settings.UNISOUND_MAX_TOKENS or 6000),
                 timeout=90,  # 思考型模型响应偏慢（实测 11~16s），给足超时
             )
 
@@ -469,7 +470,7 @@ class AISummary:
         """发起一次模型请求（不重试；重试逻辑在 _call_single_model）"""
         start = time.time()
 
-        # D66：调用方不指定时，直接用模型自身预算（思考型 U2 = 2500）。
+        # D66：调用方不指定时，直接用模型自身预算（思考型 U2 = 6000）。
         # 原实现默认 1500 + min() → 无论 .env 配 2500，ensemble/cascade
         # 实际都只发 1500，ECS 近 7 天因此出现 8 次 finish_reason=length
         # 空正文、5 次重试、1 次模型级联失败。

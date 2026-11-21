@@ -64,6 +64,12 @@ class Settings(BaseSettings):
     # 连续多少次同类超时才进入抑制（避免偶发抖动误伤）
     SOURCE_TIMEOUT_SUPPRESS_STREAK: int = 2
 
+    # D69 陈旧报价硬拒绝层（2026-11-21，ECS 体检实证）
+    # 0 = 关闭（默认，保持既有「降级优于无数据」行为与零信号漂移）；
+    # >0 = 实时报价快照超过该秒数则不再返回旧价（返回 None 触发源链继续降级）。
+    # 启用会改变信号（超龄时该轮不出信号），必须 D41 双跑 + 用户裁定后再开。
+    STALE_QUOTE_REJECT_SECONDS: int = 0
+
     # I-11 AI 叙述失败时仍推送已完成的部分结果（附降级标记）
     AI_PARTIAL_NOTIFY: bool = True
 
@@ -92,10 +98,12 @@ class Settings(BaseSettings):
     UNISOUND_MODEL: str = "u2"          # 可选：u2 / u2-flash / u2-med
     # 思考型模型（u2 系列）思考 token 也会计入 max_tokens；
     # max_tokens 过小会导致 content=null + finish_reason=length。
-    # D57 实测：典型 output 261~1256 tokens，但**偶发**思考超预算
-    # （生产 morning_review 出现过一次 finish_reason=length 空正文）。
-    # 取 2500 留足余量（实测延迟 11~16s，余量充足）。
-    UNISOUND_MAX_TOKENS: int = 2500
+    # D57 实测：典型 output 261~1256 tokens，偶发思考超预算。
+    # D69（2026-11-21）：ECS 近 7 天出现 3 次 finish_reason=length 空正文，
+    # 其中一次两轮重试仍为空 → 级联降级，实证 2500 已不足。
+    # 上调至 6000 留足 thinking + 正文余量。
+    # 注意：ECS 的 .env 若仍显式写 2500 会覆盖本默认值，部署时必须同步改。
+    UNISOUND_MAX_TOKENS: int = 6000
 
     # 小米MiMo配置（D56：已下线，保留字段以兼容旧 .env，不再注册模型）
     MIMO_API_KEY: str = ""

@@ -34,6 +34,8 @@ class SignalGenerator:
         self.trades: list[dict] = []
         # I-05：资金流 provider 可注入（回归脚本不再需要 /tmp wrapper 去 patch 类方法）
         self._capital_flow_provider = None
+        # D69：幂等跳过数按轮汇总，避免逐票 DEBUG 日志（ECS 近7天 11200 行）
+        self._idempotent_skipped = 0
 
     def set_capital_flow_provider(self, provider) -> None:
         """注入资金流 provider（需实现 ``get_capital_flow(code, days)``）。
@@ -85,6 +87,11 @@ class SignalGenerator:
                         break
             except Exception as e:  # noqa: BLE001 单项跳过
                 logger.error(f"Analyze {stock[0]} error: {e}")
+
+        # D69：幂等跳过逐票日志 → 每轮一条汇总（11200 行/7天 → ~1 行/轮）
+        if self._idempotent_skipped:
+            logger.debug(f"Idempotent skipped {self._idempotent_skipped} signals this round")
+            self._idempotent_skipped = 0
 
         # 热点板块加分
         try:
@@ -164,7 +171,7 @@ class SignalGenerator:
         date_str = datetime.now().strftime("%Y%m%d")
         signal_hash = CooldownManager.generate_signal_hash(code, signal.action.value, date_str)
         if not self.cooldown_manager.is_idempotent(signal_hash):
-            logger.debug(f"Idempotent check failed for {code}")
+            self._idempotent_skipped += 1  # D69：轮末汇总，不再逐票打 DEBUG
             return None
         self.cooldown_manager.set_idempotent(signal_hash)
         if signal.action == SignalAction.BUY:

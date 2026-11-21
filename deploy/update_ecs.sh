@@ -91,7 +91,12 @@ else
 fi
 
 echo "== 1/6 备份 ECS 现有生产代码（本次迭代前备份）"
-ssh $SSH_OPTS $ECS "tar czf /root/backup_pre_refactor_$TS.tar.gz --exclude='__pycache__' --exclude='.ruff_cache' -C $REMOTE quant_engine UX 2>/dev/null; ls -lh /root/backup_pre_refactor_$TS.tar.gz; (cd $REMOTE/quant_engine && git rev-parse HEAD 2>/dev/null || echo no-git) > /root/ecs_version_$TS.txt; cat /root/ecs_version_$TS.txt"
+# D69：ECS 侧没有 .git（rsync 不上传），旧逻辑恒写 no-git、无法追溯线上版本。
+# 改为在本地取 commit hash，随备份一并写入版本记录。
+LOCAL_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo unknown-commit)
+LOCAL_COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+ssh $SSH_OPTS $ECS "tar czf /root/backup_pre_refactor_$TS.tar.gz --exclude='__pycache__' --exclude='.ruff_cache' -C $REMOTE quant_engine UX 2>/dev/null; ls -lh /root/backup_pre_refactor_$TS.tar.gz; printf '%s\n' '$LOCAL_COMMIT' > /root/ecs_version_$TS.txt; cat /root/ecs_version_$TS.txt"
+echo "  部署版本（本地 commit）：$LOCAL_COMMIT_SHORT"
 
 echo "== 2/6 上传代码（quant_engine + UX；排除 .env/__pycache__/logs）"
 RSYNC_EXCLUDES=(--exclude='__pycache__' --exclude='*.pyc' --exclude='.env' --exclude='.env.*'

@@ -284,6 +284,51 @@ class TestDayBoundaryGuard(unittest.TestCase):
         self.assertIsNotNone(out)
         self.assertTrue(out.attrs.get('_stale'))
 
+    def test_stale_quote_reject_disabled_by_default(self):
+        """D69：默认关闭时超龄报价仍放行（零信号漂移）。"""
+        mgr = SourceManager()
+        mgr.register_source('demo')
+        df = _df([PREV, SESSION])
+        with mock.patch('quant_engine.config.get_settings',
+                        return_value=mock.Mock(STALE_QUOTE_REJECT_SECONDS=0)), \
+                mock.patch.object(SourceManager, '_expected_session',
+                                  staticmethod(lambda: SESSION)):
+            mgr._save_snapshot('get_realtime_quote', ('600519.SH',), df)
+            mgr._snapshot_cache[mgr._snapshot_key(
+                'get_realtime_quote', ('600519.SH',))]['timestamp'] -= 15765
+            out = mgr._load_stale_snapshot('get_realtime_quote', ('600519.SH',))
+        self.assertIsNotNone(out)
+        self.assertTrue(out.attrs['_stale'])
+
+    def test_stale_quote_rejected_when_over_age_limit(self):
+        """D69：开关 >0 时超龄报价返回 None，且从缓存移除。"""
+        mgr = SourceManager()
+        mgr.register_source('demo')
+        df = _df([PREV, SESSION])
+        mgr._save_snapshot('get_realtime_quote', ('600519.SH',), df)
+        key = mgr._snapshot_key('get_realtime_quote', ('600519.SH',))
+        mgr._snapshot_cache[key]['timestamp'] -= 15765
+        with mock.patch('quant_engine.config.get_settings',
+                        return_value=mock.Mock(STALE_QUOTE_REJECT_SECONDS=1800)), \
+                mock.patch.object(SourceManager, '_expected_session',
+                                  staticmethod(lambda: SESSION)):
+            out = mgr._load_stale_snapshot('get_realtime_quote', ('600519.SH',))
+        self.assertIsNone(out)
+        self.assertNotIn(key, mgr._snapshot_cache)
+
+    def test_daily_data_not_affected_by_quote_reject(self):
+        """D69：硬拒绝只作用于报价，日K 快照不受影响。"""
+        mgr = SourceManager()
+        mgr.register_source('demo')
+        df = _df([PREV, SESSION])
+        with mock.patch('quant_engine.config.get_settings',
+                        return_value=mock.Mock(STALE_QUOTE_REJECT_SECONDS=1800)), \
+                mock.patch.object(SourceManager, '_expected_session',
+                                  staticmethod(lambda: SESSION)):
+            mgr._save_snapshot('get_daily_data', ('600519.SH', 120), df)
+            out = mgr._load_stale_snapshot('get_daily_data', ('600519.SH', 120))
+        self.assertIsNotNone(out)
+
     def test_dead_priority_entry_warns(self):
         class NoDaily:
             pass

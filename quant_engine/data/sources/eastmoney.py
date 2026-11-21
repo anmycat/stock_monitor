@@ -124,6 +124,30 @@ _THROTTLE = _Throttle()
 # 三招之二/之三：所有东财请求共用一个 Session（连接复用 + keep-alive）
 _SESSION = requests.Session()
 
+# D69：对端主动断连（RST）定向恢复计数。只打日志 + 内存计数，不新增 Redis 键
+# （避免为观察指标引入新键/新连接；需要时由能力中心读取本计数）。
+_RST_RECOVERY_COUNT = 0
+
+
+def get_rst_recovery_count() -> int:
+    """返回进程内 RST 定向恢复累计次数（只读，供健康面板/诊断使用）。"""
+    return _RST_RECOVERY_COUNT
+
+
+def _is_rst_connection_error(exc: BaseException) -> bool:
+    """识别「对端主动关闭已建立连接」（RemoteDisconnected / RST）。
+
+    与 HTTP 4xx/5xx、读超时区分：这类错误的特征是连接已被对端回收，
+    复用同一条 keep-alive 连接必然再次失败 —— 必须清掉连接池重建，
+    而通用重试（_get_json 的 3 次）只是原样重试，不解决根因。
+    """
+    if isinstance(exc, ConnectionResetError):
+        return True
+    text = str(exc).lower()
+    return ('remotedisconnected' in text
+            or 'connection aborted' in text
+            or 'connection reset by peer' in text)
+
 
 def attach_global_throttle(cache) -> None:
     """装配点：把已连接的 RedisCache 注入全局限速器（MarketDataRepository 启动时调用）。
@@ -150,12 +174,30 @@ def em_get(url: str, *, params: dict | None = None,
     search-api-web / fundf10）的请求都必须经此函数，不得直接
     requests.get / urllib.urlopen / httpx.Client —— 否则三招形同虚设。
     headers 按请求合并（不同子域 Referer/UA 不同），不会污染共享 Session。
+
+    D69：对端主动断连（RemoteDisconnected/RST）时，清掉失效连接池重建后
+    定向重试一次 —— 通用 3 次重试原样复用同一条死连接，不解决根因。
     """
-    _THROTTLE.wait()
+    global _RST_RECOVERY_COUNT
     merged = dict(EastMoneySource.HEADERS)
     if headers:
         merged.update(headers)
-    return _SESSION.get(url, params=params or {}, headers=merged, timeout=timeout)
+
+    _THROTTLE.wait()
+    try:
+        return _SESSION.get(url, params=params or {}, headers=merged, timeout=timeout)
+    except requests.exceptions.ConnectionError as exc:
+        if not _is_rst_connection_error(exc):
+            raise  # 超时/DNS/普通连接错误仍交给上层通用重试
+        # 不换 Session 对象身份（其它模块持有的引用仍有效），只清空其连接池；
+        # 下次 .get() 会用新 TCP 连接，真正避开被对端回收的旧连接。
+        _SESSION.close()
+        _RST_RECOVERY_COUNT += 1
+        logger.warning(
+            f"[EM] 对端断连(RST)，已重建连接重试一次（累计 {_RST_RECOVERY_COUNT}）: "
+            f"{type(exc).__name__}")
+        _THROTTLE.wait()  # 重试同样守三招，不因恢复而绕过限速
+        return _SESSION.get(url, params=params or {}, headers=merged, timeout=timeout)
 
 
 class EastMoneySource:
