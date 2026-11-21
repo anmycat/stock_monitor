@@ -1,5 +1,6 @@
 from ..backtest.engine import BacktestEngine
 from ..data.repositories import MarketDataRepository
+from ..data.sources.ths_financial import build_ths_context_provider
 from ..services.ai.llm_ranker import LLMRanker
 from ..services.code_guard import CodeGuard
 from ..services.market.market_alert import MarketAlert
@@ -26,7 +27,9 @@ sector_monitor = SectorMonitor(datacenter)
 # market 叶族不得 import monitors：板块数据由 L0 注入 provider（依赖倒置）
 market_alert = MarketAlert(
     datacenter,
-    sector_data_provider=lambda: sector_monitor.get_sector_data())
+    sector_data_provider=lambda: sector_monitor.get_sector_data(),
+    # D71：默认关闭/无 Key → None，零请求零行为变化
+    ths_context_provider=build_ths_context_provider())
 hot_money_monitor = HotMoneyMonitor(datacenter)
 # P4：funnel 增强层由 L0 注入 L1 实例（L2 strategies 不再反向 import L1 services）
 strategy_registry = StrategyRegistry(

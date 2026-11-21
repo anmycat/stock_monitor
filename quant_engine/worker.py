@@ -7,6 +7,7 @@ from loguru import logger
 
 from .backtest.post_evaluation import PostEvaluation
 from .data.repositories import MarketDataRepository
+from .data.sources.ths_financial import build_ths_context_provider
 from .services.ai.ai_summary import AISummary
 from .services.market.market_alert import MarketAlert
 from .services.market.market_analyzer import MarketAnalyzer
@@ -345,7 +346,9 @@ def main():
     generator = SignalGenerator(datacenter)
     analyzer = MarketAnalyzer(datacenter)
     alert_detector = MarketAlert(
-        datacenter, sector_data_provider=lambda: get_sector_data(datacenter))
+        datacenter, sector_data_provider=lambda: get_sector_data(datacenter),
+        # D71：默认关闭/无 Key → None，零请求零行为变化
+        ths_context_provider=build_ths_context_provider())
     ai_summary = AISummary()
     burst_monitor = BurstMonitor(datacenter)
     notifier = NotificationManager()

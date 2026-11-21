@@ -21,28 +21,79 @@ class MarketAlert:
     """
 
     def __init__(self, datacenter: MarketDataRepository,
-                 sector_data_provider=None):
+                 sector_data_provider=None, ths_context_provider=None):
         self.datacenter = datacenter
         self.sector_data_provider = sector_data_provider
+        # D71：同花顺官方数据只做证据注入（默认 None → 零请求零行为变化）
+        self.ths_context_provider = ths_context_provider
+        self._ths_context = None
+        self._ths_context_at = 0.0
+        self._ths_context_ttl = 120.0
         self.last_alert_time = {}
         self.alert_cooldown = 300
         self.history = []
 
+    def _get_ths_context(self) -> dict | None:
+        """取 THS 证据包（缓存 120s，失败不缓存以便下一轮重试）。"""
+        if self.ths_context_provider is None:
+            return None
+        now = time.time()
+        if self._ths_context is not None and now - self._ths_context_at < self._ths_context_ttl:
+            return self._ths_context
+        try:
+            ctx = self.ths_context_provider()
+        except Exception as e:  # noqa: BLE001 外部数据源边界
+            logger.warning(f"THS market alert context failed: {type(e).__name__}: {e}")
+            return None
+        if isinstance(ctx, dict) and ctx:
+            self._ths_context = ctx
+            self._ths_context_at = now
+            return ctx
+        return None
+
     def detect_alerts(self, market: MarketState) -> list[dict]:
+        ths_ctx = self._get_ths_context()
         alerts = []
-        alerts.extend(self._check_limit_alerts(market))
+        alerts.extend(self._check_limit_alerts(market, ths_ctx))
         alerts.extend(self._check_volume_alerts())
         alerts.extend(self._check_index_alerts(market))
         alerts.extend(self._check_breadth_alerts(market))
         alerts.extend(self._check_sector_alerts())
+        if ths_ctx:
+            alerts.extend(self._check_ths_seal_alerts(ths_ctx))
         alerts = self._filter_cooldown(alerts)
         self.history.extend(alerts)
         if len(self.history) > 100:
             self.history = self.history[-100:]
         return alerts
 
-    def _check_limit_alerts(self, market: MarketState | None = None) -> list[dict]:
-        """涨跌停家数异动（D63 口径修正）
+    def _check_ths_seal_alerts(self, ctx: dict) -> list[dict]:
+        """封板转弱告警：THS 官方统计才有的维度，默认开关关闭时不发生。"""
+        from ...config import get_settings
+        cfg = get_settings()
+        if not cfg.THS_MARKET_ALERT_ENRICH:
+            return []
+        seal_rate = ctx.get('seal_rate')
+        broken = ctx.get('open_stock_count')
+        if not isinstance(seal_rate, (int, float)) or not isinstance(broken, int):
+            return []
+        if seal_rate >= cfg.THS_SEAL_RATE_WEAK or broken < cfg.THS_LIMIT_BREAK_MIN:
+            return []
+        return [{
+            'type': 'SEAL_RATE_WEAK',
+            'level': 'MEDIUM',
+            'title': f'封板转弱：封板率{seal_rate:.0%}，炸板{broken}家',
+            'detail': (f"同花顺统计：涨停{ctx.get('limit_up_stock_count', '—')}家、"
+                       f"触板{ctx.get('touched_limit_up_stock_count', '—')}家、"
+                       f"炸板{broken}家；证据时间 {ctx.get('trade_date', '—')}"),
+            'icon': '📊',
+            'timestamp': datetime.now().isoformat(),
+            'evidence': ctx,
+        }]
+
+    def _check_limit_alerts(self, market: MarketState | None = None,
+                            ths_ctx: dict | None = None) -> list[dict]:
+        """涨跌停家数异动（D63 口径修正；D71 追加 THS 证据字段）
 
         D63 修两个缺陷：
         ① **口径**：原用统一 `>= 9.9` 判涨停 → 创业板/科创板（名义 20%）的
@@ -105,6 +156,10 @@ class MarketAlert:
                 })
         except Exception as e:  # noqa: BLE001 外部调用
             logger.error(f"Check limit alerts error: {e}")
+        # D71：证据只挂在展示字段上，不参与任何阈值判断/标题口径（零信号影响）
+        if ths_ctx:
+            for alert in alerts:
+                alert['evidence'] = ths_ctx
         return alerts
 
     @staticmethod
@@ -333,4 +388,14 @@ class MarketAlert:
         return self.history[-limit:]
 
     def format_alert_message(self, alert: dict) -> str:
-        return f"{alert['icon']} **{alert['title']}**\n\n{alert['detail']}"
+        msg = f"{alert['icon']} **{alert['title']}**\n\n{alert['detail']}"
+        evidence = alert.get('evidence') or {}
+        if evidence:
+            seal_rate = evidence.get('seal_rate')
+            broken = evidence.get('open_stock_count')
+            if isinstance(seal_rate, (int, float)):
+                msg += f"\n\n数据来源：同花顺官方（封板率{seal_rate:.0%}"
+                if isinstance(broken, int):
+                    msg += f" / 炸板{broken}家"
+                msg += f" / {evidence.get('trade_date', '—')}）"
+        return msg

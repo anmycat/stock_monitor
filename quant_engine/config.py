@@ -84,6 +84,20 @@ class Settings(BaseSettings):
     # Redis 不可用 / fork 子进程 / 关闭开关时自动降级回原进程内锁（零行为变化）。
     EM_GLOBAL_THROTTLE: bool = True
 
+    # D71 / N-10 同花顺官方金融数据服务（Hithink-Tech-Org/Financial-API）
+    # 只做 market_alert 的旁路证据增强（封板率/炸板/异动原因），不进信号、
+    # 不进评分/风控/Kelly/回测。默认关闭；无 API Key 时工厂直接返回 None。
+    # Key 从 https://fuyao.aicubes.cn/admin/ 签发，只写 gitignored 的 .env。
+    THS_FINANCIAL_API_KEY: str = ""
+    THS_FINANCIAL_BASE_URL: str = "https://fuyao.aicubes.cn"
+    THS_FINANCIAL_TIMEOUT: float = 10.0
+    THS_MARKET_ALERT_ENRICH: bool = False
+    # 「封板转弱」告警阈值：封板率低于该值且炸板家数达到下限时才提示。
+    # 来源是 THS 官方字段语义（seal_rate 为小数比例、open_stock_count 为家数），
+    # 不是策略参数；仅影响展示层告警，默认关闭开关下不生效。
+    THS_SEAL_RATE_WEAK: float = 0.6
+    THS_LIMIT_BREAK_MIN: int = 20
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
