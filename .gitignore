@@ -25,6 +25,8 @@ venv/
 *.log
 logs/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 apscheduler.sqlite
