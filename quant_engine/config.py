@@ -98,6 +98,17 @@ class Settings(BaseSettings):
     THS_SEAL_RATE_WEAK: float = 0.6
     THS_LIMIT_BREAK_MIN: int = 20
 
+    # D73 eltdx / AxData 只读适配层（research/docs/45）
+    # 实证：eltdx 的 Rust 7709 实现可真实取到日/分钟K、分时、逐笔、原生资金流，
+    # 而本项目 pytdx 客户端在新旧节点均返回空（根因是客户端，非上游停供）。
+    # 但两个上游仓库均为 Research-Only/非商业许可，明文禁止生产/自动化交易服务，
+    # 故默认关闭：ELTDX_ENABLED=false 或未安装 eltdx 包时适配层零请求、零行为变化。
+    # 不注入行情主链优先级、不写 df.attrs、不改评分/门控/Kelly/回测。
+    ELTDX_ENABLED: bool = False
+    ELTDX_HOSTS: str = ""        # 逗号分隔 ip:port；空=用 eltdx 内置 43 节点列表
+    ELTDX_TIMEOUT: float = 3.0   # 单次请求超时（秒）
+    ELTDX_PROBE_HOSTS: int = 0   # >0 时探活前 N 台；0=不主动探测
+
     # AI配置
     DEEPSEEK_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
