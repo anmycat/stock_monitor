@@ -468,8 +468,13 @@ def api_signals_cache_key(max_signals: int = 3) -> str:
 
 
 def signal_to_api_dict(s: Signal) -> dict:
-    """Signal → API 响应 dict（字段与 api/schemas SignalResponse 对齐）"""
-    return {
+    """Signal → API 响应 dict（字段与 api/schemas SignalResponse 对齐）
+
+    D70/N-08：浮点字段经 finite_or_none 清洗，NaN/Inf → None。
+    只作用展示 dict，不改 Signal 决策字段本身（零信号影响）。
+    """
+    from ...utils.numeric import finite_or_none
+    d = {
         'code': s.code,
         'name': s.name,
         'action': s.action.value,
@@ -495,6 +500,13 @@ def signal_to_api_dict(s: Signal) -> dict:
         'cross_check': s.cross_check,
         'frame_status': s.frame_status,
     }
+    # D70/N-08：所有浮点字段统一过 finite_or_none（异常值 → None，合法值不变）
+    for key in ('score', 'position', 'price', 'target_price', 'stop_loss',
+                'kelly_position', 'kelly_confidence', 'capital_flow_5d',
+                'current_price', 'price_ref'):
+        if key in d:
+            d[key] = finite_or_none(d[key])
+    return d
 
 
 def warm_api_signals_cache(cache, signals: list[Signal],

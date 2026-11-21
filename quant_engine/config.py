@@ -95,7 +95,10 @@ class Settings(BaseSettings):
     #       两者实测均可用，鉴权头 x-api-key 或 Authorization: Bearer 都接受
     UNISOUND_API_KEY: str = ""
     UNISOUND_BASE_URL: str = "https://maas-api.unisound.com/v1"
-    UNISOUND_MODEL: str = "u2"          # 可选：u2 / u2-flash / u2-med
+    # D70（2026-11-21）：主力模型显式指定 u2-flash。此前写 "u2" 由服务端隐式
+    # 路由到 u2-flash，响应 model 字段回显 u2-flash，日志/健康面板难以核对；
+    # 显式写出后请求与回显一致。可选：u2-flash / u2 / u2-med。
+    UNISOUND_MODEL: str = "u2-flash"
     # 思考型模型（u2 系列）思考 token 也会计入 max_tokens；
     # max_tokens 过小会导致 content=null + finish_reason=length。
     # D57 实测：典型 output 261~1256 tokens，偶发思考超预算。

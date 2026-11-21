@@ -53,6 +53,12 @@ class SourceStatus:
         self.last_success_time = 0.0
         self.fallback_count = 0
         self.on_state_change = None  # 由 SourceManager 注入（节流持久化）
+        # D70/N-03：错误分类计数（旁路可观测，不改变现有熔断判定）
+        # key=timeout/error/empty_threshold 等分类，value=累计次数
+        self.error_kind_counts: dict[str, int] = {}
+        # 端点级冷却记录（仅登记，默认不启用端点隔离——需用户裁定）
+        # 形如 {(method_name, code): until_ts}，避免一个端点 403 拉黑整源
+        self.endpoint_cooldowns: dict[tuple, float] = {}
 
     def is_available(self, cooldown_seconds: int = 300) -> bool:
         """检查数据源是否可用（冷却中或熔断中均不可用）"""
@@ -126,6 +132,8 @@ class SourceStatus:
         self.last_request_time = time.time()
         self.last_error_kind = kind
         self.last_error_message = str(message)[:200] or None
+        # D70/N-03：分类计数（旁路，不影响下方现有 cooldown/quarantine 逻辑）
+        self.error_kind_counts[kind] = self.error_kind_counts.get(kind, 0) + 1
         if kind == 'timeout':
             self.timeout_streak += 1
         if self.error_count >= 3:
@@ -154,6 +162,8 @@ class SourceStatus:
         self.suppress_until = 0.0
         self.last_error_kind = None
         self.last_error_message = None
+        self.error_kind_counts.clear()       # D70/N-03
+        self.endpoint_cooldowns.clear()      # D70/N-03
         self._changed()
 
 
@@ -436,8 +446,9 @@ class SourceManager:
             if result is not None:
                 if failed:
                     self._record_fallback(method_name, failed, source_name)
-                # 成功时缓存快照
-                self._save_snapshot(method_name, args, result)
+                # 成功时缓存快照（D70/N-02：带上来源源名）
+                self._save_snapshot(method_name, args, result,
+                                    source_name=source_name)
                 return (result, source_name) if return_source else result
             failed.append(source_name)
 
@@ -473,6 +484,12 @@ class SourceManager:
                 'missing_codes': list(source.missing_codes),
                 'last_success_time': source.last_success_time,
                 'fallback_count': source.fallback_count,
+                # D70/N-03：错误分类计数 + 端点级冷却（只读旁路，不影响熔断）
+                'error_kind_counts': dict(source.error_kind_counts),
+                'endpoint_cooldowns': {
+                    f'{k[0]}:{k[1] if len(k) > 1 else ""}': v
+                    for k, v in source.endpoint_cooldowns.items()
+                },
             }
         return report
 
@@ -481,8 +498,13 @@ class SourceManager:
         args_str = ':'.join(str(a) for a in args)
         return f"{method_name}:{args_str}"
 
-    def _save_snapshot(self, method_name: str, args: tuple, result):
-        """缓存成功结果（D66：同时记录末根日期与归属交易日）"""
+    def _save_snapshot(self, method_name: str, args: tuple, result,
+                       source_name: str | None = None):
+        """缓存成功结果（D66：同时记录末根日期与归属交易日）
+
+        D70/N-02：新增 source_name → 快照记录来源，供陈旧降级时解释「谁的时间」。
+        仅多存一个旁路字段，不改 df 列/值。
+        """
         import pandas as pd
         key = self._snapshot_key(method_name, args)
         if isinstance(result, pd.DataFrame):
@@ -493,6 +515,8 @@ class SourceManager:
                 'session': self._expected_session(),
                 'as_of': (self._last_bar_date(result)
                           if method_name == 'get_daily_data' else None),
+                # D70/N-02：来源源名（None=旧调用/测试桩未传，向后兼容）
+                'source': source_name,
             }
         # 只缓存 DataFrame，其他类型不缓存
 
@@ -561,6 +585,15 @@ class SourceManager:
         df.attrs['_fallback'] = True
         df.attrs['_age_seconds'] = int(age)
         df.attrs['kline_as_of'] = entry.get('as_of')
+        # D70/N-02：行情质量元数据四元组（DSA UnifiedRealtimeQuote 范式）。
+        # 只写 df.attrs，不改列不改值 → 趋势信号零漂移。
+        # 目的：docs/37 的 2.7~4.4h 陈旧值可解释到「谁的时间 / 哪个源 / 有多旧」。
+        df.attrs['quote_date'] = entry.get('session')        # date-only 归属日
+        df.attrs['provider_timestamp'] = entry.get('timestamp')  # 快照采集时刻(epoch)
+        df.attrs['fallback_from'] = entry.get('source')      # 原产出源（可能 None=旧桩）
+        df.attrs['stale_seconds'] = int(age)                  # 陈旧时长
+        df.attrs['data_quality'] = 'stale'                    # fresh/stale 标签
+        df.attrs['missing_fields'] = []                       # 缺省字段留空，供上游补
         if method_name == 'get_daily_data':
             df.attrs['kline_source'] = 'stale_snapshot'
             df.attrs['kline_sealed'] = False

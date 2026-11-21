@@ -2,7 +2,7 @@
 AI智能分析总结服务 - 多模型融合架构
 
 模型组合（D56 起）：
-1. 云知声 U2 (主力模型) - 原生智能体大模型，长上下文（160k）+ 深度推理
+1. 云知声 U2-flash (主力模型，D70 显式指定) - 原生智能体大模型，长上下文（160k）+ 深度推理
 2. DeepSeek V4 (备用模型) - 金融分析见长，作为 U2 不可用时的备份
 
 融合策略：
@@ -20,9 +20,10 @@ AI智能分析总结服务 - 多模型融合架构
   max_tokens 过小 → content=null + finish_reason=length（正文全丢）。
   项目默认 UNISOUND_MAX_TOKENS=6000（D69 从 2500 上调：ECS 近 7 天 3 次
   finish_reason=length 空正文实证 2500 不足）。
-- 注意：请求 model="u2" 时服务端实际路由到 u2-flash（响应 model 字段回显
-  u2-flash）；显式写 "u2-flash" 亦可，但 max_tokens 需更大（实测 100 会
-  content=null）。项目用 "u2" + 1500。
+- D70（2026-11-21）起主力模型显式用 "u2-flash"：此前请求 "u2" 时服务端
+  隐式路由到 u2-flash（响应 model 字段回显 u2-flash），请求与回显不一致；
+  显式写出便于日志与健康面板核对。max_tokens 必须给足（实测 100 会
+  content=null）；项目用 "u2-flash" + 6000。
 
 分析模式：
 1. 早盘总结（12:15）: 上午市场回顾 + 板块热点 + 下午展望
@@ -126,13 +127,13 @@ class AISummary:
         # 注册模型
         self.models: dict[str, ModelConfig] = {}
 
-        # 云知声 U2（D56：主力模型，第一优先）
+        # 云知声 U2-flash（D56 引入 / D70 显式化：主力模型，第一优先）
         # 权重最高 → cascade 优先尝试、ensemble 合并时用它做合并者
         uni_key = settings.UNISOUND_API_KEY
         if uni_key:
             self.models["unisound"] = ModelConfig(
                 name="云知声 U2",
-                model_id=settings.UNISOUND_MODEL or "u2",
+                model_id=settings.UNISOUND_MODEL or "u2-flash",
                 api_key=uni_key,
                 base_url=settings.UNISOUND_BASE_URL
                 or "https://maas-api.unisound.com/v1",

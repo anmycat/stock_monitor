@@ -52,6 +52,82 @@ def get_code_guard_report():
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.get("/system/doctor")
+def system_doctor():
+    """只读脱敏自检快照（D70/N-04，DSA `--doctor` 范式）。
+
+    聚合健康 / 数据源能力 / 关键开关（**不输出任何密钥或 webhook**）/
+    AI 主力模型标识。纯观测，不取数、不改状态、不参与信号。
+    与 API_AUTH_TOKEN 同批启用（依赖 verify_api_key）。
+    """
+    from datetime import datetime
+
+    from ...config import get_settings
+
+    doctor: dict = {
+        'status': 'ok',
+        'checked_at': datetime.now().isoformat(),
+        'components': {},
+        'settings': {},
+        'warnings': [],
+    }
+    # 健康（轻量直读，纯观测；不复用 async health_check 避免事件循环差异）
+    try:
+        redis_ok = bool(datacenter.cache.is_connected)
+    except Exception:
+        redis_ok = False
+    doctor['components']['health'] = {
+        'status': 'healthy' if redis_ok else 'degraded',
+        'redis': 'healthy' if redis_ok else 'unhealthy',
+    }
+    if not redis_ok:
+        doctor['status'] = 'degraded'
+        doctor['warnings'].append('redis_unavailable')
+
+    # 数据源能力（复用 I-02 报告，纯只读）
+    try:
+        from ...data.capability import build_capability_report
+        cap = build_capability_report(cache=getattr(datacenter, 'cache', None))
+        doctor['components']['data_capability'] = {
+            'as_of': cap.get('as_of'),
+            'providers': [
+                {'name': p.get('name'), 'status': p.get('status')}
+                for p in cap.get('providers', [])
+            ],
+            'warnings': cap.get('warnings', []),
+        }
+        if cap.get('warnings'):
+            doctor['warnings'].extend(cap['warnings'][:5])
+    except Exception as exc:
+        doctor['components']['data_capability'] = {'error': type(exc).__name__}
+
+    # 关键开关（只列布尔/数值，绝不输出密钥/webhook/token）
+    try:
+        s = get_settings()
+        doctor['settings'] = {
+            'api_port': s.API_PORT,
+            'api_auth_enabled': bool(s.API_AUTH_TOKEN),  # 只报是否启用，不报值
+            'em_global_throttle': bool(s.EM_GLOBAL_THROTTLE),
+            'intraday_kline_correction': bool(s.INTRADAY_KLINE_CORRECTION),
+            'kline_cross_check': bool(s.KLINE_CROSS_CHECK),
+            'kline_eod_seal': bool(s.KLINE_EOD_SEAL),
+            'stale_quote_reject_seconds': s.STALE_QUOTE_REJECT_SECONDS,
+            'source_timeout_suppression': bool(s.SOURCE_TIMEOUT_SUPPRESSION),
+            # 密钥存在性（布尔）而非值——便于确认主力模型已配置
+            'unisound_key_configured': bool(s.UNISOUND_API_KEY),
+            'unisound_model': s.UNISOUND_MODEL,
+            'unisound_base_url': s.UNISOUND_BASE_URL,
+            'unisound_max_tokens': s.UNISOUND_MAX_TOKENS,
+            'deepseek_key_configured': bool(s.DEEPSEEK_API_KEY or s.OPENAI_API_KEY),
+        }
+        if not doctor['settings']['api_auth_enabled']:
+            doctor['warnings'].append('api_auth_token_not_set')
+    except Exception:
+        doctor['components']['settings'] = {'error': 'unavailable'}
+
+    return doctor
+
+
 @router.get("/health")
 async def health_check():
     """系统健康检查端点(无需认证)"""

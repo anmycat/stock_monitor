@@ -31,6 +31,7 @@ from pathlib import Path
 # 高置信度密钥模式
 _PATTERNS: list[tuple[str, str]] = [
     ('OpenAI/云知声类密钥', r'sk-[A-Za-z0-9_-]{32,}'),
+    ('MaaS平台tp类密钥', r'tp-[A-Za-z0-9]{32,}'),
     ('同花顺扶摇密钥', r'sk_fuyao-[A-Za-z0-9_-]{16,}'),
     ('baostock 密钥', r'bs-[A-Za-z0-9]{24,}'),
     ('钉钉 webhook token',

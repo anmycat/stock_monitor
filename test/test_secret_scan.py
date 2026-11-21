@@ -31,6 +31,13 @@ class TestSecretDetection(unittest.TestCase):
         self.assertTrue(hits, '云知声密钥应被检出')
         self.assertIn('OpenAI/云知声类密钥', hits[0][0])
 
+    def test_detects_tp_maas_key(self):
+        """D70：云知声/小米 MaaS 平台 tp- 密钥（sk- 之外的新前缀）"""
+        text = 'UNISOUND_API_KEY=tp-FAKE0000000000000000000000000000000000'
+        hits = scan_text(text)
+        self.assertTrue(hits, 'tp- 密钥应被检出')
+        self.assertIn('MaaS平台tp类密钥', hits[0][0])
+
     def test_detects_generic_sk_key(self):
         text = 'key = sk-abcdefghijklmnopqrstuvwxyz0123456789ABCD'
         self.assertTrue(scan_text(text))

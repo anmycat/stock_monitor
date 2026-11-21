@@ -1,4 +1,5 @@
 """通知管理器 - 统一管理所有通知渠道"""
+from __future__ import annotations
 
 import threading
 import time
@@ -11,6 +12,47 @@ from .base import BaseNotifier
 from .feishu import FeishuNotifier
 from .telegram import TelegramNotifier
 from .wechat import WeChatNotifier
+
+# D70/N-05：按渠道的 payload 字节预算（UTF-8）。取各平台公开上限的保守值：
+# 钉钉 text 20KB / 飞书 30KB / 企业微信 4KB / Telegram 4096 字符。
+# 统一用最保守的 4096 字节（中文约 1365 字），避免长报告触发 webhook 413。
+# 0 = 不限制（供测试/特殊场景）。仅影响发送内容，不改信号决策。
+_CHANNEL_BYTE_BUDGET: dict[str, int] = {
+    'DingTalk': 4096,
+    'Feishu': 4096,
+    'WeChat': 4096,
+    'Telegram': 4096,
+}
+_DEFAULT_BYTE_BUDGET = 4096
+_TRUNCATE_SUFFIX = '\n…（内容过长已截断）'
+
+
+def clip_to_byte_budget(content: str, channel_name: str,
+                        budget: int | None = None) -> str:
+    """按 UTF-8 字节预算截断内容（D70/N-05）。
+
+    budget 显式传入时用它；否则按渠道名查表，未知渠道用默认预算。
+    budget<=0 表示不截断。截断按字符边界，绝不切出半个 UTF-8 字符。
+    """
+    if budget is None:
+        budget = _CHANNEL_BYTE_BUDGET.get(channel_name, _DEFAULT_BYTE_BUDGET)
+    if budget <= 0:
+        return content
+    raw = content.encode('utf-8')
+    if len(raw) <= budget:
+        return content
+    suffix_bytes = _TRUNCATE_SUFFIX.encode('utf-8')
+    # 预留后缀空间，按字符逐个累加保证不切出半个汉字
+    limit = max(0, budget - len(suffix_bytes))
+    kept: list[str] = []
+    used = 0
+    for ch in content:
+        n = len(ch.encode('utf-8'))
+        if used + n > limit:
+            break
+        kept.append(ch)
+        used += n
+    return ''.join(kept) + _TRUNCATE_SUFFIX
 
 
 class DingTalkNotifier(BaseNotifier):
@@ -176,7 +218,9 @@ class NotificationManager:
         success = False
         for notifier in self.notifiers:
             try:
-                if notifier.send(title, content):
+                # D70/N-05：按渠道字节预算截断（只影响发送内容长度，零信号影响）
+                safe_content = clip_to_byte_budget(content, notifier.name)
+                if notifier.send(title, safe_content):
                     success = True
             except Exception as e:
                 logger.error(f"Send to {notifier.name} failed: {e}")
