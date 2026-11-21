@@ -27,6 +27,9 @@ class KellyConfig:
     default_profit_loss_ratio: float = 1.5  # 无历史数据时的默认盈亏比
     portfolio_kelly_enabled: bool = True    # 是否启用组合级Kelly
     max_portfolio_kelly: float = 0.80       # 组合Kelly总仓位上限
+    # Kelly v1.8（2026-11-21 用户裁定，docs/44）：f*≤0（无正期望）时建议仓位。
+    # 0.0=归零口径；回退 legacy 5% 地板设 0.05（KELLY_NO_EDGE_MIN_POSITION）。
+    no_edge_min_position: float = 0.0
 
 
 @dataclass
@@ -302,15 +305,19 @@ class PositionSizer:
         if kelly_result['has_edge']:
             recommended = min(recommended, kelly_position)
         else:
-            # 无正期望 → 降至最小仓位
-            recommended = self.min_position
+            # 无正期望 → 降至 no_edge 建议仓位
+            # v1.8（2026-11-21 用户裁定）：归零口径（0.0）；回退 legacy 5% 地板设
+            # KELLY_NO_EDGE_MIN_POSITION=0.05。docs/44：8-22~11-20 窗口全规则 f*≤0。
+            recommended = self.config.no_edge_min_position
         
         # 7. 总仓位限制
         if current_positions + recommended > self.max_total_position:
             recommended = max(0, self.max_total_position - current_positions)
         
-        # 8. 最终限制
-        recommended = max(self.min_position, min(self.max_position, recommended))
+        # 8. 最终限制（地板按 has_edge 分流：v1.8 无 edge 归零口径不得被 min_position 托回 5%）
+        floor = self.min_position if kelly_result['has_edge'] \
+            else min(self.min_position, self.config.no_edge_min_position)
+        recommended = max(floor, min(self.max_position, recommended))
         
         # 生成调整原因
         reasoning = self._generate_reasoning(
@@ -468,14 +475,27 @@ class PositionSizer:
 # 全局仓位管理器
 _position_sizer = None
 
+def _default_kelly_config() -> KellyConfig:
+    """从 Settings 构造默认 KellyConfig（KELLY_NO_EDGE_MIN_POSITION，v1.8 归零口径）"""
+    try:
+        from ...config import get_settings  # 局部导入避免模块加载环
+        return KellyConfig(no_edge_min_position=float(
+            get_settings().KELLY_NO_EDGE_MIN_POSITION))
+    except Exception:  # noqa: BLE001 配置缺失时用归零默认（v1.8 安全侧）
+        return KellyConfig()
+
+
 def get_position_sizer(config: KellyConfig = None,
                        strategy_performance_provider=None) -> PositionSizer:
     """获取全局仓位管理器
 
     strategy_performance_provider 首次创建时生效；后续传入且当前实例
     未注入过 provider 时补注（消费者启动顺序无关）。
+    config 未传时从 Settings 构造（KELLY_NO_EDGE_MIN_POSITION，v1.8 归零口径）。
     """
     global _position_sizer
+    if config is None:
+        config = _default_kelly_config()
     if _position_sizer is None:
         _position_sizer = PositionSizer(
             config, strategy_performance_provider=strategy_performance_provider)
@@ -486,7 +506,9 @@ def get_position_sizer(config: KellyConfig = None,
 
 def reset_position_sizer(config: KellyConfig = None,
                          strategy_performance_provider=None):
-    """重置仓位管理器(用于配置变更)"""
+    """重置仓位管理器(用于配置变更)；config=None 时同样走 Settings 默认"""
     global _position_sizer
+    if config is None:
+        config = _default_kelly_config()
     _position_sizer = PositionSizer(
         config, strategy_performance_provider=strategy_performance_provider)

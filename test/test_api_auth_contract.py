@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -47,6 +48,49 @@ class TestAuthContract(unittest.TestCase):
                 and 'function fetch' not in ln]
         self.assertEqual(len(bare), 1, f'发现绕过鉴权头的裸 fetch: {bare}')
         self.assertIn('apiHeaders()', bare[0])
+
+
+class TestAuthEnabledEndToEnd(unittest.TestCase):
+    """启用态端到端：API_AUTH_TOKEN 配置后 401/200 全链路（E3 白名单挂空的替代保护）"""
+
+    @classmethod
+    def setUpClass(cls):
+        from fastapi.testclient import TestClient
+
+        from quant_engine.config import get_settings
+        from quant_engine.main import app
+        get_settings.cache_clear()
+        os.environ['API_AUTH_TOKEN'] = 'e2e-test-token-123'
+        get_settings.cache_clear()
+        cls.client = TestClient(app)
+        cls.app = app
+
+    @classmethod
+    def tearDownClass(cls):
+        os.environ.pop('API_AUTH_TOKEN', None)
+        from quant_engine.config import get_settings
+        get_settings.cache_clear()
+
+    def test_health_exempt_anonymous(self):
+        r = self.client.get('/api/health')
+        self.assertNotEqual(r.status_code, 401)
+
+    def test_protected_endpoint_401_without_key(self):
+        r = self.client.get('/api/market')
+        self.assertEqual(r.status_code, 401)
+
+    def test_protected_endpoint_401_wrong_key(self):
+        r = self.client.get('/api/market', headers={'X-API-Key': 'wrong'})
+        self.assertEqual(r.status_code, 401)
+
+    def test_protected_endpoint_200_with_key(self):
+        r = self.client.get('/api/market', headers={'X-API-Key': 'e2e-test-token-123'})
+        self.assertNotEqual(r.status_code, 401)
+
+    def test_ws_token_verification(self):
+        self.assertTrue(auth.verify_websocket_token('e2e-test-token-123'))
+        self.assertFalse(auth.verify_websocket_token('wrong'))
+        self.assertFalse(auth.verify_websocket_token(None))
 
 
 if __name__ == '__main__':

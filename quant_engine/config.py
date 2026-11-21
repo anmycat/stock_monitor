@@ -97,6 +97,11 @@ class Settings(BaseSettings):
     # 说明：回测是纯分析工具，不改任何实时信号/仓位，故 D41 实盘零漂移不受影响。
     BACKTEST_FILL_NEXT_OPEN: bool = True
 
+    # Kelly v1.8（2026-11-21 用户裁定落库，docs/44 复核 8-22~11-20 窗口全规则 f*≤0）：
+    # Kelly 判定无正期望时（has_edge=False）的建议仓位。
+    # 0.0＝归零口径（v1.8：停止按 Kelly 建议开仓）；回退 legacy 设 0.05（旧「无 edge→最小仓位 5%」地板）。
+    KELLY_NO_EDGE_MIN_POSITION: float = 0.0
+
     # I-08 日报「过程纪律」第六维（R3，2026-11-21 用户裁定推进，默认启用）；
     # 由代码从真实信号/评估历史算分，绝不交给模型发挥（D61 铁律）。
     # 零信号影响：只加日报展示分区，不进门控 5 维综合分、不改仓位建议。
