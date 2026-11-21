@@ -32,7 +32,12 @@ SESSION = '2026-11-07'
 
 
 class FakeRedis:
-    """模拟 _RESERVE_LUA 的原子预约语义（按 script/keys/args 记录调用）。"""
+    """模拟 _RESERVE_LUA 的原子预约语义（按 script/keys/args 记录调用）。
+
+    D68 验收补遗：真实 Redis 的 Lua **只把整数**作为数值返回值，
+    `return 1.234567` 会被截断成 1。因此脚本必须返回格式化字符串，
+    这里也按字符串返回，模拟线上真实行为（由 Python float() 解析）。
+    """
 
     def __init__(self):
         self.next_allowed = 0.0
@@ -46,7 +51,7 @@ class FakeRedis:
         now, gap = float(now), float(gap)
         allowed = max(now, self.next_allowed + gap)
         self.next_allowed = allowed
-        return allowed - now
+        return f'{allowed - now:.6f}'
 
 
 class FakeResponse:
@@ -77,6 +82,35 @@ class TestGlobalReservation(unittest.TestCase):
                                     + em._Throttle.JITTER_RANGE[0] - 1e-9)
             self.assertLessEqual(call[4], em._Throttle.MIN_INTERVAL
                                  + em._Throttle.JITTER_RANGE[1] + 1e-9)
+
+    def test_reservation_wait_preserves_subsecond_jitter(self):
+        """验收补遗：等待值必须保留亚秒抖动，不能被 Redis 压成整数秒。
+
+        ECS 实测 `EVAL "return 1.234567" 0` → 1，旧脚本直接 return 浮点会让
+        1.15~1.6s 的「限速+抖动」全变成 1s 整数，多进程节奏退化为固定 1s
+        （第②招失效）。改为返回 string.format 字符串后由 float() 精确解析。
+        """
+        r = FakeRedis()
+        t = _Throttle()
+        t.attach_redis(r)
+        with mock.patch.object(em.random, 'uniform', return_value=0.37), \
+                mock.patch.object(em.time, 'sleep') as sleep:
+            t.wait()
+            t.wait()
+        waits = [c.args[0] for c in sleep.call_args_list if c.args]
+        self.assertEqual(len(waits), 1)
+        self.assertGreater(waits[0], 1.2)
+        self.assertLess(waits[0], 1.5)
+        self.assertNotEqual(waits[0], round(waits[0]),
+                            '等待值被整数化 → 抖动失效')
+
+    def test_lua_script_returns_formatted_string_not_number(self):
+        """静态护栏：禁止把 Lua 返回值改回会被 Redis 截断的数值类型。"""
+        self.assertIn("return string.format('%.6f', allowed - now)",
+                      em._RESERVE_LUA)
+        self.assertFalse(em._RESERVE_LUA.strip().endswith('return allowed - now'))
+        self.assertIsInstance(FakeRedis().eval(
+            em._RESERVE_LUA, 1, em._GLOBAL_KEY, 1000.0, 1.37, 120), str)
 
     def test_reservation_is_monotonic_across_three_callers(self):
         """模拟三服务进程并发：允许时刻严格递增，不出现同时放行"""

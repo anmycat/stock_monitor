@@ -404,14 +404,10 @@ class TestCheckAndPush(unittest.TestCase):
     def test_push_with_stub_notifier(self):
         m = _make_monitor()
         m.source_manager = _StubSourceManager()
-        # 宽窗口（回看30天）确保fixture内容都在窗口内
-        # 2026-10-27 修：48h→7天（2026-10-20）后，fixture 静态日期 10-18
-        # 随真实时间推进再次老化（10-27 距 10-18 已9天，windowed=0→digest
-        # None）；fixture 是静态桩，放宽到30天不影响断言语义。
-        # 根治需 fixture 改为相对时间（published_at=now-timedelta），
-        # 留作后续清理项——断言语义不变前提下优先保证测试不随日历失效
-        m._cache.store['news:last_push_at'] = \
-            (datetime.now() - timedelta(days=30)).isoformat()
+        # 2026-11-21 修：静态 fixture 固定在 2026-10-18，任何「now - N 天」
+        # 写法都会随日历推进再次老化（30 天窗口到 11-21 已把 10-18 排除）。
+        # 用固定极早起点彻底解耦真实时间；断言语义（有新增才推送）不变。
+        m._cache.store['news:last_push_at'] = '2020-01-01T00:00:00'
 
         sent = []
 

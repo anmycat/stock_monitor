@@ -37,7 +37,11 @@ local last = tonumber(redis.call('GET', KEYS[1]) or '0')
 local allowed = now
 if last + gap > allowed then allowed = last + gap end
 redis.call('SET', KEYS[1], string.format('%.6f', allowed), 'EX', tonumber(ARGV[3]))
-return allowed - now
+-- Redis 的 Lua 返回值只支持整数：直接 return 一个 float 会被截断
+-- （实测 `EVAL "return 1.234567" 0` → 1），导致 1.15~1.6s 的「限速+抖动」
+-- 全被压成 1s 整数、第②招抖动失效、多进程节奏退化为固定 1s。
+-- 返回格式化字符串由 Python float() 精确解析，保住亚秒级抖动。
+return string.format('%.6f', allowed - now)
 """
 # 排队上限：三服务最坏排队约 3×1.6s，10s 足够；超限时告警并截断，避免 worker 卡死
 _MAX_QUEUE_WAIT = 10.0

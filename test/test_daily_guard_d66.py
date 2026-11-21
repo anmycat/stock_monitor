@@ -273,9 +273,12 @@ class TestDayBoundaryGuard(unittest.TestCase):
         mgr = SourceManager()
         mgr.register_source('demo')
         df = _df([PREV, SESSION])
-        mgr._save_snapshot('get_daily_data', ('600519.SH', 120), df)
+        # 2026-11-21 修：保存时也必须固定 session，否则真实运行日（如周六）
+        # 的 _expected_session() 会写入最近交易日，与这里 mock 的 SESSION
+        # 常量不一致 → 被 D66 跨交易日护栏正确作废，测试反而误报失败。
         with mock.patch.object(SourceManager, '_expected_session',
                                staticmethod(lambda: SESSION)):
+            mgr._save_snapshot('get_daily_data', ('600519.SH', 120), df)
             out = mgr._load_stale_snapshot(
                 'get_daily_data', ('600519.SH', 120))
         self.assertIsNotNone(out)
