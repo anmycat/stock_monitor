@@ -21,7 +21,8 @@ class MarketAlert:
     """
 
     def __init__(self, datacenter: MarketDataRepository,
-                 sector_data_provider=None, ths_context_provider=None):
+                 sector_data_provider=None, ths_context_provider=None,
+                 eltdx_context_provider=None):
         self.datacenter = datacenter
         self.sector_data_provider = sector_data_provider
         # D71：同花顺官方数据只做证据注入（默认 None → 零请求零行为变化）
@@ -29,6 +30,12 @@ class MarketAlert:
         self._ths_context = None
         self._ths_context_at = 0.0
         self._ths_context_ttl = 120.0
+        # D74：eltdx（TDX 7709）盘面证据注入——连板梯队/资金流/榜单/封单，
+        # 只挂告警展示字段，不改任何阈值判定（零信号影响）
+        self.eltdx_context_provider = eltdx_context_provider
+        self._eltdx_context = None
+        self._eltdx_context_at = 0.0
+        self._eltdx_context_ttl = 120.0
         self.last_alert_time = {}
         self.alert_cooldown = 300
         self.history = []
@@ -51,8 +58,28 @@ class MarketAlert:
             return ctx
         return None
 
+    def _get_eltdx_context(self) -> dict | None:
+        """取 eltdx 盘面证据包（缓存 120s，失败不缓存以便下一轮重试）。"""
+        if self.eltdx_context_provider is None:
+            return None
+        now = time.time()
+        if (self._eltdx_context is not None and
+                now - self._eltdx_context_at < self._eltdx_context_ttl):
+            return self._eltdx_context
+        try:
+            ctx = self.eltdx_context_provider()
+        except Exception as e:  # noqa: BLE001 外部数据源边界
+            logger.warning(f"eltdx market alert context failed: {type(e).__name__}: {e}")
+            return None
+        if isinstance(ctx, dict) and ctx:
+            self._eltdx_context = ctx
+            self._eltdx_context_at = now
+            return ctx
+        return None
+
     def detect_alerts(self, market: MarketState) -> list[dict]:
         ths_ctx = self._get_ths_context()
+        eltdx_ctx = self._get_eltdx_context()
         alerts = []
         alerts.extend(self._check_limit_alerts(market, ths_ctx))
         alerts.extend(self._check_volume_alerts())
@@ -61,6 +88,12 @@ class MarketAlert:
         alerts.extend(self._check_sector_alerts())
         if ths_ctx:
             alerts.extend(self._check_ths_seal_alerts(ths_ctx))
+        # D74：eltdx 证据挂到所有已产生告警的展示字段（不改判定、不新增告警维度）
+        if eltdx_ctx:
+            for alert in alerts:
+                evidence = alert.setdefault('evidence', {})
+                if isinstance(evidence, dict):
+                    evidence['eltdx_context'] = eltdx_ctx
         alerts = self._filter_cooldown(alerts)
         self.history.extend(alerts)
         if len(self.history) > 100:
@@ -398,4 +431,17 @@ class MarketAlert:
                 if isinstance(broken, int):
                     msg += f" / 炸板{broken}家"
                 msg += f" / {evidence.get('trade_date', '—')}）"
+        # D74：eltdx 盘面证据来源行（纯展示，不参与任何阈值判定）
+        eltdx = (evidence.get('eltdx_context') if isinstance(evidence, dict) else None)
+        if isinstance(eltdx, dict):
+            hot = eltdx.get('hot_rank') or []
+            flow = eltdx.get('money_flow') or {}
+            bits = [eltdx.get('source', 'eltdx')]
+            if hot:
+                bits.append(f"热榜{len(hot)}条")
+            if flow:
+                bits.append(f"资金流{len(flow)}只")
+            if eltdx.get('observed_at'):
+                bits.append(str(eltdx['observed_at'])[:16])
+            msg += "\n\n盘面证据：" + " / ".join(bits)
         return msg

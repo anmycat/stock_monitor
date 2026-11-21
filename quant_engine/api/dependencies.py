@@ -1,5 +1,6 @@
 from ..backtest.engine import BacktestEngine
 from ..data.repositories import MarketDataRepository
+from ..data.sources.eltdx_client import build_eltdx_context_provider
 from ..data.sources.ths_financial import build_ths_context_provider
 from ..services.ai.llm_ranker import LLMRanker
 from ..services.code_guard import CodeGuard
@@ -29,7 +30,9 @@ market_alert = MarketAlert(
     datacenter,
     sector_data_provider=lambda: sector_monitor.get_sector_data(),
     # D71：默认关闭/无 Key → None，零请求零行为变化
-    ths_context_provider=build_ths_context_provider())
+    ths_context_provider=build_ths_context_provider(),
+    # D74：eltdx 盘面证据（用户裁定自用启用）；未装包时 provider 内部降级为空
+    eltdx_context_provider=build_eltdx_context_provider())
 hot_money_monitor = HotMoneyMonitor(datacenter)
 # P4：funnel 增强层由 L0 注入 L1 实例（L2 strategies 不再反向 import L1 services）
 strategy_registry = StrategyRegistry(

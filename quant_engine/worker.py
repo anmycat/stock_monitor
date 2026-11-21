@@ -7,6 +7,7 @@ from loguru import logger
 
 from .backtest.post_evaluation import PostEvaluation
 from .data.repositories import MarketDataRepository
+from .data.sources.eltdx_client import build_eltdx_context_provider
 from .data.sources.ths_financial import build_ths_context_provider
 from .services.ai.ai_summary import AISummary
 from .services.market.market_alert import MarketAlert
@@ -348,7 +349,9 @@ def main():
     alert_detector = MarketAlert(
         datacenter, sector_data_provider=lambda: get_sector_data(datacenter),
         # D71：默认关闭/无 Key → None，零请求零行为变化
-        ths_context_provider=build_ths_context_provider())
+        ths_context_provider=build_ths_context_provider(),
+        # D74：eltdx 盘面证据（用户裁定自用启用）；未装包时 provider 内部降级为空
+        eltdx_context_provider=build_eltdx_context_provider())
     ai_summary = AISummary()
     burst_monitor = BurstMonitor(datacenter)
     notifier = NotificationManager()

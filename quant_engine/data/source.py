@@ -5,6 +5,7 @@ from loguru import logger
 
 from .source_manager import source_manager
 from .sources.eastmoney import EastMoneySource
+from .sources.eltdx_client import EltdxFallbackSource
 from .sources.sina import SinaSource
 from .sources.tdx import TdxSource
 from .sources.tencent import TencentSource
@@ -31,10 +32,13 @@ _PRIORITY = {
     # D53：新增同花顺网页端备源（免费免 Key，逐字段与腾讯对齐且 volume 直接是「股」）。
     # 位置：腾讯 → 新浪 → 同花顺 → 东财 → tushare
     # 不接 realtime/stock_list：同花顺是单标的单请求，全市场 5000+ 请求不可接受。
-    'daily': ['tencent', 'sina', 'ths_web', 'eastmoney', 'tushare'],
-    # D53：分钟线新增新浪（getKLineData scale=5/15/30/60）——TDX 公共节点
-    # 已停供行情（协议级探测：quotes/bars 全空），新浪为生产实测可用替代
-    'minute': ['sina', 'tdx'],
+    # D74：末位追加 eltdx——Rust 7709 实现真机可取（docs/45 推翻 I-03「停供」前提），
+    # 前复权 qfq 对齐腾讯口径；仅当上面全部失败才兜底。未装包时包装返回 None → 跳过，
+    # 主链成功时永不触发，故零信号影响。
+    'daily': ['tencent', 'sina', 'ths_web', 'eastmoney', 'tushare', 'eltdx'],
+    # D53：分钟线新浪主路；D74 追加 eltdx（1m 独有能力 + 5/15/30/60 兜底），
+    # tdx（pytdx 恒空）保留其后再 eltdx 兜底，未装包时 None 跳过。
+    'minute': ['sina', 'tdx', 'eltdx'],
 }
 
 
@@ -52,6 +56,7 @@ class CompositeSource:
         source_manager.register_source('tdx')
         source_manager.register_source('tushare')  # B7 兜底线
         source_manager.register_source('ths_web')  # D53 同花顺网页端备源
+        source_manager.register_source('eltdx')    # D74 eltdx 末位兜底
 
         # 初始化数据源
         self.sources = {
@@ -61,6 +66,7 @@ class CompositeSource:
             'tdx': TdxSource(),
             'tushare': TushareSource(),
             'ths_web': ThsWebSource(),
+            'eltdx': EltdxFallbackSource(),  # 空 DF→None，未装包时降级链无缝跳过
         }
         self.datacenter = datacenter
         logger.info("CompositeSource initialized (via SourceManager)")

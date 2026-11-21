@@ -242,7 +242,8 @@ class TdxRegistrationTest(unittest.TestCase):
         from quant_engine.data.source import _PRIORITY, CompositeSource
         # minute 第一线且唯一线为 tdx（akshare 遗留链已于 P0 切除，见 prd/15）
         # D53：TDX 公共节点已停供行情（协议级探活全失败）→ 新浪分钟线接替为首选
-        self.assertEqual(_PRIORITY['minute'], ['sina', 'tdx'])
+        # D74：新增 eltdx 末位兜底（未装包时 None 跳过，零信号影响）
+        self.assertEqual(_PRIORITY['minute'], ['sina', 'tdx', 'eltdx'])
         cs = CompositeSource()
         self.assertIn('tdx', cs.sources)
         self.assertTrue(hasattr(cs.sources['tdx'], 'get_minute_data'))

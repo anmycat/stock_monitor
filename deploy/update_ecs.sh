@@ -127,6 +127,22 @@ PY"
 echo "== 3.5/6 node 探针（问财 Hexin-V 自动生成需要；可选依赖，缺失不阻塞部署）"
 ssh $SSH_OPTS $ECS "if command -v node >/dev/null 2>&1; then echo '  node 已装：\$(node -v)'; else echo '  node 缺失 → 安装（问财选股需要）'; DEBIAN_FRONTEND=noninteractive apt-get install -y -q nodejs >/dev/null 2>&1 && echo '  node 安装完成：\$(node -v)' || echo '  ⚠️ node 安装失败（问财功能将降级，其余服务不受影响）'; fi"
 
+echo "== 3.6/6 eltdx 探针（D74 用户裁定自用启用；可选依赖，装不上则适配层自动降级为零跳过）"
+ssh $SSH_OPTS $ECS "cd $REMOTE && python3 - <<'PY'
+import importlib.util, subprocess, sys
+# eltdx 为 Rust 实现的 7709 客户端；py3.14 若无预编译 wheel 则本地降级为 None，
+# 行情主链不受影响（EltdxFallbackSource 返回 None → 降级链跳过）。装失败非致命。
+if importlib.util.find_spec('eltdx') is None:
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q',
+                               '--break-system-packages', 'eltdx'])
+        print('eltdx 安装完成（D74 末位兜底 + market_alert 旁路证据生效）')
+    except Exception as exc:
+        print(f'⚠️ eltdx 安装失败（{type(exc).__name__}）：降级为零跳过，其余服务不受影响')
+else:
+    print('eltdx 已装：D74 能力生效')
+PY"
+
 echo "== 4/6 ECS 侧导入冒烟"
 ssh $SSH_OPTS $ECS "cd $REMOTE && python3 -c 'import quant_engine.main; print(\"import OK\")'"
 

@@ -130,10 +130,12 @@ class TestTushareSource(unittest.TestCase):
             self.assertIsNone(TushareSource.get_daily_data('000001.SZ'))
 
     def test_composite_source_registers_tushare(self):
-        """CompositeSource 注册 tushare，且 daily 优先级排最后（兜底）"""
+        """CompositeSource 注册 tushare，daily 优先级仍在末段（兜底）"""
         from quant_engine.data.source import _PRIORITY, CompositeSource
         self.assertIn('tushare', _PRIORITY['daily'])
-        self.assertEqual(_PRIORITY['daily'][-1], 'tushare')
+        # D74：tushare 之后仅新增 eltdx（末位兜底，未装包时 None 跳过）
+        self.assertEqual(_PRIORITY['daily'][-1], 'eltdx')
+        self.assertEqual(_PRIORITY['daily'][-2], 'tushare')
         self.assertIn('tushare', _PRIORITY['stock_list'])
         # 初始化不炸（tushare 未真实安装）
         cs = CompositeSource()

@@ -197,7 +197,8 @@ class TestRegistryUpdates(unittest.TestCase):
         self.assertEqual(spec.rank(Capability.MINUTE), 0)
 
     def test_minute_priority_sina_first(self):
-        self.assertEqual(_PRIORITY['minute'], ['sina', 'tdx'])
+        # D74：新增 eltdx 末位兜底（未装包时 None 跳过，零信号影响）
+        self.assertEqual(_PRIORITY['minute'], ['sina', 'tdx', 'eltdx'])
 
     def test_new_sources_registered(self):
         for name in ('akshare', 'cninfo', 'iwencai'):
