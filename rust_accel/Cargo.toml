@@ -1,0 +1,27 @@
+[package]
+name = "qerust"
+version = "0.1.0"
+edition = "2021"
+description = "quant_engine 自有 Rust 加速扩展（D78）：指标热点内核，PyO3 封装"
+license = "MIT"
+publish = false
+
+[lib]
+name = "qerust"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# PyO3 0.30（支持 Python 3.9~3.14）+ abi3-py39：同一份 .so 即可在本地 py3.9
+# 与 ECS py3.14 使用（各平台仍需各自编译，不能跨 OS 复用）。
+# 注意：不在依赖里写 extension-module（否则 cargo test 无法链接 libpython）；
+# 构建扩展时用 --features extension-module（见 deploy/build_rust_accel.sh）。
+pyo3 = { version = "0.30", features = ["abi3-py39"] }
+
+[features]
+default = []
+extension-module = ["pyo3/extension-module"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

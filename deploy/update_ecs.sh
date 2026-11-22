@@ -106,14 +106,22 @@ RSYNC_EXCLUDES=(--exclude='__pycache__' --exclude='*.pyc'
                 --exclude='.env' --exclude='.env.bak*' --exclude='.env.local' --exclude='.env.test'
                 --exclude='logs/' --exclude='*.log' --exclude='.ruff_cache' --exclude='.DS_Store')
 if ssh $SSH_OPTS $ECS "command -v rsync >/dev/null"; then
-    rsync -az --delete -e "$RSYNC_RSH" "${RSYNC_EXCLUDES[@]}" quant_engine/ "$ECS:$REMOTE/quant_engine/"
+    # _qerust/ 是本机编译的扩展产物，**不能跨 OS 复用**（D78 实证：mac .so 传到
+    # ECS 后 import 报 invalid ELF header）→ 必须排除，由 §3.7 在 ECS 本机编译。
+    rsync -az --delete -e "$RSYNC_RSH" "${RSYNC_EXCLUDES[@]}" --exclude='_qerust/' \
+        quant_engine/ "$ECS:$REMOTE/quant_engine/"
     rsync -az --delete -e "$RSYNC_RSH" --exclude='__pycache__' --exclude='.DS_Store' UX/ "$ECS:$REMOTE/UX/"
+    # D78：本项目自有 Rust 扩展源码 + 构建脚本必须同步（target* 为构建缓存，不同步）
+    rsync -az --delete -e "$RSYNC_RSH" --exclude='target' --exclude='target*' --exclude='__pycache__' \
+        rust_accel/ "$ECS:$REMOTE/rust_accel/"
+    rsync -az --delete -e "$RSYNC_RSH" --exclude='__pycache__' deploy/ "$ECS:$REMOTE/deploy/"
 else
     echo "ECS 无 rsync，走 tar 管道"
     tar czf - --exclude='__pycache__' --exclude='*.pyc' \
         --exclude='.env' --exclude='.env.bak*' --exclude='.env.local' --exclude='.env.test' \
         --exclude='logs' --exclude='*.log' --exclude='.ruff_cache' --exclude='.DS_Store' \
-        quant_engine UX | ssh $SSH_OPTS $ECS "tar xzf - -C $REMOTE"
+        --exclude='target' --exclude='target*' --exclude='_qerust' \
+        quant_engine UX rust_accel deploy | ssh $SSH_OPTS $ECS "tar xzf - -C $REMOTE"
 fi
 
 echo "== 3/6 依赖探针（只装缺失的；ECS 现网版本优先，不按钉版降级）"
@@ -148,8 +156,15 @@ else:
     print('eltdx 已装：D74 能力生效')
 PY"
 
+echo "== 3.7/6 Rust 加速扩展构建（D78；本项目自有 PyO3 模块，可选，失败自动回退纯 Python）"
+ssh $SSH_OPTS $ECS "cd $REMOTE && if command -v cargo >/dev/null 2>&1; then PYTHON_BIN=python3 bash deploy/build_rust_accel.sh; else
+  echo '  ECS 无 cargo → 跳过构建（指标走纯 Python 回退，逐位等价）'
+  echo '  安装 Rust 工具链：curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal'
+  echo '  或镜像：RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static sh rustup-init.sh -y --profile minimal'
+fi"
+
 echo "== 4/6 ECS 侧导入冒烟"
-ssh $SSH_OPTS $ECS "cd $REMOTE && python3 -c 'import quant_engine.main; print(\"import OK\")'"
+ssh $SSH_OPTS $ECS "cd $REMOTE && python3 -c 'import quant_engine.main; from quant_engine.utils import rust_accel; print(\"import OK | accel backend =\", rust_accel.backend())'"
 
 echo "== 5/6 重启三服务并确认 active"
 ssh $SSH_OPTS $ECS "systemctl restart quant-api quant-worker quant-beat && sleep 8 && systemctl is-active quant-api quant-worker quant-beat"

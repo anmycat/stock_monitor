@@ -97,6 +97,13 @@ class Settings(BaseSettings):
     # 说明：回测是纯分析工具，不改任何实时信号/仓位，故 D41 实盘零漂移不受影响。
     BACKTEST_FILL_NEXT_OPEN: bool = True
 
+    # Rust 加速扩展（D78，2026-11-22 用户要求「本项目自身 Rust 化改造」）：
+    # 指标模块三处 Python 级逐元素循环（Wilder 平滑 / RSI / 平台天数 / 连续涨跌）
+    # 下沉到自有 PyO3 扩展 `qerust`（源码 rust_accel/），其余仍 pandas/numpy 向量化。
+    # True（默认）＝可用就用；扩展缺失/构建失败/平台不匹配时自动回退纯 Python（逐位等价）。
+    # False ＝ 强制纯 Python（A/B 对比用）。
+    RUST_ACCEL_ENABLED: bool = True
+
     # Kelly v1.8（2026-11-21 用户裁定落库，docs/44 复核 8-22~11-20 窗口全规则 f*≤0）：
     # Kelly 判定无正期望时（has_edge=False）的建议仓位。
     # 0.0＝归零口径（v1.8：停止按 Kelly 建议开仓）；回退 legacy 设 0.05（旧「无 edge→最小仓位 5%」地板）。

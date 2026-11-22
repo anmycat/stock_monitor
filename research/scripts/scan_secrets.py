@@ -48,6 +48,12 @@ EXEMPT_PATHS = (
     ':(exclude)research/raw',
     ':(exclude)research/docs',
     ':(exclude)quant_engine/data/sources/assets',
+    # D78：Rust 构建相关误报——2026-11-22 实证两类
+    #   ① Cargo.lock 的 `checksum = "<64 位十六进制>"` 是 crates.io 公开内容哈希
+    #      （锁文件必须入库以复现构建，故豁免路径而非改检测规则）
+    #   ② cargo 构建产物目录（本机 CARGO_TARGET_DIR 带随机后缀，如 targetRajAQB）
+    ':(exclude)rust_accel/Cargo.lock',
+    ':(exclude)rust_accel/target',
 )
 
 # 扫描器自身的测试文件（必须包含密钥样例来验证检测能力，

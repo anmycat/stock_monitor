@@ -1,7 +1,14 @@
-"""技术指标计算 - 包含基础指标和高级特征"""
+"""技术指标计算 - 包含基础指标和高级特征
+
+D78：三处 Python 级逐元素循环（Wilder 平滑 / 平台天数 / 连续涨跌）已下沉到
+本项目自有 Rust 扩展 `qerust`（`rust_accel/`），由 `utils.rust_accel` 统一调度；
+扩展不可用时自动回退到本文件内的纯 Python 实现，两者逐位等价（专项测试 + D41 双跑）。
+"""
 
 import numpy as np
 import pandas as pd
+
+from . import rust_accel
 
 
 def _wilder_smooth(series: pd.Series, period: int) -> float:
@@ -11,21 +18,11 @@ def _wilder_smooth(series: pd.Series, period: int) -> float:
     与 pandas ``ewm(alpha=1/period, adjust=False)`` 数值等价，但显式用
     前 period 期 SMMA 作种子，避免 EWM 起始值偏差；数据不足 period+1 时
     退回整体均值（与旧行为兼容的兜底，仅在极短序列触发）。
+
+    D78：实现下沉到 Rust（`qerust.wild_smooth`），回退为纯 Python，逐位一致。
     """
-    vals = series.to_numpy(dtype='float64')
-    # 跳过首部 NaN（diff 产生），只在有效区间平滑
-    valid = vals[~np.isnan(vals)]
-    n = len(valid)
-    if n == 0:
-        return 0.0
-    if n < period:
-        return float(valid.mean())
-    seed = valid[:period].mean()
-    smoothed = seed
-    alpha = 1.0 / period
-    for v in valid[period:]:
-        smoothed = smoothed + alpha * (v - smoothed)
-    return float(smoothed)
+    return rust_accel.wild_smooth(series, period)
+
 
 
 def calculate_indicators(df: pd.DataFrame) -> dict:
@@ -44,13 +41,8 @@ def calculate_indicators(df: pd.DataFrame) -> dict:
     # 原实现用简单移动平均 (rolling.mean) 平滑涨跌幅 → 与主流软件（通达信/文华）
     # 的 Wilder 口径不一致。2026-11-21 用户裁定 S3 统一为 Wilder：
     # 首值用前 14 期简单均值，其后按 alpha=1/14 指数平滑（等价 Wilder 递归）。
-    delta = df['close'].diff()
-    gain = delta.where(delta > 0, 0.0)
-    loss = (-delta.where(delta < 0, 0.0))
-    avg_gain = _wilder_smooth(gain, 14)
-    avg_loss = _wilder_smooth(loss, 14)
-    rs = avg_gain / avg_loss if avg_loss != 0 else 0.0
-    indicators['rsi'] = 100 - (100 / (1 + rs))
+    # D78：diff → gain/loss → 平滑 → RSI 整链下沉到 Rust（回退纯 Python，逐位一致）。
+    indicators['rsi'] = rust_accel.wilder_rsi(df['close'], 14)
 
     # ── MACD ──
     ema12 = df['close'].ewm(span=12).mean()
@@ -136,19 +128,13 @@ def _advanced_features(df: pd.DataFrame, close: float) -> dict:
 
 
 def _consolidation_days(df: pd.DataFrame, pct_range: float = 0.03, lookback: int = 30) -> int:
-    """计算平台天数：价格在 pct_range 范围内波动的连续天数"""
+    """计算平台天数：价格在 pct_range 范围内波动的连续天数（D78：Rust 优先）"""
     n = min(lookback, len(df))
-    closes = df['close'].iloc[-n:].values
     if n < 2:
         return 0
-    days = 0
-    ref = closes[-1]
-    for c in reversed(closes):
-        if abs(c / ref - 1) <= pct_range:
-            days += 1
-        else:
-            break
-    return days
+    return rust_accel.consolidation_days(
+        df['close'].iloc[-n:].to_numpy(dtype='float64'), pct_range, lookback
+    )
 
 
 def _obv(df: pd.DataFrame) -> pd.Series:
@@ -159,15 +145,8 @@ def _obv(df: pd.DataFrame) -> pd.Series:
 
 
 def _consecutive_direction(df: pd.DataFrame) -> int:
-    """计算连续涨跌天数（正=连涨，负=连跌）"""
+    """计算连续涨跌天数（正=连涨，负=连跌；D78：Rust 优先）"""
     pct = df['close'].pct_change().dropna()
     if pct.empty:
         return 0
-    count = 0
-    direction = 1 if pct.iloc[-1] >= 0 else -1
-    for p in reversed(pct.values):
-        if (direction > 0 and p >= 0) or (direction < 0 and p < 0):
-            count += 1
-        else:
-            break
-    return count * direction
+    return rust_accel.consecutive_direction(pct.to_numpy(dtype='float64'))
