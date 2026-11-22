@@ -99,14 +99,19 @@ ssh $SSH_OPTS $ECS "tar czf /root/backup_pre_refactor_$TS.tar.gz --exclude='__py
 echo "  部署版本（本地 commit）：$LOCAL_COMMIT_SHORT"
 
 echo "== 2/6 上传代码（quant_engine + UX；排除 .env/__pycache__/logs）"
-RSYNC_EXCLUDES=(--exclude='__pycache__' --exclude='*.pyc' --exclude='.env' --exclude='.env.*'
+# D77（2026-11-22 部署验收发现）：旧写法 --exclude='.env.*' 会把模板文档 .env.example
+# 一并排除，导致 ECS 上 .env.example 永远是首次部署那份（本次实测 ECS 1112B/6月版
+# vs 本地 4539B/最新版）。改为只排除真正的密钥文件，模板必须同步。
+RSYNC_EXCLUDES=(--exclude='__pycache__' --exclude='*.pyc'
+                --exclude='.env' --exclude='.env.bak*' --exclude='.env.local' --exclude='.env.test'
                 --exclude='logs/' --exclude='*.log' --exclude='.ruff_cache' --exclude='.DS_Store')
 if ssh $SSH_OPTS $ECS "command -v rsync >/dev/null"; then
     rsync -az --delete -e "$RSYNC_RSH" "${RSYNC_EXCLUDES[@]}" quant_engine/ "$ECS:$REMOTE/quant_engine/"
     rsync -az --delete -e "$RSYNC_RSH" --exclude='__pycache__' --exclude='.DS_Store' UX/ "$ECS:$REMOTE/UX/"
 else
     echo "ECS 无 rsync，走 tar 管道"
-    tar czf - --exclude='__pycache__' --exclude='*.pyc' --exclude='.env' --exclude='.env.*' \
+    tar czf - --exclude='__pycache__' --exclude='*.pyc' \
+        --exclude='.env' --exclude='.env.bak*' --exclude='.env.local' --exclude='.env.test' \
         --exclude='logs' --exclude='*.log' --exclude='.ruff_cache' --exclude='.DS_Store' \
         quant_engine UX | ssh $SSH_OPTS $ECS "tar xzf - -C $REMOTE"
 fi
