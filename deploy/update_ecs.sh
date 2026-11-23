@@ -47,6 +47,22 @@ else
     echo "     内网可信环境可忽略；公网暴露请在 $REMOTE/.env 配置后重启 quant-api。"
 fi
 
+echo "== 0.6/6 systemd EnvironmentFile 单一来源（D79：幂等确保三服务显式加载 .env）"
+ssh $SSH_OPTS $ECS "for u in quant-api quant-worker quant-beat; do
+  f=/etc/systemd/system/\$u.service
+  if grep -q '^EnvironmentFile=' \$f; then
+    echo \"  \$u: EnvironmentFile 已存在\"
+  else
+    sed -i '/^Environment=PYTHONUNBUFFERED=1/a EnvironmentFile=-$REMOTE/.env' \$f
+    echo \"  \$u: 已插入 EnvironmentFile=-$REMOTE/.env\"
+    echo '  ⚠️ 本服务需 daemon-reload（§5 重启前自动执行）'
+  fi
+done
+systemctl daemon-reload
+for u in quant-api quant-worker quant-beat; do
+  printf '  %s: ' \$u; systemctl show \$u -p EnvironmentFiles --value
+done"
+
 echo "== 0.7/6 敏感信息扫描（D59：防止密钥误入 git / 部署包）"
 if [ -f research/scripts/scan_secrets.py ]; then
   if python3 research/scripts/scan_secrets.py; then
@@ -156,7 +172,7 @@ else:
     print('eltdx 已装：D74 能力生效')
 PY"
 
-echo "== 3.7/6 Rust 加速扩展构建（D78；本项目自有 PyO3 模块，可选，失败自动回退纯 Python）"
+echo "== 3.7/6 Rust 加速扩展（D78/D79；产物缓存命中跳过 cargo，源码变更自动重编；失败回退纯 Python）"
 ssh $SSH_OPTS $ECS "cd $REMOTE && if command -v cargo >/dev/null 2>&1; then PYTHON_BIN=python3 bash deploy/build_rust_accel.sh; else
   echo '  ECS 无 cargo → 跳过构建（指标走纯 Python 回退，逐位等价）'
   echo '  安装 Rust 工具链：curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal'
@@ -171,6 +187,21 @@ ssh $SSH_OPTS $ECS "systemctl restart quant-api quant-worker quant-beat && sleep
 
 echo "== 6/6 端点验证（本机 8000）"
 ssh $SSH_OPTS $ECS 'for ep in health market signals; do curl -s -o /dev/null -w "$ep %{http_code}\n" http://localhost:8000/api/$ep; done'
+
+echo "== 6.5/6 部署一致性分级校验（D79：A/B 字节级硬门禁，C 只验存在，D 跳过）"
+# D77 教训：rsync -a 只比大小+mtime，.env.example 曾静默不同步数月。
+# 本地与 ECS 各生成 manifest，按产物类型分级比对；A/B 不一致 → 部署失败（exit 2）。
+LOCAL_MANIFEST=$(mktemp)
+REMOTE_MANIFEST=$(mktemp)
+trap 'rm -f "$LOCAL_MANIFEST" "$REMOTE_MANIFEST"' EXIT
+python3 deploy/verify_deploy.py manifest . > "$LOCAL_MANIFEST"
+ssh $SSH_OPTS $ECS "cd $REMOTE && python3 deploy/verify_deploy.py manifest ." > "$REMOTE_MANIFEST"
+if python3 deploy/verify_deploy.py compare "$LOCAL_MANIFEST" "$REMOTE_MANIFEST"; then
+    echo "  ✅ 一致性校验通过"
+else
+    echo "  ❌ 一致性校验失败（A/B 代码或配置漂移）——请排查后重部署"
+    exit 2
+fi
 
 echo "==================================="
 echo "部署完成。备份：/root/backup_pre_refactor_$TS.tar.gz（ECS 上）"

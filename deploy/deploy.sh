@@ -91,6 +91,7 @@ WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/python3 -m quant_engine.main
 Restart=always
 RestartSec=5
+EnvironmentFile=-$PROJECT_DIR/.env
 
 [Install]
 WantedBy=multi-user.target
@@ -109,6 +110,7 @@ WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/python3 -m quant_engine.worker
 Restart=always
 RestartSec=5
+EnvironmentFile=-$PROJECT_DIR/.env
 
 [Install]
 WantedBy=multi-user.target
@@ -127,6 +129,7 @@ WorkingDirectory=$PROJECT_DIR
 ExecStart=/usr/bin/python3 -m quant_engine.beat
 Restart=always
 RestartSec=5
+EnvironmentFile=-$PROJECT_DIR/.env
 
 [Install]
 WantedBy=multi-user.target
