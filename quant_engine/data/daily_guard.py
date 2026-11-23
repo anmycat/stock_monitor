@@ -123,7 +123,8 @@ collector = SessionBarCollector()
 
 def cross_check(df: pd.DataFrame, code: str,
                 session: str | None = None,
-                *, verifier=None, phase: str | None = None) -> dict:
+                *, verifier=None, phase: str | None = None,
+                sample_n: int | None = None) -> dict:
     """针对性跨源复核：仅在主源疑似降级时调用。
 
     Args:
@@ -133,6 +134,7 @@ def cross_check(df: pd.DataFrame, code: str,
         verifier: 复核源实例（需实现 ``get_daily_data(code, days)``）。
             缺省用 ``EastMoneySource``；测试可注入替身。
         phase: 市场阶段（测试可注入，避免依赖墙钟）
+        sample_n: D80 抽样率（每 N 票查 1 票）；None=保持 D66 原行为（全量）
 
     Returns:
         结论 dict：{status, verified_by, ref_date, ref_close,
@@ -146,7 +148,8 @@ def cross_check(df: pd.DataFrame, code: str,
         'main_close': None, 'gap_pct': None,
         'checked_at': datetime.now().isoformat(timespec='seconds'),
     }
-    if not prov.should_cross_check(df, session, phase=phase):
+    if not prov.should_cross_check(df, session, phase=phase,
+                                   code=code, sample_n=sample_n):
         return result
     try:
         result['main_close'] = float(df['close'].iloc[-1])
@@ -206,11 +209,12 @@ def cross_check(df: pd.DataFrame, code: str,
 def apply_cross_check(df: pd.DataFrame, code: str,
                       session: str | None = None, *,
                       verifier=None, phase: str | None = None,
-                      cache=None) -> pd.DataFrame:
+                      cache=None, sample_n: int | None = None) -> pd.DataFrame:
     """复核并把结论写回标签（同一交易日每票只复核一次，避免刷源）。
 
     Args:
         cache: 可选 RedisCache，用于跨轮去重 + 审计留痕；None 时仅进程内生效。
+        sample_n: D80 抽样率（每 N 票查 1 票）；None=保持 D66 原行为（全量）。
     """
     if df is None or df.empty:
         return df
@@ -227,7 +231,8 @@ def apply_cross_check(df: pd.DataFrame, code: str,
         except Exception as e:  # noqa: BLE001 旁路缓存异常不得影响主链
             logger.debug(f"[D66] cross-check cache read failed: {e}")
 
-    conclusion = cross_check(df, code, session, verifier=verifier, phase=phase)
+    conclusion = cross_check(df, code, session, verifier=verifier, phase=phase,
+                             sample_n=sample_n)
     source = prov.read(df).get('source') or 'unknown'
     if conclusion['status'] != CC_NOT_NEEDED:
         prov.tag(df, source,

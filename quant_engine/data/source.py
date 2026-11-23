@@ -41,6 +41,29 @@ _PRIORITY = {
     'minute': ['sina', 'tdx', 'eltdx'],
 }
 
+# D80：eltdx 主力模式优先级。实测 OHLC 与腾讯 qfq 逐位一致（docs/46 + 本轮实证），
+# 提到首位后主链零请求外部 HTTP（eltdx 走 Rust TCP 7709），东财仅作 D66 证实源。
+_PRIORITY_PRIMARY = {
+    'daily': ['eltdx', 'tencent', 'sina', 'ths_web', 'eastmoney', 'tushare'],
+    'minute': ['eltdx', 'sina', 'tdx'],
+}
+
+
+def resolve_priority(cap: str) -> list[str]:
+    """按 ELTDX_AS_PRIMARY 开关解析实际优先级（D80）。
+
+    开关开启且该链路有主力模式定义时返回 eltdx 优先序列，否则返回原序。
+    单独抽成函数便于测试注入，也避免改动 _PRIORITY 常量破坏既有断言。
+    """
+    if cap in _PRIORITY_PRIMARY:
+        try:
+            from ..config import get_settings
+            if bool(get_settings().ELTDX_AS_PRIMARY):
+                return list(_PRIORITY_PRIMARY[cap])
+        except Exception:  # noqa: BLE001, S110 配置缺失时保守回退原序
+            pass
+    return list(_PRIORITY[cap])
+
 
 class CompositeSource:
     """组合数据源 - 通过 SourceManager 统一调度"""
@@ -133,7 +156,7 @@ class CompositeSource:
         而不是靠降级顺序猜。来源名来自 SourceManager 实际命中的那一档。
         """
         result, source_name = source_manager.execute_with_fallback(
-            _PRIORITY['daily'], self.sources, 'get_daily_data',
+            resolve_priority('daily'), self.sources, 'get_daily_data',
             code, days, skip_delay=True, return_source=True,
         )
         if result is not None and not result.empty:
@@ -145,7 +168,7 @@ class CompositeSource:
     def get_minute_data(self, code: str, period: str = "5") -> pd.DataFrame:
         """获取分钟线数据"""
         result = source_manager.execute_with_fallback(
-            _PRIORITY['minute'], self.sources, 'get_minute_data',
+            resolve_priority('minute'), self.sources, 'get_minute_data',
             code, period, skip_delay=True,
         )
         if result is not None and not result.empty:

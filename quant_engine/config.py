@@ -149,6 +149,16 @@ class Settings(BaseSettings):
     ELTDX_PROBE_HOSTS: int = 0   # >0 时探活前 N 台；0=不主动探测
     ELTDX_ADJUST: str = "qfq"    # 日K 前复权，对齐主链腾讯 fqkline 口径
     ELTDX_MARKET_ALERT_ENRICH: bool = True  # 旁路证据注入 market_alert（不改判定）
+    # D80：eltdx 候选主力源（默认关闭，用户裁定）。ECS 实证：近 30 根 OHLC 与腾讯
+    # qfq 逐位一致，但 60 根上有 23 根历史 bar 差 0.001 元（eltdx 复权截断到分 vs
+    # 腾讯保留三位），传导到 RSI≈0.0025/MA60≈0.0004；10 票当日无阈值翻转，但 D41
+    # 回归用冻结 fixture、结构上无法验证换源漂移。故默认 false 保持 tencent 主链，
+    # 观察 ECS 实时 A/B 若干交易日确认无信号影响后再手动置 true；随时可回退。
+    ELTDX_AS_PRIMARY: bool = False
+    # D80：D66 跨源复核从「每票每日查东财」降为「异常必查 + 确定性抽样」。
+    # 每 N 票抽 1 票（hash(code+session)%N==0，稳定可复现）；0=仅异常帧触发。
+    # 27 票池取 9 ≈ 每日抽 3 票；东财仍为唯一证实源，只降请求量不改信号。
+    KLINE_VERIFY_SAMPLE_N: int = 9
 
     # AI配置
     DEEPSEEK_API_KEY: str = ""

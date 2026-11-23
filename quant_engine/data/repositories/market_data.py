@@ -216,8 +216,10 @@ class MarketDataRepository:
         # ② 针对性跨源复核：仅「疑似降级」时打第二源，正常路径零额外请求
         try:
             if bool(get_settings().KLINE_CROSS_CHECK):
+                # D80：东财降为证实源，按 1/N 确定性抽样（异常帧仍必查）
                 daily_guard.apply_cross_check(
-                    df, code, session, cache=getattr(self, 'cache', None))
+                    df, code, session, cache=getattr(self, 'cache', None),
+                    sample_n=int(get_settings().KLINE_VERIFY_SAMPLE_N))
         except Exception as e:  # noqa: BLE001 复核失败不得影响取数/配置缺失
             logger.debug(f"[D66] cross-check skipped for {code}: {e}")
 

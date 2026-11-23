@@ -147,8 +147,12 @@ class EltdxClient:
     def _bars_to_df(bars) -> pd.DataFrame:
         """eltdx KlineBar 元组 → 本项目标准 DataFrame（列严格对齐）。
 
-        单位（research/docs/45 §3 实测）：`amount` 为元；`volume_lots` 为手，
-        ×100 = 股（本项目约定 volume=股，amount≈volume×close）。
+        单位（research/docs/45 §3 实测）：`amount` 为元；`volume_lots` 为手。
+
+        D80 成交量口径对齐：eltdx 返回精确股数（如 244403616），腾讯 fqkline
+        按手取整到百位（244403600）。eltdx 提主力后必须对齐腾讯既有口径，
+        否则 volume_ratio / volume_score 等量能因子会漂移（违反零漂移铁律）。
+        实证 `round(lots) * 100` 对 5 票 × 30 根全部精确吻合腾讯末根成交量。
         """
         records = []
         for b in bars or ():
@@ -167,7 +171,7 @@ class EltdxClient:
                     'high': float(getattr(b, 'high', 0) or 0),
                     'low': float(getattr(b, 'low', 0) or 0),
                     'close': float(getattr(b, 'close', 0) or 0),
-                    'volume': lots * 100.0,
+                    'volume': round(lots) * 100.0,  # D80 对齐腾讯按手取整口径
                     'amount': float(getattr(b, 'amount', 0) or 0),
                 })
             except Exception as e:  # 单根 bar 字段异常不应炸整帧

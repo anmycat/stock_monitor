@@ -180,19 +180,44 @@ def assess(df: pd.DataFrame, session: str | None = None) -> str:
 
 
 def should_cross_check(df: pd.DataFrame, session: str | None = None,
-                       *, phase: str | None = None) -> bool:
+                       *, phase: str | None = None,
+                       code: str | None = None,
+                       sample_n: int | None = None) -> bool:
     """是否触发针对性跨源复核。
 
-    只在「lagging + 交易时段或盘后」触发：盘前本来就该停在上一交易日，
-    复核没有意义；stale 是历史数据，复核只会污染历史序列。
+    D66 原始逻辑：只在「lagging + 交易时段或盘后」触发——盘前本来就该停在
+    上一交易日，复核没有意义；stale 是历史数据，复核只会污染历史序列。
+
+    D80 证实源降频：eltdx 提主力后，lagging 多为「当日 bar 尚未生成」而非
+    源错误，全量查东财属浪费（实测 102 键/日）。降频规则：
+      - ``sample_n=None``（缺省）：保持 D66 原行为，lagging 即查（向后兼容）；
+      - ``sample_n`` 为整数：启用降频，满足任一才查（东财仍为唯一证实源）：
+          1. 整帧异常 ``kline_frame_status == 'invalid'``（I-04 已落 attrs）；
+          2. 确定性抽样 1/N（code+session 稳定 hash，重启/多进程一致）。
+      - ``sample_n=0``：只查异常帧、完全不抽样。
     """
     if assess(df, session) != 'lagging':
         return False
     if phase is None:
         from .calendar import get_market_phase
         phase = get_market_phase()
-    return phase in ('MORNING_SESSION', 'AFTERNOON_SESSION',
-                     'NOON_BREAK', 'AFTER_HOURS')
+    if phase not in ('MORNING_SESSION', 'AFTERNOON_SESSION',
+                     'NOON_BREAK', 'AFTER_HOURS'):
+        return False
+    # sample_n=None（缺省）→ 保持 D66 原行为（既有测试/旧调用路径）
+    if sample_n is None:
+        return True
+    # 启用 D80 降频
+    meta = read(df)
+    if meta.get('frame_status') == 'invalid':  # 规则 1：整帧异常必查
+        return True
+    n = int(sample_n)  # 规则 2：确定性抽样 1/N
+    if n <= 0:
+        return False
+    import hashlib
+    token = f'{session or ""}:{code or ""}'.encode()
+    bucket = int.from_bytes(hashlib.md5(token).digest()[:4], 'big')
+    return bucket % n == 0
 
 
 def describe(df: pd.DataFrame, session: str | None = None) -> str:
