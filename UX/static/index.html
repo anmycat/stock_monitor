@@ -153,6 +153,19 @@
         .etf-sort .arrow { font-size: 7px; opacity: 0.25; line-height: 0.8; color: var(--ink-3); }
         .etf-sort .arrow.active { opacity: 1; color: var(--red); font-size: 8px; }
         .etf-sort .arrow.active.asc { color: var(--green); }
+        /* D79 优势 ETF 榜 */
+        .etf-theme-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+        .etf-theme { padding: 3px 10px; font-size: 11px; border: 1px solid var(--line); border-radius: 12px;
+                     background: transparent; color: var(--ink-2); cursor: pointer; }
+        .etf-theme.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+        .etf-leader-row { display: grid; grid-template-columns: 18px 1fr 56px 60px 64px; gap: 6px;
+                          align-items: center; padding: 5px 8px; background: var(--bg);
+                          border-radius: 6px; font-size: 11px; margin-bottom: 5px; }
+        .etf-leader-row .rk { color: var(--ink-3); font-size: 10px; }
+        .etf-leader-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+        .etf-leader-row .sc, .etf-leader-row .am { text-align: right; font-variant-numeric: tabular-nums; }
+        .etf-leader-row .cg { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        .etf-leader-row .cg.flat { color: var(--ink-3); }
 
         /* Eval */
         .eval-item { padding: 8px 10px; background: var(--bg); border-radius: var(--r-sm); margin-bottom: 6px; }
@@ -365,6 +378,16 @@
             <div class="card">
                 <div class="card-hd"><div class="bar"></div><h3>ETF监控</h3></div>
                 <div id="etfGrid"><div class="loading">加载中...</div></div>
+            </div>
+            <div class="card">
+                <div class="card-hd"><div class="bar"></div><h3>优势ETF榜</h3><span class="badge badge-blue" id="etfLeadersCount"></span></div>
+                <div class="etf-theme-tabs" id="etfThemeTabs">
+                    <button class="etf-theme on" data-theme="dividend" onclick="loadETFLeaders('dividend')">红利</button>
+                    <button class="etf-theme" data-theme="lowvol" onclick="loadETFLeaders('lowvol')">低波</button>
+                    <button class="etf-theme" data-theme="central" onclick="loadETFLeaders('central')">央企</button>
+                    <button class="etf-theme" data-theme="broad" onclick="loadETFLeaders('broad')">宽基</button>
+                </div>
+                <div id="etfLeaders"><div class="loading">加载中...</div></div>
             </div>
             <div class="card">
                 <div class="card-hd"><div class="bar"></div><h3>回测评估</h3><span class="badge badge-blue" id="evalBadge">T+N</span></div>
@@ -669,6 +692,40 @@ function renderETF() {
     });
     h += '</div>';
     el.innerHTML = h;
+}
+
+/* === D79 优势 ETF 榜（红利/低波/央企/宽基；旁路只读） === */
+var etfLeadersTheme = 'dividend';
+function loadETFLeaders(theme) {
+    etfLeadersTheme = theme || etfLeadersTheme;
+    document.querySelectorAll('.etf-theme').forEach(function(b) {
+        b.classList.toggle('on', b.getAttribute('data-theme') === etfLeadersTheme);
+    });
+    var el = $('etfLeaders');
+    el.innerHTML = '<div class="loading">加载中...</div>';
+    fetchAPI('/api/etf/leaders?theme=' + encodeURIComponent(etfLeadersTheme)).then(function(d) {
+        if (!d || !d.leaders || !d.leaders.length) {
+            el.innerHTML = '<div class="empty">' + (d && d.partial ? '榜单数据抓取中断，暂不可用' : '暂无符合条件标的') + '</div>';
+            return;
+        }
+        var h = '';
+        if (d.partial) {
+            h += '<div style="font-size:10px;color:var(--orange);margin-bottom:6px">数据源分页中断，榜单可能不完整（共扫描 ' + d.total_universe + ' 只）</div>';
+        }
+        d.leaders.forEach(function(e) {
+            var cgCls = Math.abs(e.change_pct) < 0.005 ? 'flat' : (e.change_pct > 0 ? 'up' : 'down');
+            var arrow = Math.abs(e.change_pct) < 0.005 ? '' : (e.change_pct > 0 ? '▲' : '▼');
+            h += '<div class="etf-leader-row" title="' + e.code + '">' +
+                '<span class="rk">' + e.rank + '</span>' +
+                '<span class="nm">' + e.name + '</span>' +
+                '<span class="sc">' + (e.scale / 1e8).toFixed(0) + '亿</span>' +
+                '<span class="am">' + (e.amount / 1e8).toFixed(2) + '亿</span>' +
+                '<span class="cg ' + cgCls + '">' + arrow + ' ' + e.change_pct.toFixed(2) + '%</span></div>';
+        });
+        h += '<div style="font-size:9px;color:var(--ink-3);margin-top:4px">规模≥5亿 · 按规模排序 · ' + d.as_of + '</div>';
+        el.innerHTML = h;
+        $('etfLeadersCount').textContent = d.leaders.length + ' 只';
+    }).catch(function() { el.innerHTML = '<div class="empty">榜单获取失败</div>'; });
 }
 
 /* === KELLY === */
@@ -1013,13 +1070,13 @@ function refreshAll() {
             console.log('🔒 收盘后冻结数据，停止自动刷新');
             // 最后刷新一次确保数据最新
             loadMarket(); loadSignals(); loadAlerts(); loadSectors(); loadHotspots();
-            loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary(); loadCapability();
+            loadHotMoney(); loadETF(); loadETFLeaders(); loadKelly(); loadEval(); loadSummary(); loadCapability();
         }
         return;
     }
     marketClosed = false;
     loadMarket(); loadSignals(); loadAlerts(); loadSectors(); loadHotspots();
-    loadHotMoney(); loadETF(); loadKelly(); loadEval(); loadSummary(); loadCapability();
+    loadHotMoney(); loadETF(); loadETFLeaders(); loadKelly(); loadEval(); loadSummary(); loadCapability();
 }
 loadReportDates();
 refreshAll();

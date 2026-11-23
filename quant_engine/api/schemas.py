@@ -136,6 +136,27 @@ class ETFResponse(BaseModel):
     no_data: bool = False
 
 
+class ETFLeaderItem(BaseModel):
+    """D79 优势 ETF 榜单项（旁路只读，不参与趋势信号）"""
+    code: str
+    name: str
+    theme: str = ''
+    price: float = 0
+    change_pct: float = 0
+    amount: float = 0       # 成交额（元）
+    turnover_pct: float = 0
+    scale: float = 0        # 规模（元）
+    rank: int = 0
+
+
+class ETFLeadersResponse(BaseModel):
+    theme: str
+    as_of: str = ''
+    total_universe: int = 0
+    partial: bool = False   # True=分页抓取提前失败，榜单可能不完整（诚实标注）
+    leaders: list[ETFLeaderItem] = []
+
+
 class ETFHoldingItem(BaseModel):
     code: str
     name: str

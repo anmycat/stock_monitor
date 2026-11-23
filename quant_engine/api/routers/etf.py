@@ -4,8 +4,10 @@ URL/方法/响应结构与拆分前一一对应；模型见 ../schemas，共享�
 """
 import re
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
+
+from quant_engine.data.sources.etf_universe import THEMES, get_leaders
 
 from .._shared import (
     datacenter,
@@ -18,6 +20,8 @@ from ..schemas import (
     ETFHoldingsChangesResponse,
     ETFHoldingsLatestResponse,
     ETFHoldingsOverviewItem,
+    ETFLeaderItem,
+    ETFLeadersResponse,
     ETFResponse,
 )
 
@@ -47,6 +51,26 @@ def _normalize_etf_code(code: str) -> str:
     if not re.match(r'^\d{6}(\.(SH|SZ|BJ))?$', code):
         raise HTTPException(status_code=400, detail=f"无效ETF代码: {code}")
     return code.split('.')[0]
+
+
+@router.get("/etf/leaders", response_model=ETFLeadersResponse,
+            dependencies=[Depends(verify_api_key)])
+def get_etf_leaders(theme: str = Query("dividend", description="主题：dividend/lowvol/central/broad"),
+                    limit: int = Query(10, ge=1, le=30)):
+    """D79 优势 ETF 榜（红利/低波/央企/宽基）——旁路只读，不参与任何信号计算。"""
+    if theme not in THEMES:
+        raise HTTPException(status_code=400, detail=f"未知主题 {theme}，可选 {list(THEMES)}")
+    try:
+        result = get_leaders(datacenter.cache, theme=theme, limit=limit)
+        return ETFLeadersResponse(
+            theme=result["theme"], as_of=result["as_of"],
+            total_universe=result["total_universe"], partial=result["partial"],
+            leaders=[ETFLeaderItem(**item) for item in result["leaders"]])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"API error in get_etf_leaders: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/etf/holdings", response_model=list[ETFHoldingsOverviewItem],
