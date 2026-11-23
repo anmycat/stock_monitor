@@ -108,6 +108,25 @@ class TestFetchAndCache(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertTrue(partial)
 
+    def test_fetch_retries_rst_before_partial(self):
+        """东财 RST 偶发：前两次失败、第三次成功应拿到数据且不标 partial。"""
+        page = {"data": {"diff": {"0": _row("512890", "红利低波ETF", 300)}}}
+        with (mock.patch.object(eu, "em_get", side_effect=[
+                RuntimeError("RST"), RuntimeError("RST"), FakeResponse(page)]) as m,
+              mock.patch.object(eu.time, "sleep")):  # 测试不等退避
+            rows, partial = eu.fetch_etf_universe(max_pages=1)
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(partial)
+        self.assertEqual(m.call_count, 3)
+
+    def test_fetch_marks_partial_after_all_retries(self):
+        with (mock.patch.object(eu, "em_get", side_effect=RuntimeError("RST")) as m,
+              mock.patch.object(eu.time, "sleep")):
+            rows, partial = eu.fetch_etf_universe(max_pages=1)
+        self.assertEqual(rows, [])
+        self.assertTrue(partial)
+        self.assertEqual(m.call_count, 3)
+
     def test_get_leaders_uses_cache(self):
         cache = FakeCache()
         with mock.patch.object(eu, "fetch_etf_universe") as fetch:

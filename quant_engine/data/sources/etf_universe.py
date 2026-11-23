@@ -81,17 +81,27 @@ def fetch_etf_universe(max_pages: int = 17, page_size: int = 100) -> tuple[list[
     for pn in range(1, max_pages + 1):
         params = {"pn": pn, "pz": page_size, "po": 1, "fid": "f6",
                   "fs": FS_ETF, "fields": FIELDS}
-        try:
-            resp = em_get(CLIST_URL, params=params, timeout=15)
-            data = resp.json().get("data")
-            if not data or not data.get("diff"):
-                break  # 正常到尾
-            for row in _parse_rows(data["diff"]):
-                allrows[row["code"]] = row
-        except Exception as exc:
-            logger.warning(f"[ETF] 全市场列表第 {pn}/{max_pages} 页抓取失败：{type(exc).__name__}")
+        # 东财对端常偶发 RST（docs/36/37）；em_get 内部已重建连接重试一次，
+        # 此处每页最多再试 3 轮，仍走 em_get 全局限速（绝不绕过 D68 三招）
+        data = None
+        for attempt in range(3):
+            try:
+                resp = em_get(CLIST_URL, params=params, timeout=15)
+                data = resp.json().get("data")
+                break
+            except Exception as exc:
+                if attempt == 2:
+                    logger.warning(
+                        f"[ETF] 全市场列表第 {pn}/{max_pages} 页抓取失败（重试 2 次）：{type(exc).__name__}")
+                else:
+                    time.sleep(0.5 * (attempt + 1))
+        if data is None:
             partial = True
             break
+        if not data.get("diff"):
+            break  # 正常到尾
+        for row in _parse_rows(data["diff"]):
+            allrows[row["code"]] = row
         time.sleep(0.2)  # 温和分页，全局限速已守，此处只做二次保护
     return list(allrows.values()), partial
 
