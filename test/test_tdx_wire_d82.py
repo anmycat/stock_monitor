@@ -55,7 +55,7 @@ class TestFrameCodec(unittest.TestCase):
 
     def test_decode_header_rejects_bad_prefix(self):
         with self.assertRaises(ValueError):
-            decode_header(bytes.fromhex('ffffffff' + '00' * 12))
+            decode_header(bytes([0xFF] * 4 + [0] * 12))
 
 
 class TestCodeAndPeriod(unittest.TestCase):

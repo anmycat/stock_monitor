@@ -76,10 +76,14 @@ KNOWN_FAKE_KEYS = {
     'AKIAIOSFODNN7EXAMPLE',      # AWS 官方文档示例
 }
 
-# 已核实的公开参数白名单（网页抓包可见，非凭据）
+# 已核实的公开参数/协议常量白名单（公开抓包可见，非凭据）
 KNOWN_PUBLIC_UT = {
     '7eea3edcaed734bea9cbfc24409ed989',   # 东财 push2/push2ex 公共 ut
     'bd1d9ddb04089700cf9c27f6f7426281',   # 东财旧版 ut（历史 modules/ 用）
+    # D82：TDX 7709 公开的协议冻结向量（eltdx 源码单测 + ECS 真机抓包），
+    # 是报文结构常量而非密钥，test/test_tdx_wire_d82.py 逐字节校验用。
+    '0c7b00000001080008004e040000a7263501',  # 请求帧（eltdx frame.rs 冻结向量）
+    'b1cb74001c213758a8000d005200bd00',      # 握手响应帧头（ECS tcpdump 抓包）
 }
 
 # 长十六进制（排除 git SHA / 纯数字 / 公开 ut）
