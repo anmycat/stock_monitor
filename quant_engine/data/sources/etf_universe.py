@@ -99,7 +99,9 @@ def fetch_etf_universe(max_pages: int = 17, page_size: int = 100) -> tuple[list[
             partial = True
             break
         if not data.get("diff"):
-            break  # 正常到尾
+            if not allrows:  # 首页即空且无异常 → 视同上游异常，标 partial 不伪装成正常空榜
+                partial = True
+            break  # 到尾
         for row in _parse_rows(data["diff"]):
             allrows[row["code"]] = row
         time.sleep(0.2)  # 温和分页，全局限速已守，此处只做二次保护
@@ -136,5 +138,6 @@ def get_leaders(cache, theme: str = "dividend", limit: int = 10,
     leaders = select_leaders(rows, theme=theme, limit=limit, min_scale=min_scale)
     result = {"theme": theme, "as_of": time.strftime("%Y-%m-%d %H:%M:%S"),
               "total_universe": len(rows), "partial": partial, "leaders": leaders}
-    cache.set(key, result, ttl=CACHE_TTL)
+    # partial（上游 RST/风控）只缓存 3 分钟，避免空榜长期占位；成功后才缓存 30 分钟
+    cache.set(key, result, ttl=180 if partial else CACHE_TTL)
     return result

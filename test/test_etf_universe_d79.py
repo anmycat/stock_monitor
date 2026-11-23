@@ -138,6 +138,42 @@ class TestFetchAndCache(unittest.TestCase):
         self.assertEqual(second, first)
         self.assertFalse(first["partial"])
 
+    def test_partial_uses_short_ttl(self):
+        """上游风控时 partial 结果只缓存 3 分钟，避免空榜占位 30 分钟。"""
+        cache = FakeCache()
+        original_set = cache.set
+        ttls = []
+
+        def recording_set(k, v, ttl=None):
+            ttls.append(ttl)
+            original_set(k, v, ttl)
+
+        cache.set = recording_set
+        with mock.patch.object(eu, "fetch_etf_universe", return_value=([], True)):
+            eu.get_leaders(cache, "dividend")
+        self.assertEqual(ttls, [180])
+
+    def test_success_uses_full_ttl(self):
+        cache = FakeCache()
+        ttls = []
+        original_set = cache.set
+
+        def recording_set(k, v, ttl=None):
+            ttls.append(ttl)
+            original_set(k, v, ttl)
+
+        cache.set = recording_set
+        with mock.patch.object(eu, "fetch_etf_universe",
+                               return_value=(eu._parse_rows({"0": _row("512890", "红利低波ETF", 300)}), False)):
+            eu.get_leaders(cache, "dividend")
+        self.assertEqual(ttls, [eu.CACHE_TTL])
+
+    def test_empty_first_page_marks_partial(self):
+        with mock.patch.object(eu, "em_get", return_value=FakeResponse({"data": {"diff": {}}})):
+            rows, partial = eu.fetch_etf_universe(max_pages=1)
+        self.assertEqual(rows, [])
+        self.assertTrue(partial)
+
     def test_get_leaders_cache_key_includes_params(self):
         cache = FakeCache()
         with mock.patch.object(eu, "fetch_etf_universe", return_value=([], False)) as fetch:
