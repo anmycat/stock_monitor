@@ -101,8 +101,23 @@ class EltdxClient:
         self.cfg = settings or get_settings()
         self._factory = client_factory  # 测试注入点：注入假客户端做契约测试
         self._client = None
+        self._wire_client = None  # D82 自研 7709 协议核（K 线路径优先）
         self._lock = threading.Lock()
         self._warned = False  # 降级告警只打一次，避免全市场扫描日志刷屏（D70 纪律）
+
+    def _use_wire(self) -> bool:
+        """K 线是否走自研协议核：无测试注入 + 开关开 + 已启用。"""
+        return (self._factory is None
+                and bool(getattr(self.cfg, 'TDX_WIRE_ENABLED', False))
+                and self._enabled())
+
+    def _get_wire_client(self):
+        """延迟构造自研 wire client（纯标准库，无需 eltdx wheel）。"""
+        if self._wire_client is None:
+            from .tdx_wire import TdxWireClient
+            self._wire_client = TdxWireClient(
+                self._hosts(), timeout=self.cfg.ELTDX_TIMEOUT)
+        return self._wire_client
 
     def _enabled(self) -> bool:
         return bool(self.cfg.ELTDX_ENABLED)
@@ -157,22 +172,26 @@ class EltdxClient:
         records = []
         for b in bars or ():
             try:
-                t = getattr(b, 'time', None)
+                # D82：自研 wire client 返回 dict，wheel 返回 dataclass；统一取值器
+                is_dict = isinstance(b, dict)
+                get = (lambda key, default=None, _b=b: _b.get(key, default)) if is_dict \
+                    else (lambda key, default=None, _b=b: getattr(_b, key, default))
+                t = get('time')
                 if isinstance(t, datetime):
                     date_str = t.strftime('%Y-%m-%d %H:%M')
                 elif isinstance(t, date):
                     date_str = t.strftime('%Y-%m-%d')
                 else:
                     date_str = str(t or '')
-                lots = float(getattr(b, 'volume_lots', 0) or 0)
+                lots = float(get('volume_lots', 0) or 0)
                 records.append({
                     'date': date_str,
-                    'open': float(getattr(b, 'open', 0) or 0),
-                    'high': float(getattr(b, 'high', 0) or 0),
-                    'low': float(getattr(b, 'low', 0) or 0),
-                    'close': float(getattr(b, 'close', 0) or 0),
+                    'open': float(get('open', 0) or 0),
+                    'high': float(get('high', 0) or 0),
+                    'low': float(get('low', 0) or 0),
+                    'close': float(get('close', 0) or 0),
                     'volume': round(lots) * 100.0,  # D80 对齐腾讯按手取整口径
-                    'amount': float(getattr(b, 'amount', 0) or 0),
+                    'amount': float(get('amount', 0) or 0),
                 })
             except Exception as e:  # 单根 bar 字段异常不应炸整帧
                 logger.debug(f'[ELTDX] 跳过异常 bar {type(e).__name__}')
@@ -184,12 +203,40 @@ class EltdxClient:
 
     def _get_bars(self, code: str, period: str, count: int,
                   adjust: str | None) -> pd.DataFrame:
-        """K 线取数公共实现；period 用 eltdx 原生值（1m/5m/day…）。"""
-        client = self._get_client()
-        if client is None:
-            return pd.DataFrame(columns=_OUT_COLS)
+        """K 线取数公共实现；period 用 eltdx 原生值（1m/5m/day…）。
+
+        D82：K 线路径优先自研纯 Python 协议核（`TDX_WIRE_ENABLED`），失败降级 wheel；
+        测试注入 `client_factory` 时保持原路径不变（契约测试零影响）。旁路方法
+        （分时/逐笔/资金流/榜单）仍只走 wheel，未安装时维持空（零降级）。
+        """
         conv = to_eltdx_code(code)
         if conv is None:
+            return pd.DataFrame(columns=_OUT_COLS)
+        # 测试注入或 wire 关闭 → 原 wheel 路径
+        if not self._use_wire():
+            client = self._get_client()
+            if client is None:
+                return pd.DataFrame(columns=_OUT_COLS)
+            try:
+                with self._lock:
+                    series = client.bars.get(conv[0], period=period,
+                                             count=int(count), adjust=adjust)
+                return self._bars_to_df(getattr(series, 'bars', None))
+            except Exception as e:
+                logger.debug(f'[ELTDX] {code} {period} 取数失败 {type(e).__name__}: {e}')
+                return pd.DataFrame(columns=_OUT_COLS)
+        # D82 wire 路径
+        try:
+            series = self._get_wire_client().bars.get(
+                conv[0], period=period, count=int(count), adjust=adjust)
+            df = self._bars_to_df(series.bars)
+            if not df.empty:
+                return df
+        except Exception as e:
+            logger.debug(f'[TDX-WIRE] {code} {period} 取数失败 {type(e).__name__}: {e}')
+        # wire 空/失败 → 降级 wheel（若安装）
+        client = self._get_client()
+        if client is None:
             return pd.DataFrame(columns=_OUT_COLS)
         try:
             with self._lock:
@@ -197,7 +244,7 @@ class EltdxClient:
                                          count=int(count), adjust=adjust)
             return self._bars_to_df(getattr(series, 'bars', None))
         except Exception as e:
-            logger.debug(f'[ELTDX] {code} {period} 取数失败 {type(e).__name__}: {e}')
+            logger.debug(f'[ELTDX] {code} {period} wheel 降级失败 {type(e).__name__}: {e}')
             return pd.DataFrame(columns=_OUT_COLS)
 
     def get_minute_data(self, code: str, period: str = '5',
@@ -355,6 +402,10 @@ class EltdxClient:
         仅显式调用才发请求；关闭时返回空列表。
         """
         client = self._get_client()
+        if client is None and self._use_wire():
+            # D82：wire 模式下即使无 wheel 也可探活（纯标准库）
+            results = self._get_wire_client().probe_hosts(max_hosts)
+            return [r for r in results if r.get('ok')] if results else []
         if client is None:
             return []
         try:

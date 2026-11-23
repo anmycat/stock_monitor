@@ -187,10 +187,83 @@ eltdx/
 
 | # | 事项 | 建议 |
 |---|---|---|
-| D73-1 | 是否接受 eltdx/AxData 的 Research-Only 许可证用于本项目 ECS 生产部署 | 若不能确认合规，保持默认关闭，仅作研究数据源 |
+| D73-1 | 是否接受 eltdx/AxData 的 Research-Only 许可证用于本项目 ECS 生产部署 | 若不能确认合规，保持默认关闭，仅作研究数据源。**D82 更新（11-24）**：K 线主路径已自研纯 Python 协议核（`TDX_WIRE_ENABLED`，见 §7），不再依赖 wheel；仅旁路仍用 wheel（用户 11-21 已裁定自用可用） |
 | D73-2 | 是否把 eltdx 加为 daily/minute **末位备源**（会改变极端情况下的信号） | 先不加，保持零信号；需要时单独批次 + D41 双跑 |
 | D73-3 | 是否把 TDX tick/资金流/连板天梯接为 `market_alert` 旁路证据（类 D71） | 可低成本做，但同上先过许可证裁定 |
 | D73-4 | I-03 前提订正后，是否更新调研基线记录 | 已更新 **`research/docs/34`**（I-03 原始基线所在；D73 原稿误写 docs/31，已订正）为"根因订正、eltdx 已启用见 docs/46" |
+
+---
+
+## 7. D82：eltdx 协议核源码级移植（自研纯 Python，2026-11-24）
+
+> 用户指令："研究下 eltdx 代码如何实现，然后移植到我们项目上。"
+> 纪律：源码级逐函数分析（已 clone 仓库）+ 冻结向量逐位校验 + ECS 真机抓包 +
+> 与 wheel 逐值对照。以下结论全部有实证，不凭印象。
+
+### 7.1 源码级研究结论（为什么不是整体搬 84,499 行）
+
+eltdx v3.3.5 分层（GitHub 源码逐文件核对）：
+
+| 层 | 规模 | 职责 | 移植决策 |
+|---|---|---|---|
+| `crates/eltdx-protocol` | ~96KB Rust | 7709 帧编解码、varint/压缩浮点、K线/报价/资金流解析 | **核心借鉴**，纯 Python 复刻子集 |
+| `crates/eltdx-runtime` | ~670KB Rust | tokio 连接池/心跳/actor/push/重连/测速 | 只借鉴语义（单连接+锁+握手+失败重连），不复刻 actor 框架 |
+| `crates/eltdx-python` | PyO3 0.29 | ABI 绑定 | 不需要（自研纯 Python，无二进制） |
+| `src/eltdx/api/*` | ~150KB Python | 门面（bars/quotes/minutes/trades/money_flow/helpers） | 只对齐 `.bars.get()` 契约子集 |
+
+**关键发现**：Python 侧 `protocol/frame.py` 与 `transport/socket.py` 都只是 Rust 扩展的
+薄壳——`call_native(native_module().encode_request_frame, ...)`。真正的协议在 Rust，
+pytdx 之所以恒空而 eltdx 可取数，根因在请求帧与 payload 细节，不在服务器（docs/45 §3.1 已订正）。
+
+### 7.2 协议逆向（冻结向量 + ECS 真机抓包双证）
+
+1. **请求帧 12B 头**：`0x0C` + msg_id<u32 LE> + **control 单字节 0x01** + len<u16>(=data+2) ×2
+   + msg_type<u16> + data。
+   - **本轮踩坑**：初版误把 control 写成 2 字节（`struct.pack('<BIHHH')`），帧长多 1 字节，
+     服务端静默超时（本地沙箱还有 fake-accept 假象：`1.2.3.4:7709` 也显示可达）。
+     修正为 `<BIBHH` 后一次成功——冻结向量 `frame.rs:request_frame_matches_the_frozen_python_header`
+     与抓包 `0c 21 37 58 a8 01 03 00 03 00 0d 00 01` 同时验证。
+2. **响应帧 16B 头**：`b1 cb 74 00` + control + msg_id + reserved + msg_type + zip_length + length
+   + payload；`zip_length != length` 时 zlib 解压（冻结向量 `response_decoder_handles_zlib`）。
+3. **握手**：`0x000D` + 单字节 `0x01`，响应 payload ≥189B（服务器名/产品名 GBK）。
+   这与 pytdx 的 `SetupCmd1/2/3`（三段固定报文）完全不同——是 pytdx 不兼容的重要环节。
+4. **K 线请求 0x052D**（40B payload，抓包实证）：market<u16>(沪1/深0/北2) + 6s 代码 +
+   period<u16> + param<u16> + start<u16> + count<u16> + adjust<u16> + anchor<u32> + **18×0**。
+   - ⚠️ 与 GitHub 源码 `klines.rs` 写的 **20 个尾零（42B）不一致**——线上 wheel 3.3.5 实发 18 零。
+     以抓包为准；移植时用 18 零真机取数成功，用 20 零未验证（版本差异，记录在此避免后人踩坑）。
+   - 复权：0=none/1=qfq/2=hfq/3=fixed_qfq/4=fixed_hfq；周期 day=4/1、5m=0/1、1m=7/1…
+5. **解码**：价格 varint（首字节低 6 位 + 0x40 符号位，后续 7 位续接，千分位），
+   成交量/额用 TDX 4 字节压缩浮点；日K时间=yymmdd<u32>，分钟K=packed date + minute-of-day。
+   ⚠️ 成交量口径：`volume_lots = get_volume(raw)/100`（wheel 语义，eltdx `convertible_tests` 实证
+   `get_volume=2.0 → 0.02 手`）；适配层 `round(lots)*100` 把它还原为 D80 腾讯按手取整口径。
+   若 wire 层直接返回股数会被再乘 100 **放大 100 倍**——已写专项回归测试锁死。
+
+### 7.3 移植方案与合规边界
+
+- **实现**：`quant_engine/data/sources/tdx_wire.py`（约 430 行，纯标准库 struct/zlib/socket/
+  threading，零第三方依赖），提供 `TdxWireClient.bars.get()` 与 eltdx wheel 接口子集兼容。
+- **接入**：`eltdx_client.py` K 线路径优先 wire；`TDX_WIRE_ENABLED=false` 或注入
+  `client_factory` 时回退原 wheel 路径。旁路能力（分时/逐笔/资金流/榜单/连板）**仍走 wheel**，
+  未安装时维持空（零降级）——避免一次性移植 1600+ 行解析引入风险。
+- **许可证**：§0/§4.3 的 Research-Only / 禁止 production 风险，对 K 线主路径**不再依赖 wheel**
+  而大幅缓解（自研实现是本项目自有代码）；旁路仍依赖 wheel，合规结论不变（用户 11-21 已裁定自用）。
+- **零信号影响**：只输出标准 DataFrame（列/值/D80 成交量口径完全对齐），不写 df.attrs、
+  不改评分/门控/Kelly/风控/回测；开关默认 `TDX_WIRE_ENABLED=true`。
+
+### 7.4 实证证据（ECS 2026-11-24）
+
+| 验证 | 结果 |
+|---|---|
+| 冻结向量帧编解码 | 请求帧/握手帧/响应头/压缩响应全部逐字节一致（15 例专项测试） |
+| ECS 真机 wire 取数 | 600519 11-20 O1450.89/H1489.09/L1423.9/**C1485.75**；000001 C**12.22**——与 eltdx wheel 及 docs/45 §3 历史记录逐值一致 |
+| 分钟K | 5m 2026-11-23 14:55 C=1440.76、15:00 C=1439.0，正常 |
+| 性能 | 单票 8ms（首连含握手），连接复用后更快；无 PyO3/wheel 加载开销 |
+| 全量回归 | 48 例专项 + 既有 eltdx 测试全过；ruff 全仓 0；D41 双跑结果见提交记录 |
+
+### 7.5 回退
+
+- `TDX_WIRE_ENABLED=false` → K 线回退 eltdx wheel（需安装）；`ELTDX_ENABLED=false` → 整个 eltdx 链路零请求。
+- 无 wheel 环境下 wire 独立可用（本地 py3.9 / ECS py3.14 同一份纯 Python 代码）。
 
 ---
 

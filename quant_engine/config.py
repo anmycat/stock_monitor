@@ -149,6 +149,10 @@ class Settings(BaseSettings):
     ELTDX_PROBE_HOSTS: int = 0   # >0 时探活前 N 台；0=不主动探测
     ELTDX_ADJUST: str = "qfq"    # 日K 前复权，对齐主链腾讯 fqkline 口径
     ELTDX_MARKET_ALERT_ENRICH: bool = True  # 旁路证据注入 market_alert（不改判定）
+    # D82：自研 TDX 7709 纯 Python 协议核（research/docs/45 §7）。K 线路径优先用它，
+    # 摆脱 eltdx wheel 的 PyO3 二进制 / Research-Only 许可证依赖；与 wheel 逐值一致
+    # （ECS 真机 600519/000001 实证）。false=回退 wheel；旁路能力始终仍走 wheel。
+    TDX_WIRE_ENABLED: bool = True
     # D80：eltdx 候选主力源（默认关闭，用户裁定）。ECS 实证：近 30 根 OHLC 与腾讯
     # qfq 逐位一致，但 60 根上有 23 根历史 bar 差 0.001 元（eltdx 复权截断到分 vs
     # 腾讯保留三位），传导到 RSI≈0.0025/MA60≈0.0004；10 票当日无阈值翻转，但 D41
