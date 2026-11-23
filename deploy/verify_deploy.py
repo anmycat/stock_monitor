@@ -26,7 +26,8 @@ from typing import Any
 # 上传范围（与 update_ecs.sh rsync 目标一致）
 SCAN_ROOTS = ("quant_engine", "UX", "deploy", "rust_accel")
 EXCLUDE_DIR_PARTS = {"__pycache__", ".git", ".ruff_cache", "logs", "node_modules",
-                     "target", "target_release", ".venv", "coding"}
+                     ".venv", "coding"}
+EXCLUDE_DIR_PREFIX = ("target",)  # 排除 target 及 target<随机后缀>/（cargo 带随机 CARGO_TARGET_DIR）
 # 注意：_qerust/ 不在此列——C 类产物（qerust.so）需计入「远端存在性」校验
 # 只排除真密钥文件；.env.example 是模板文档，必须纳入 B 类硬门禁（D77 静默不同步教训）
 EXCLUDE_ENV_NAMES = {".env", ".env.local", ".env.test"}
@@ -45,7 +46,7 @@ def classify(path: str | Path) -> str | None:
     is_secret_env = name in EXCLUDE_ENV_NAMES or name.startswith(EXCLUDE_ENV_PREFIX)
     if is_secret_env or name.lower().endswith(".ds_store"):
         return None
-    if any(part in EXCLUDE_DIR_PARTS for part in parts):
+    if any(part in EXCLUDE_DIR_PARTS or part.startswith(EXCLUDE_DIR_PREFIX) for part in parts):
         return None
     suffix = Path(name).suffix.lower()
     if suffix in EXCLUDE_SUFFIX_D:

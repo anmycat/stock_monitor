@@ -30,6 +30,7 @@ class TestClassify(unittest.TestCase):
         for rel in (
             "quant_engine/__pycache__/x.py",
             "rust_accel/target/release/libqerust.so",
+            "rust_accel/targetRajAQB/CACHEDIR.TAG",  # cargo 随机后缀 target 目录
             ".env",
             "quant_engine/.env.bak_d56",
             "logs/worker.log",
