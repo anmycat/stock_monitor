@@ -244,6 +244,110 @@ def parse_klines(payload: bytes, period_raw: int, *, volume_lots: bool = True) -
     return bars
 
 
+# ── 0x000F 权息事件 + 本地复权（D82 精度攻坚，源码机制自研）────────────────
+# 机制来源 eltdx corporate.rs / equity.py（research/docs/46 §6.5），纯自研实现。
+# 意义：服务端 qfq 按 round(·,2) 舍入致 0.001 差异；拿 adjust=none 完整毫位价 +
+# 权息系数本地复合，可保留 3 位逐位对齐腾讯（ECS 120/120 实证）。
+_TYPE_CAPITAL_CHANGES = 0x000F
+_CAP_RECORD_SIZE = 29  # 定长记录：market1+code6+resv1+date4+cat1+c1..c4(4×4)
+
+
+def parse_capital_changes(payload: bytes) -> list[dict]:
+    """解析 0x000F 响应 → 权息事件记录列表（category/date/c1..c4）。
+
+    block: u16 block_count + 每块 [market u8 + code 6s + count u16 + count×29B record]。
+    record: market1 + code6 + reserved1 + date u32([8:12]) + category u8([12])
+            + c1/c2/c3/c4 f32 LE([13:17],[17:21],[21:25],[25:29])。
+    category=1（送转配/分红）才参与复权；category 属股本类时 c 值 ×10000（此处原样保留，
+    由 _adjustment_factors 按 category 处理，与 eltdx parse_capital_change_record 一致）。
+    """
+    if len(payload) < 2:
+        return []
+    offset = 2  # skip block_count
+    events: list[dict] = []
+    while offset + 9 <= len(payload):
+        market = payload[offset]
+        number = payload[offset + 1:offset + 7].decode('ascii', errors='ignore')
+        count = int.from_bytes(payload[offset + 7:offset + 9], 'little')
+        offset += 9
+        for _ in range(count):
+            if offset + _CAP_RECORD_SIZE > len(payload):
+                return events
+            rec = payload[offset:offset + _CAP_RECORD_SIZE]
+            date_raw = int.from_bytes(rec[8:12], 'little')
+            category = rec[12]
+            raw_vals = [struct.unpack('<f', rec[13 + 4 * i:17 + 4 * i])[0] for i in range(4)]
+            # category 属"股本/送转"类按 ×10000 还原（对齐 eltdx is_share_count_category）
+            if category in {2, 3, 4, 5}:
+                vals = [v * 10000.0 for v in raw_vals]
+            elif category == 6:
+                vals = [raw_vals[0], raw_vals[1], raw_vals[2] * 10000.0, raw_vals[3]]
+            else:
+                vals = raw_vals
+            if date_raw:
+                y, md = date_raw // 10000, date_raw % 10000
+                events.append({
+                    'market': market, 'code': number,
+                    'date': datetime(y, md // 100, md % 100, tzinfo=_SH_TZ).date(),
+                    'category': category,
+                    'c1': vals[0], 'c2': vals[1], 'c3': vals[2], 'c4': vals[3],
+                })
+            offset += _CAP_RECORD_SIZE
+    return events
+
+
+def adjustment_factors(events: list[dict], *, start_date=None, anchor_date=None) -> list[dict]:
+    """从权息事件复合前复权 scale/offset（eltdx equity.py 纯数学自研）。
+
+    仅取 category=1 且 date 有效、>= start_date 的事件，按日期升序；
+    每个事件日一行，复合该日<=date<=anchor 的全部事件：
+        m = (10 + S + R)/10;  c = (D - R*P)/10     (D=c1 P=c2 S=c3 R=c4)
+        qfq_scale /= m;  qfq_offset = (qfq_offset - c)/m
+    返回按日期升序的 [{date, scale, offset}]，供 local_qfq 使用。
+    """
+    evs = [e for e in events
+           if e.get('category') == 1 and e.get('date') is not None
+           and (start_date is None or e['date'] >= start_date)]
+    evs.sort(key=lambda e: e['date'])
+    dates = sorted({e['date'] for e in evs})
+    out = []
+    for d in dates:
+        scale, offset = 1.0, 0.0
+        for e in evs:
+            if e['date'] >= d and (anchor_date is None or e['date'] <= anchor_date):
+                m = (10.0 + e['c3'] + e['c4']) / 10.0
+                c = (e['c1'] - e['c4'] * e['c2']) / 10.0
+                if m <= 0:
+                    continue
+                scale /= m
+                offset = (offset - c) / m
+        out.append({'date': d, 'scale': scale, 'offset': offset})
+    return out
+
+
+def local_qfq(bars: list[dict], factors: list[dict], *, digits: int = 3) -> list[dict]:
+    """对 adjust=none 的不复权 bar 应用本地前复权，返回新 bar 列表（不改入参）。
+
+    前复权系数选择：第一条 bar_date < factor.date 的行；无匹配用 scale=1/offset=0。
+    digits 控制舍入位数：3 逐位对齐腾讯，2 复现服务端 qfq（ECS 120/120 实证）。
+    """
+    result = []
+    for b in bars:
+        t = b['time']
+        bar_date = t.date() if isinstance(t, datetime) else t
+        scale, offset = 1.0, 0.0
+        for f in factors:
+            if bar_date < f['date']:
+                scale, offset = f['scale'], f['offset']
+                break
+        nb = dict(b)
+        for key in ('open', 'close', 'high', 'low'):
+            if key in nb and nb[key] is not None:
+                nb[key] = round(nb[key] * scale + offset, digits)
+        result.append(nb)
+    return result
+
+
 class TdxWireError(RuntimeError):
     """协议/连接层错误（上层按失败降级，不抛到信号链）。"""
 
@@ -269,6 +373,7 @@ class TdxWireClient:
         self._warned = False
         # 与 eltdx TdxClient.bars 兼容的子集接口（放在 __init__ 避免类体前向引用）
         self.bars = TdxWireClient._BarsApi(self)
+        self.corporate = TdxWireClient._CorporateApi(self)
 
     def _next_id(self) -> int:
         self._msg_id = (self._msg_id + 1) & 0xFFFFFFFF
@@ -393,6 +498,33 @@ class TdxWireClient:
     class BarSeries:
         bars: list[dict]
 
+    class _CorporateApi:
+        """0x000F 权息事件查询（对齐 eltdx client.corporate 子集）。"""
+
+        def __init__(self, owner: TdxWireClient):
+            self._owner = owner
+
+        def capital_changes(self, code: str) -> list[dict]:
+            conv = normalize_code(code)
+            if conv is None:
+                return []
+            market, number = conv
+            # 请求帧：count u16 + 每码 [market u8 + 6s 代码]
+            data = struct.pack('<H', 1) + bytes([market]) + number.encode('ascii')
+            try:
+                body = self._owner._request(_TYPE_CAPITAL_CHANGES, data)
+                return parse_capital_changes(body)
+            except Exception as e:
+                if not self._owner._warned:
+                    logger.warning(f'[TDX-WIRE] {code} 权息查询失败 {type(e).__name__}: {e}')
+                    self._owner._warned = True
+                return []
+
+        def adjustment_factors(self, code: str, *, start_date=None,
+                               anchor_date=None) -> list[dict]:
+            events = self.capital_changes(code)
+            return adjustment_factors(events, start_date=start_date, anchor_date=anchor_date)
+
     def ping(self) -> str:
         with self._lock:
             if self._sock is None:
@@ -431,6 +563,7 @@ class TdxWireClient:
 
 
 __all__ = [
-    'TdxWireClient', 'TdxWireError', 'decode_header', 'encode_frame',
-    'map_period', 'normalize_code', 'parse_klines',
+    'TdxWireClient', 'TdxWireError', 'adjustment_factors', 'decode_header',
+    'encode_frame', 'local_qfq', 'map_period', 'normalize_code',
+    'parse_capital_changes', 'parse_klines',
 ]

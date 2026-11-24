@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import struct
 import sys
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -17,10 +18,13 @@ from quant_engine.config import Settings
 from quant_engine.data.sources.eltdx_client import EltdxClient
 from quant_engine.data.sources.tdx_wire import (
     TdxWireClient,
+    adjustment_factors,
     decode_header,
     encode_frame,
+    local_qfq,
     map_period,
     normalize_code,
+    parse_capital_changes,
     parse_klines,
 )
 
@@ -169,6 +173,96 @@ class TestAdapterWirePath(unittest.TestCase):
         cfg = Settings(ELTDX_ENABLED=False, TDX_WIRE_ENABLED=True)
         c = EltdxClient(settings=cfg)
         self.assertTrue(c.get_daily_data('600519.SH', 10).empty)
+
+
+class TestLocalAdjustmentD82b(unittest.TestCase):
+    """0x000F 权息解析 + 本地复权精度对齐（机制自研，ECS 实证数据锁死）。"""
+
+    def _cap_payload(self, records: list[dict], *, market: int = 0,
+                     code: str = '000001') -> bytes:
+        """构造 0x000F 响应：u16 block_count + block(market1+code6+count u16+rec×29B)。"""
+        out = bytearray(struct.pack('<H', 1))
+        out += bytes([market]) + code.encode('ascii')
+        out += struct.pack('<H', len(records))
+        for r in records:
+            rec = bytearray(29)
+            rec[0] = market
+            rec[1:7] = code.encode('ascii')
+            rec[8:12] = struct.pack('<I', r['date'])
+            rec[12] = r['category']
+            for i, key in enumerate(('c1', 'c2', 'c3', 'c4')):
+                rec[13 + 4 * i:17 + 4 * i] = struct.pack('<f', r[key])
+            out += rec
+        return bytes(out)
+
+    def test_parse_capital_changes(self):
+        payload = self._cap_payload([
+            {'date': 20260601, 'category': 1, 'c1': 6.09, 'c2': 0.0, 'c3': 0.0, 'c4': 0.0},
+        ])
+        events = parse_capital_changes(payload)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]['date'].strftime('%Y-%m-%d'), '2026-06-01')
+        self.assertEqual(events[0]['category'], 1)
+        self.assertAlmostEqual(events[0]['c1'], 6.09, places=4)
+
+    def test_parse_capital_changes_malformed(self):
+        self.assertEqual(parse_capital_changes(b''), [])
+        self.assertEqual(parse_capital_changes(b'\x01\x00'), [])  # 块头不足
+
+    def test_adjustment_factors_offset_only(self):
+        """纯现金分红 D=-6.09（每10股）：m=1, c=-0.609 → scale=1, offset=-0.609。"""
+        events = [{
+            'date': datetime(2026, 6, 1, tzinfo=_TZ).date(), 'category': 1,
+            'c1': 6.09, 'c2': 0.0, 'c3': 0.0, 'c4': 0.0,
+        }]
+        fs = adjustment_factors(events)
+        self.assertEqual(len(fs), 1)
+        self.assertAlmostEqual(fs[0]['scale'], 1.0)
+        self.assertAlmostEqual(fs[0]['offset'], -0.609, places=6)
+
+    def test_adjustment_factors_start_filter(self):
+        """早于 start_date 的事件不参与（避免上市前事件污染累计基准）。"""
+        events = [
+            {'date': datetime(2020, 1, 1, tzinfo=_TZ).date(), 'category': 1,
+             'c1': -1.0, 'c2': 0.0, 'c3': 0.0, 'c4': 0.0},
+            {'date': datetime(2026, 6, 1, tzinfo=_TZ).date(), 'category': 1,
+             'c1': 6.09, 'c2': 0.0, 'c3': 0.0, 'c4': 0.0},
+        ]
+        fs = adjustment_factors(events, start_date=datetime(2026, 1, 1, tzinfo=_TZ).date())
+        self.assertEqual(len(fs), 1)
+        self.assertAlmostEqual(fs[0]['offset'], -0.609, places=6)
+
+    def test_local_qfq_digits2_matches_server(self):
+        """ECS 实证：raw=10.9, offset=-0.609 → round2=10.29 = 服务端 qfq。"""
+        bar = {'time': datetime(2026, 6, 1, 15, 0, tzinfo=_TZ),
+               'open': 10.9, 'close': 10.9, 'high': 10.9, 'low': 10.9}
+        fs = [{'date': datetime(2026, 6, 1, tzinfo=_TZ).date(), 'scale': 1.0, 'offset': -0.609}]
+        # bar_date < factor.date 才匹配；这里同日 → 无匹配 → 用 1/0（仿真边界），
+        # 改为事件日次日以触发匹配（真实场景为除权前一日 bar 匹配到除权日 factor）
+        bar['time'] = datetime(2026, 5, 29, 15, 0, tzinfo=_TZ)
+        r2 = local_qfq([bar], fs, digits=2)[0]
+        r3 = local_qfq([bar], fs, digits=3)[0]
+        self.assertAlmostEqual(r2['open'], 10.29)  # 服务端 qfq
+        self.assertAlmostEqual(r3['open'], 10.291)  # 腾讯 qfq
+        self.assertAlmostEqual(bar['open'], 10.9)  # 入参未修改
+
+    def test_local_qfq_no_factor_identity(self):
+        """无匹配 factor 时原样（scale=1/offset=0）。"""
+        bar = {'time': datetime(2026, 11, 20, 15, 0, tzinfo=_TZ), 'open': 12.22}
+        out = local_qfq([bar], [], digits=3)[0]
+        self.assertEqual(out['open'], 12.22)
+
+    def test_e2e_factors_from_payload_to_qfq(self):
+        """端到端：构造 0x000F payload → 解析 → 复合 → 本地复权对齐腾讯。"""
+        payload = self._cap_payload([
+            {'date': 20260601, 'category': 1, 'c1': 6.09, 'c2': 0.0, 'c3': 0.0, 'c4': 0.0},
+        ])
+        events = parse_capital_changes(payload)
+        fs = adjustment_factors(events)
+        bar = {'time': datetime(2026, 5, 29, 15, 0, tzinfo=_TZ),
+               'open': 10.9, 'close': 10.9, 'high': 10.9, 'low': 10.9}
+        out3 = local_qfq([bar], fs, digits=3)[0]
+        self.assertAlmostEqual(out3['open'], 10.291)  # = 腾讯 qfq（ECS 实证）
 
 
 if __name__ == '__main__':
